@@ -1,0 +1,433 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum OrganizationType {
+  BAND
+  MINISTRY
+  ACOUSTIC_GROUP
+  ORCHESTRA
+  OTHER
+}
+
+enum MembershipRole {
+  OWNER
+  ADMIN
+  LEADER
+  MUSICIAN
+  GUEST
+}
+
+enum MembershipStatus {
+  ACTIVE
+  INACTIVE
+  INVITED
+}
+
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  CANCELLED
+  EXPIRED
+}
+
+enum SongStatus {
+  ACTIVE
+  DRAFT
+  ARCHIVED
+}
+
+enum EventStatus {
+  CONFIRMED
+  PENDING
+  DRAFT
+  CANCELLED
+  FINISHED
+}
+
+enum AttendanceStatus {
+  PENDING
+  CONFIRMED
+  DECLINED
+}
+
+enum FileType {
+  PDF
+  LYRICS
+  SHEET_MUSIC
+  AUDIO
+  VIDEO
+  BACKING_TRACK
+  DOCUMENT
+}
+
+enum SongTrackType {
+  FULL_TRACK
+  BACKING_TRACK
+  CLICK
+  PAD
+  DRUMS
+  BASS
+  GUITAR
+  KEYS
+  VOCALS
+  CHOIR
+  GUIDE
+  OTHER
+}
+
+enum SongLinkProvider {
+  YOUTUBE
+  SPOTIFY
+  APPLE_MUSIC
+  SOUNDCLOUD
+  VIMEO
+  OTHER
+}
+
+enum SongFileCategory {
+  LYRIC_PDF
+  CHORD_CHART
+  SHEET_MUSIC
+  AUDIO
+  STEM
+  BACKING_TRACK
+  VIDEO
+  DOCUMENT
+  IMAGE
+  OTHER
+}
+
+enum SongNoteVisibility {
+  PRIVATE
+  ORGANIZATION
+  LEADERS_ONLY
+}
+
+model User {
+  id            String       @id @default(cuid())
+  name          String
+  email         String       @unique
+  passwordHash  String
+  phone         String?
+  avatarUrl     String?
+  active        Boolean      @default(true)
+  memberships   Membership[]
+  invitations   Invitation[] @relation("InvitationInviter")
+  uploadedFiles File[]       @relation("FileUploader")
+  songNotes     SongNote[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([email])
+}
+
+model Organization {
+  id           String           @id @default(cuid())
+  slug         String           @unique
+  name         String
+  type         OrganizationType @default(BAND)
+  description  String?
+  primaryColor String           @default("#18e0ae")
+  memberships  Membership[]
+  invitations  Invitation[]
+  songs        Song[]
+  songNotes    SongNote[]
+  events       Event[]
+  setlists     Setlist[]
+  files        File[]
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([slug])
+}
+
+model Membership {
+  id             String           @id @default(cuid())
+  userId         String
+  organizationId String
+  role           MembershipRole   @default(MUSICIAN)
+  status         MembershipStatus @default(ACTIVE)
+  instrument     String?
+  joinedAt       DateTime         @default(now())
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  eventMusicians EventMusician[]
+
+  @@unique([userId, organizationId])
+  @@index([organizationId, role])
+  @@index([userId])
+}
+
+model Invitation {
+  id             String           @id @default(cuid())
+  organizationId String
+  email          String
+  role           MembershipRole   @default(MUSICIAN)
+  status         InvitationStatus @default(PENDING)
+  token          String           @unique
+  invitedById    String?
+  expiresAt      DateTime
+  acceptedAt     DateTime?
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  invitedBy      User?            @relation("InvitationInviter", fields: [invitedById], references: [id], onDelete: SetNull)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@unique([organizationId, email, status])
+  @@index([email])
+  @@index([organizationId])
+}
+
+model Song {
+  id             String        @id @default(cuid())
+  organizationId String
+  title          String
+  artist         String
+  originalKey    String
+  currentKey     String
+  bpm            Int?
+  durationSec    Int?
+  album          String?
+  year           Int?
+  genre          String?
+  timeSignature  String?
+  language       String?
+  isFavorite     Boolean       @default(false)
+  coverUrl       String?
+  youtubeUrl     String?
+  lyrics         String?
+  chords         String?
+  notes          String?
+  tags           String[]      @default([])
+  status         SongStatus    @default(ACTIVE)
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  setlistSongs   SetlistSong[]
+  files          File[]
+  tracks         SongTrack[]
+  versions       SongVersion[]
+  links          SongLink[]
+  songFiles      SongFile[]
+  songNotes      SongNote[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([organizationId, status])
+  @@index([organizationId, title])
+}
+
+model SongVersion {
+  id            String       @id @default(cuid())
+  songId        String
+  name          String
+  key           String
+  bpm           Int?
+  durationSec   Int?
+  lyrics        String?
+  chords        String?
+  contentJson   Json?
+  structureJson Json?
+  notes         String?
+  isDefault     Boolean      @default(false)
+  song          Song         @relation(fields: [songId], references: [id], onDelete: Cascade)
+  tracks        SongTrack[]
+  links         SongLink[]
+  songFiles     SongFile[]
+  songNotes     SongNote[]
+  setlistSongs  SetlistSong[]
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  @@index([songId])
+  @@index([songId, isDefault])
+  @@index([songId, name])
+}
+
+model SongTrack {
+  id            String        @id @default(cuid())
+  songId        String
+  versionId     String?
+  name          String
+  type          SongTrackType @default(OTHER)
+  instrument    String?
+  durationSec   Int?
+  storageKey    String?
+  url           String?
+  provider      String?
+  volumeDefault Float?
+  panDefault    Float?
+  isPrimary     Boolean       @default(false)
+  sortOrder     Int           @default(0)
+  song          Song          @relation(fields: [songId], references: [id], onDelete: Cascade)
+  version       SongVersion?  @relation(fields: [versionId], references: [id], onDelete: SetNull)
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([songId, sortOrder])
+  @@index([versionId])
+}
+
+model SongLink {
+  id        String           @id @default(cuid())
+  songId    String
+  versionId String?
+  provider  SongLinkProvider @default(OTHER)
+  url       String
+  title     String?
+  isPrimary Boolean          @default(false)
+  song      Song             @relation(fields: [songId], references: [id], onDelete: Cascade)
+  version   SongVersion?     @relation(fields: [versionId], references: [id], onDelete: SetNull)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([songId, provider])
+  @@index([versionId])
+}
+
+model SongFile {
+  id        String           @id @default(cuid())
+  songId    String
+  versionId String?
+  fileId    String
+  category  SongFileCategory @default(OTHER)
+  sortOrder Int              @default(0)
+  song      Song             @relation(fields: [songId], references: [id], onDelete: Cascade)
+  version   SongVersion?     @relation(fields: [versionId], references: [id], onDelete: SetNull)
+  file      File             @relation(fields: [fileId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([songId, fileId])
+  @@index([songId, category])
+  @@index([versionId])
+  @@index([fileId])
+}
+
+model SongNote {
+  id             String             @id @default(cuid())
+  songId         String
+  versionId      String?
+  userId         String?
+  organizationId String
+  content        String
+  visibility     SongNoteVisibility @default(ORGANIZATION)
+  song           Song               @relation(fields: [songId], references: [id], onDelete: Cascade)
+  version        SongVersion?       @relation(fields: [versionId], references: [id], onDelete: SetNull)
+  user           User?              @relation(fields: [userId], references: [id], onDelete: SetNull)
+  organization   Organization       @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  createdAt      DateTime           @default(now())
+  updatedAt      DateTime           @updatedAt
+
+  @@index([songId, visibility])
+  @@index([versionId])
+  @@index([organizationId])
+  @@index([userId])
+}
+
+model Event {
+  id             String          @id @default(cuid())
+  organizationId String
+  setlistId      String?
+  name           String
+  startsAt       DateTime
+  endsAt         DateTime?
+  location       String?
+  description    String?
+  status         EventStatus     @default(DRAFT)
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  setlist        Setlist?        @relation(fields: [setlistId], references: [id], onDelete: SetNull)
+  musicians      EventMusician[]
+  files          File[]
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([organizationId, startsAt])
+  @@index([organizationId, status])
+}
+
+model EventMusician {
+  id           String           @id @default(cuid())
+  eventId      String
+  membershipId String
+  instrument   String?
+  status       AttendanceStatus @default(PENDING)
+  note         String?
+  event        Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  membership   Membership       @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@unique([eventId, membershipId])
+  @@index([membershipId])
+}
+
+model Setlist {
+  id             String        @id @default(cuid())
+  organizationId String
+  name           String
+  description    String?
+  estimatedSec   Int           @default(0)
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  songs          SetlistSong[]
+  events         Event[]
+  files          File[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([organizationId, name])
+}
+
+model SetlistSong {
+  id          String   @id @default(cuid())
+  setlistId   String
+  songId      String
+  songVersionId String?
+  order       Int
+  keyOverride String?
+  bpmOverride Int?
+  notes       String?
+  transitionNote String?
+  durationOverrideSec Int?
+  setlist     Setlist  @relation(fields: [setlistId], references: [id], onDelete: Cascade)
+  song        Song     @relation(fields: [songId], references: [id], onDelete: Cascade)
+  songVersion SongVersion? @relation(fields: [songVersionId], references: [id], onDelete: SetNull)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([setlistId, songId])
+  @@unique([setlistId, order])
+  @@index([songId])
+  @@index([songVersionId])
+}
+
+model File {
+  id             String       @id @default(cuid())
+  organizationId String
+  uploadedById   String?
+  songId         String?
+  eventId        String?
+  setlistId      String?
+  name           String
+  type           FileType
+  mimeType       String?
+  sizeBytes      Int?
+  storageKey     String?
+  url            String?
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  uploadedBy     User?        @relation("FileUploader", fields: [uploadedById], references: [id], onDelete: SetNull)
+  song           Song?        @relation(fields: [songId], references: [id], onDelete: SetNull)
+  songFiles      SongFile[]
+  event          Event?       @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  setlist        Setlist?     @relation(fields: [setlistId], references: [id], onDelete: SetNull)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId, type])
+  @@index([songId])
+  @@index([eventId])
+  @@index([setlistId])
+}

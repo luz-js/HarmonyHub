@@ -1,0 +1,112 @@
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { MembershipRole } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+
+type Permission = 'organization.manage' | 'members.manage' | 'invitations.manage' | 'songs.manage' | 'events.manage' | 'setlists.manage' | 'read';
+
+const permissionsByRole: Record<MembershipRole, Permission[]> = {
+  OWNER: ['organization.manage', 'members.manage', 'invitations.manage', 'songs.manage', 'events.manage', 'setlists.manage', 'read'],
+  ADMIN: ['organization.manage', 'members.manage', 'invitations.manage', 'songs.manage', 'events.manage', 'setlists.manage', 'read'],
+  LEADER: ['songs.manage', 'events.manage', 'setlists.manage', 'read'],
+  MUSICIAN: ['read'],
+  GUEST: ['read'],
+};
+
+@Injectable()
+export class PermissionsService {
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
+
+  can(role: MembershipRole, permission: Permission) {
+    return permissionsByRole[role]?.includes(permission) || false;
+  }
+
+  canManageOrganization(role: MembershipRole) {
+    return this.can(role, 'organization.manage');
+  }
+
+  canManageMembers(role: MembershipRole) {
+    return this.can(role, 'members.manage');
+  }
+
+  canInviteMembers(role: MembershipRole) {
+    return this.can(role, 'invitations.manage');
+  }
+
+  canManageSongs(role: MembershipRole) {
+    return this.can(role, 'songs.manage');
+  }
+
+  canManageEvents(role: MembershipRole) {
+    return this.can(role, 'events.manage');
+  }
+
+  canManageSetlists(role: MembershipRole) {
+    return this.can(role, 'setlists.manage');
+  }
+
+  canViewOrganization(role: MembershipRole) {
+    return this.can(role, 'read');
+  }
+
+  async getMembership(userId: string, organizationId: string) {
+    if (!organizationId) throw new BadRequestException('Organizacion activa requerida');
+    return this.prisma.membership.findUnique({
+      where: { userId_organizationId: { userId, organizationId } },
+      include: { user: true, organization: true },
+    });
+  }
+
+  async assertOrganizationMember(userId: string, organizationId: string) {
+    const membership = await this.getMembership(userId, organizationId);
+    if (!membership || membership.status !== 'ACTIVE') {
+      throw new ForbiddenException('No tienes acceso a esta organizacion');
+    }
+    return membership;
+  }
+
+  async assertRole(userId: string, organizationId: string, allowedRoles: MembershipRole[]) {
+    const membership = await this.assertOrganizationMember(userId, organizationId);
+    if (!allowedRoles.includes(membership.role)) {
+      throw new ForbiddenException('Permisos insuficientes');
+    }
+    return membership;
+  }
+
+  async assertPermission(userId: string, organizationId: string, permission: Permission) {
+    const membership = await this.assertOrganizationMember(userId, organizationId);
+    if (!this.can(membership.role, permission)) {
+      throw new ForbiddenException('Permisos insuficientes');
+    }
+    return membership;
+  }
+
+  async getMembershipById(id: string) {
+    const membership = await this.prisma.membership.findUnique({ where: { id }, include: { user: true } });
+    if (!membership) throw new NotFoundException('Miembro no encontrado');
+    return membership;
+  }
+
+  async assertCanMutateMembership(actorUserId: string, targetMembershipId: string) {
+    const target = await this.getMembershipById(targetMembershipId);
+    const actor = await this.assertPermission(actorUserId, target.organizationId, 'members.manage');
+
+    if (actor.role === 'ADMIN' && target.role === 'OWNER') {
+      throw new ForbiddenException('Un ADMIN no puede modificar un OWNER');
+    }
+
+    return { actor, target };
+  }
+
+  async assertNotLastOwner(organizationId: string, targetMembershipId: string) {
+    const target = await this.getMembershipById(targetMembershipId);
+    if (target.role !== 'OWNER' || target.status !== 'ACTIVE') return;
+
+    const owners = await this.prisma.membership.count({
+      where: { organizationId, role: 'OWNER', status: 'ACTIVE', id: { not: targetMembershipId } },
+    });
+
+    if (owners === 0) {
+      throw new ForbiddenException('No se puede quitar el ultimo OWNER');
+    }
+  }
+}
