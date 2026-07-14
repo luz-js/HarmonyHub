@@ -243,6 +243,24 @@ button {
   color: #ff9bad;
 }
 
+.badge-neutral {
+  border-color: rgba(141, 162, 180, 0.3);
+  background: rgba(141, 162, 180, 0.1);
+  color: var(--muted);
+}
+
+.badge-teal {
+  border-color: rgba(45, 212, 191, 0.3);
+  background: rgba(45, 212, 191, 0.1);
+  color: #5eead4;
+}
+
+.badge-orange {
+  border-color: rgba(251, 146, 60, 0.32);
+  background: rgba(251, 146, 60, 0.12);
+  color: #fdba74;
+}
+
 .table-wrap {
   overflow-x: auto;
 }
