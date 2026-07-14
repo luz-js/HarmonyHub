@@ -63,6 +63,7 @@ button {
   color: white;
 }
 
+@layer components {
 .container {
   width: min(100%, 1400px);
   margin-left: auto;
@@ -357,3 +358,4 @@ pre {
     min-width: 680px;
   }
 }
+} /* end @layer components */
