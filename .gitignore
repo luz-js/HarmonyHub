@@ -3,6 +3,8 @@ dist
 coverage
 apps/api/dist
 apps/web/dist
+var
+apps/api/var
 
 .env
 .env*.local

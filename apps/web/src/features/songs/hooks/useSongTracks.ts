@@ -1,10 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { getSongTracks } from '../api/songs.client';
 
-export function useSongTracks(songId: string) {
+export function useSongTracks(organizationId: string, songId: string, filters?: { versionId?: string | null; includeGeneral?: boolean }) {
   return useQuery({
-    queryKey: ['songs', songId, 'tracks'],
-    queryFn: () => getSongTracks(songId),
-    enabled: Boolean(songId),
+    queryKey: ['songTracks', organizationId, songId, filters?.versionId ?? 'all', filters?.includeGeneral ?? true],
+    queryFn: () => getSongTracks(songId, filters),
+    enabled: Boolean(organizationId && songId),
   });
 }
