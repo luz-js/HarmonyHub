@@ -18,6 +18,7 @@ import { events, files, musicians, notifications, setlists, songs } from './data
 import { loginRequest } from './api';
 import { DashboardPage as HomeDashboard } from './features/dashboard';
 import { SongDetailPage, SongsPage } from './features/songs';
+import { SetlistDetailPage, SetlistsPage as RealSetlistsPage } from './features/setlists';
 import { clearAuthSession } from './shared/api/http';
 
 type User = {
@@ -282,19 +283,6 @@ function EventsPage() {
   return <PanelTable title="Eventos" rows={events.map((event) => [event.name, event.date, event.time, event.location, event.status])} />;
 }
 
-function SetlistsPage() {
-  const active = setlists[0];
-  return (
-    <div className="space-y-5">
-      <section className="panel p-5">
-        <h1 className="text-2xl font-bold text-white">{active.name}</h1>
-        <p className="mt-1 text-sm text-muted">Duración total: {active.duration}</p>
-      </section>
-      <PanelTable title="Canciones del setlist" rows={active.songs.map((song, index) => [index + 1, song.title, song.key, `${song.bpm} BPM`, song.duration])} />
-    </div>
-  );
-}
-
 function MusiciansPage() {
   return <PanelTable title="Músicos" rows={musicians.map((musician) => [musician.name, musician.instrument, musician.role, musician.status])} />;
 }
@@ -353,11 +341,15 @@ function App() {
       return <SongDetailPage id={path.replace('/songs/', '')} navigate={navigate} />;
     }
 
+    if (path.startsWith('/setlists/')) {
+      return <SetlistDetailPage id={path.replace('/setlists/', '')} navigate={navigate} />;
+    }
+
     const pages: Record<string, ReactNode> = {
       '/': <HomeDashboard user={user} navigate={navigate} />,
       '/songs': <SongsPage user={user} navigate={navigate} />,
       '/events': <EventsPage />,
-      '/setlists': <SetlistsPage />,
+      '/setlists': <RealSetlistsPage navigate={navigate} />,
       '/musicians': <MusiciansPage />,
       '/archives': <ArchivesPage />,
       '/calendar': <CalendarPage />,

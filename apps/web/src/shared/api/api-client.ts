@@ -1,5 +1,36 @@
-import type { CurrentUser, InvitationSummary, OrganizationSummary, SongDetail, SongPayload, SongSummary, SongVersion } from '../types';
-import { http, setAuthToken, setCurrentOrganizationId } from './http';
+import type {
+  CurrentUser,
+  InvitationSummary,
+  OrganizationSummary,
+  SongActivityPage,
+  SongActivityType,
+  SongComment,
+  SongCommentTarget,
+  SongCommentThread,
+  SongDetail,
+  SongEntityType,
+  SongFile,
+  SongFileCategory,
+  SongLink,
+  SongNote,
+  SongNoteVisibility,
+  SongPayload,
+  SongRevisionDiffResult,
+  SongSummary,
+  SongThreadStatus,
+  SongTrack,
+  SongTrackType,
+  SongVersion,
+  SongVersionRevision,
+  TrackProvider,
+  CreateSetlistItemInput,
+  SetlistDetail,
+  SetlistItem,
+  SetlistListResponse,
+  SetlistStatus,
+  UpdateSetlistItemInput,
+} from '../types';
+import { buildAuthHeaders, http, requestBlob, setAuthToken, setCurrentOrganizationId } from './http';
 
 export async function loginRequest(input: { email: string; password: string }) {
   const data = await http<{ ok: boolean; user: CurrentUser; accessToken: string }>('/api/login', { method: 'POST', body: JSON.stringify(input) });
@@ -72,20 +103,130 @@ export function getSongVersion(songId: string, versionId: string) {
   return http<SongVersion>(`/api/songs/${songId}/versions/${versionId}`);
 }
 
-export function getSongTracks(songId: string) {
-  return http<SongDetail['tracks']>(`/api/songs/${songId}/tracks`);
+export function getSongTracks(songId: string, filters?: { versionId?: string | null; includeGeneral?: boolean }) {
+  const params = new URLSearchParams();
+  if (filters?.versionId) params.set('versionId', filters.versionId);
+  if (filters?.includeGeneral === false) params.set('includeGeneral', 'false');
+  const query = params.toString();
+  return http<SongTrack[]>(`/api/songs/${songId}/tracks${query ? `?${query}` : ''}`);
 }
 
-export function getSongLinks(songId: string) {
-  return http<SongDetail['links']>(`/api/songs/${songId}/links`);
+export function getSongTrack(songId: string, trackId: string) {
+  return http<SongTrack>(`/api/songs/${songId}/tracks/${trackId}`);
 }
 
-export function getSongFiles(songId: string) {
-  return http<SongDetail['songFiles']>(`/api/songs/${songId}/files`);
+export function getSongLinks(songId: string, filters?: { versionId?: string | null }) {
+  const params = new URLSearchParams();
+  if (filters?.versionId) params.set('versionId', filters.versionId);
+  const query = params.toString();
+  return http<SongLink[]>(`/api/songs/${songId}/links${query ? `?${query}` : ''}`);
 }
 
-export function getSongNotes(songId: string) {
-  return http<SongDetail['songNotes']>(`/api/songs/${songId}/notes`);
+export function getSongLink(songId: string, linkId: string) {
+  return http<SongLink>(`/api/songs/${songId}/links/${linkId}`);
+}
+
+export function getSongFiles(songId: string, filters?: { versionId?: string | null; category?: SongFileCategory }) {
+  const params = new URLSearchParams();
+  if (filters?.versionId) params.set('versionId', filters.versionId);
+  if (filters?.category) params.set('category', filters.category);
+  const query = params.toString();
+  return http<SongFile[]>(`/api/songs/${songId}/files${query ? `?${query}` : ''}`);
+}
+
+export function getSongFile(songId: string, songFileId: string) {
+  return http<SongFile>(`/api/songs/${songId}/files/${songFileId}`);
+}
+
+export function uploadSongFile(
+  songId: string,
+  input: {
+    file: File;
+    title?: string;
+    description?: string;
+    category: SongFileCategory;
+    versionId?: string | null;
+    isPrimary?: boolean;
+  },
+  onProgress?: (progress: number) => void,
+) {
+  return new Promise<SongFile>((resolve, reject) => {
+    const formData = new FormData();
+    formData.set('file', input.file);
+    formData.set('category', input.category);
+    if (input.title) formData.set('title', input.title);
+    if (input.description) formData.set('description', input.description);
+    if (input.versionId) formData.set('versionId', input.versionId);
+    if (input.isPrimary !== undefined) formData.set('isPrimary', String(input.isPrimary));
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `/api/songs/${songId}/files/upload`);
+    const headers = buildAuthHeaders();
+    headers.forEach((value, key) => xhr.setRequestHeader(key, value));
+    xhr.responseType = 'json';
+
+    xhr.upload.onprogress = (event) => {
+      if (!event.lengthComputable || !onProgress) return;
+      onProgress(Math.round((event.loaded / event.total) * 100));
+    };
+
+    xhr.onerror = () => reject(new Error('No se pudo subir el archivo'));
+    xhr.onload = () => {
+      const response = typeof xhr.response === 'string' ? JSON.parse(xhr.response) : xhr.response || JSON.parse(xhr.responseText || 'null');
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(response as SongFile);
+        return;
+      }
+      reject(new Error(response?.message || 'No se pudo subir el archivo'));
+    };
+
+    xhr.send(formData);
+  });
+}
+
+export function updateSongFile(songId: string, songFileId: string, input: Partial<{
+  title: string;
+  description: string | null;
+  category: SongFileCategory;
+  versionId: string | null;
+  isPrimary: boolean;
+  active: boolean;
+  sortOrder: number;
+}>) {
+  return http<SongFile>(`/api/songs/${songId}/files/${songFileId}`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function deleteSongFile(songId: string, songFileId: string) {
+  return http<{ ok: boolean }>(`/api/songs/${songId}/files/${songFileId}`, { method: 'DELETE' });
+}
+
+export function setPrimarySongFile(songId: string, songFileId: string) {
+  return http<SongFile>(`/api/songs/${songId}/files/${songFileId}/set-primary`, { method: 'POST' });
+}
+
+export function reorderSongFiles(songId: string, input: { versionId?: string | null; items: Array<{ id: string; sortOrder: number }> }) {
+  return http<SongFile[]>(`/api/songs/${songId}/files/reorder`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function streamSongFile(songId: string, songFileId: string) {
+  return requestBlob(`/api/songs/${songId}/files/${songFileId}/stream`);
+}
+
+export function downloadSongFile(songId: string, songFileId: string) {
+  return requestBlob(`/api/songs/${songId}/files/${songFileId}/download`);
+}
+
+export function getSongNotes(songId: string, filters?: { versionId?: string | null; visibility?: SongNoteVisibility; includeArchived?: boolean }) {
+  const params = new URLSearchParams();
+  if (filters?.versionId) params.set('versionId', filters.versionId);
+  if (filters?.visibility) params.set('visibility', filters.visibility);
+  if (filters?.includeArchived) params.set('includeArchived', 'true');
+  const query = params.toString();
+  return http<SongNote[]>(`/api/songs/${songId}/notes${query ? `?${query}` : ''}`);
+}
+
+export function getSongNote(songId: string, noteId: string) {
+  return http<SongNote>(`/api/songs/${songId}/notes/${noteId}`);
 }
 
 export function createSong(input: SongPayload) {
@@ -116,26 +257,304 @@ export function setDefaultSongVersion(songId: string, versionId: string) {
   return http<SongVersion>(`/api/songs/${songId}/versions/${versionId}/set-default`, { method: 'POST' });
 }
 
-export function createSongLink(songId: string, input: { provider: string; url: string; title?: string; isPrimary?: boolean; versionId?: string }) {
-  return http(`/api/songs/${songId}/links`, { method: 'POST', body: JSON.stringify(input) });
+export function createSongLink(songId: string, input: { url: string; title: string; isPrimary?: boolean; versionId?: string | null }) {
+  return http<SongLink>(`/api/songs/${songId}/links`, { method: 'POST', body: JSON.stringify(input) });
 }
 
-export function updateSongLink(songId: string, linkId: string, input: { provider?: string; url?: string; title?: string; isPrimary?: boolean; versionId?: string }) {
-  return http(`/api/songs/${songId}/links/${linkId}`, { method: 'PATCH', body: JSON.stringify(input) });
+export function updateSongLink(songId: string, linkId: string, input: Partial<{
+  url: string;
+  title: string;
+  isPrimary: boolean;
+  versionId: string | null;
+  active: boolean;
+  sortOrder: number;
+}>) {
+  return http<SongLink>(`/api/songs/${songId}/links/${linkId}`, { method: 'PATCH', body: JSON.stringify(input) });
 }
 
-export function createSongNote(songId: string, input: { content: string; visibility: string; versionId?: string }) {
-  return http(`/api/songs/${songId}/notes`, { method: 'POST', body: JSON.stringify(input) });
+export function deleteSongLink(songId: string, linkId: string) {
+  return http<{ ok: boolean }>(`/api/songs/${songId}/links/${linkId}`, { method: 'DELETE' });
 }
 
-export function updateSongNote(songId: string, noteId: string, input: { content?: string; visibility?: string }) {
-  return http(`/api/songs/${songId}/notes/${noteId}`, { method: 'PATCH', body: JSON.stringify(input) });
+export function setPrimarySongLink(songId: string, linkId: string) {
+  return http<SongLink>(`/api/songs/${songId}/links/${linkId}/set-primary`, { method: 'POST' });
 }
 
-export function createSongTrack(songId: string, input: { name: string; type: string; instrument?: string; url?: string; durationSec?: number; isPrimary?: boolean; versionId?: string }) {
-  return http(`/api/songs/${songId}/tracks`, { method: 'POST', body: JSON.stringify(input) });
+export function reorderSongLinks(songId: string, input: { versionId?: string | null; items: Array<{ id: string; sortOrder: number }> }) {
+  return http<SongLink[]>(`/api/songs/${songId}/links/reorder`, { method: 'PATCH', body: JSON.stringify(input) });
 }
 
-export function updateSongTrack(songId: string, trackId: string, input: Partial<{ name: string; type: string; instrument: string; url: string; durationSec: number; isPrimary: boolean; versionId: string; sortOrder: number }>) {
-  return http(`/api/songs/${songId}/tracks/${trackId}`, { method: 'PATCH', body: JSON.stringify(input) });
+export function createSongNote(songId: string, input: { title?: string; content: string; visibility: SongNoteVisibility; versionId?: string | null; isPinned?: boolean }) {
+  return http<SongNote>(`/api/songs/${songId}/notes`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function updateSongNote(songId: string, noteId: string, input: Partial<{
+  title: string | null;
+  content: string;
+  visibility: SongNoteVisibility;
+  versionId: string | null;
+}>) {
+  return http<SongNote>(`/api/songs/${songId}/notes/${noteId}`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function deleteSongNote(songId: string, noteId: string) {
+  return http<{ ok: boolean }>(`/api/songs/${songId}/notes/${noteId}`, { method: 'DELETE' });
+}
+
+export function pinSongNote(songId: string, noteId: string) {
+  return http<SongNote>(`/api/songs/${songId}/notes/${noteId}/pin`, { method: 'POST' });
+}
+
+export function archiveSongNote(songId: string, noteId: string) {
+  return http<SongNote>(`/api/songs/${songId}/notes/${noteId}/archive`, { method: 'POST' });
+}
+
+export function getSongThreads(songId: string, filters?: { versionId?: string | null; status?: SongThreadStatus; targetType?: SongCommentTarget; targetRef?: string }) {
+  const params = new URLSearchParams();
+  if (filters?.versionId) params.set('versionId', filters.versionId);
+  if (filters?.status) params.set('status', filters.status);
+  if (filters?.targetType) params.set('targetType', filters.targetType);
+  if (filters?.targetRef) params.set('targetRef', filters.targetRef);
+  const query = params.toString();
+  return http<SongCommentThread[]>(`/api/songs/${songId}/threads${query ? `?${query}` : ''}`);
+}
+
+export function getSongThread(songId: string, threadId: string) {
+  return http<SongCommentThread>(`/api/songs/${songId}/threads/${threadId}`);
+}
+
+export function createSongThread(songId: string, input: {
+  versionId?: string | null;
+  targetType: SongCommentTarget;
+  targetRef?: string | null;
+  title?: string;
+  content: string;
+  mentionedUserIds?: string[];
+}) {
+  return http<SongCommentThread>(`/api/songs/${songId}/threads`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function updateSongThread(songId: string, threadId: string, input: { title?: string | null }) {
+  return http<SongCommentThread>(`/api/songs/${songId}/threads/${threadId}`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function resolveSongThread(songId: string, threadId: string) {
+  return http<SongCommentThread>(`/api/songs/${songId}/threads/${threadId}/resolve`, { method: 'POST' });
+}
+
+export function reopenSongThread(songId: string, threadId: string) {
+  return http<SongCommentThread>(`/api/songs/${songId}/threads/${threadId}/reopen`, { method: 'POST' });
+}
+
+export function createSongComment(songId: string, threadId: string, input: { content: string; mentionedUserIds?: string[] }) {
+  return http<SongComment>(`/api/songs/${songId}/threads/${threadId}/comments`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function updateSongComment(songId: string, threadId: string, commentId: string, input: { content: string }) {
+  return http<SongComment>(`/api/songs/${songId}/threads/${threadId}/comments/${commentId}`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function deleteSongComment(songId: string, threadId: string, commentId: string) {
+  return http<{ ok: boolean }>(`/api/songs/${songId}/threads/${threadId}/comments/${commentId}`, { method: 'DELETE' });
+}
+
+export function createSongTrack(songId: string, input: {
+  name: string;
+  type: SongTrackType;
+  instrument?: string;
+  url?: string;
+  durationSec?: number;
+  isPrimary?: boolean;
+  versionId?: string | null;
+  provider?: TrackProvider;
+  volumeDefault?: number;
+  panDefault?: number;
+}) {
+  return http<SongTrack>(`/api/songs/${songId}/tracks`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function uploadSongTrack(
+  songId: string,
+  input: {
+    file: File;
+    name?: string;
+    type: SongTrackType;
+    instrument?: string;
+    versionId?: string | null;
+    isPrimary?: boolean;
+    durationSec?: number;
+  },
+  onProgress?: (progress: number) => void,
+) {
+  return new Promise<SongTrack>((resolve, reject) => {
+    const formData = new FormData();
+    formData.set('file', input.file);
+    formData.set('type', input.type);
+    if (input.name) formData.set('name', input.name);
+    if (input.instrument) formData.set('instrument', input.instrument);
+    if (input.versionId) formData.set('versionId', input.versionId);
+    if (input.isPrimary !== undefined) formData.set('isPrimary', String(input.isPrimary));
+    if (input.durationSec !== undefined) formData.set('durationSec', String(input.durationSec));
+
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `/api/songs/${songId}/tracks/upload`);
+    const headers = buildAuthHeaders();
+    headers.forEach((value, key) => xhr.setRequestHeader(key, value));
+    xhr.responseType = 'json';
+
+    xhr.upload.onprogress = (event) => {
+      if (!event.lengthComputable || !onProgress) return;
+      onProgress(Math.round((event.loaded / event.total) * 100));
+    };
+
+    xhr.onerror = () => reject(new Error('No se pudo subir la pista'));
+    xhr.onload = () => {
+      const response = typeof xhr.response === 'string' ? JSON.parse(xhr.response) : xhr.response || JSON.parse(xhr.responseText || 'null');
+      if (xhr.status >= 200 && xhr.status < 300) {
+        resolve(response as SongTrack);
+        return;
+      }
+      reject(new Error(response?.message || 'No se pudo subir la pista'));
+    };
+
+    xhr.send(formData);
+  });
+}
+
+export function updateSongTrack(songId: string, trackId: string, input: Partial<{
+  name: string;
+  type: SongTrackType;
+  instrument: string | null;
+  url: string | null;
+  durationSec: number | null;
+  isPrimary: boolean;
+  versionId: string | null;
+  sortOrder: number;
+  active: boolean;
+  provider: TrackProvider;
+  volumeDefault: number;
+  panDefault: number;
+}>) {
+  return http<SongTrack>(`/api/songs/${songId}/tracks/${trackId}`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function deleteSongTrack(songId: string, trackId: string) {
+  return http<{ ok: boolean }>(`/api/songs/${songId}/tracks/${trackId}`, { method: 'DELETE' });
+}
+
+export function setPrimarySongTrack(songId: string, trackId: string) {
+  return http<SongTrack>(`/api/songs/${songId}/tracks/${trackId}/set-primary`, { method: 'POST' });
+}
+
+export function reorderSongTracks(songId: string, input: { versionId?: string | null; items: Array<{ id: string; sortOrder: number }> }) {
+  return http<SongTrack[]>(`/api/songs/${songId}/tracks/reorder`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function copySongTrackReferences(songId: string, input: { sourceVersionId: string; targetVersionId: string }) {
+  return http<{ copied: number; tracks: SongTrack[] }>(`/api/songs/${songId}/tracks/copy`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function streamSongTrack(songId: string, trackId: string) {
+  return requestBlob(`/api/songs/${songId}/tracks/${trackId}/stream`);
+}
+
+export function downloadSongTrack(songId: string, trackId: string) {
+  return requestBlob(`/api/songs/${songId}/tracks/${trackId}/download`);
+}
+
+export function getSongActivity(songId: string, filters?: {
+  action?: SongActivityType;
+  entityType?: SongEntityType;
+  versionId?: string;
+  from?: string;
+  to?: string;
+  page?: number;
+  pageSize?: number;
+}) {
+  const params = new URLSearchParams();
+  if (filters?.action) params.set('action', filters.action);
+  if (filters?.entityType) params.set('entityType', filters.entityType);
+  if (filters?.versionId) params.set('versionId', filters.versionId);
+  if (filters?.from) params.set('from', filters.from);
+  if (filters?.to) params.set('to', filters.to);
+  if (filters?.page) params.set('page', String(filters.page));
+  if (filters?.pageSize) params.set('pageSize', String(filters.pageSize));
+  const query = params.toString();
+  return http<SongActivityPage>(`/api/songs/${songId}/activity${query ? `?${query}` : ''}`);
+}
+
+export function getSongRevisions(songId: string, versionId: string) {
+  return http<SongVersionRevision[]>(`/api/songs/${songId}/versions/${versionId}/revisions`);
+}
+
+export function getSongRevision(songId: string, versionId: string, revisionNumber: number) {
+  return http<SongVersionRevision>(`/api/songs/${songId}/versions/${versionId}/revisions/${revisionNumber}`);
+}
+
+export function diffSongRevision(songId: string, versionId: string, revisionNumber: number, compareTo?: number) {
+  const query = compareTo ? `?compareTo=${compareTo}` : '';
+  return http<SongRevisionDiffResult>(`/api/songs/${songId}/versions/${versionId}/revisions/${revisionNumber}/diff${query}`);
+}
+
+export function restoreSongRevision(songId: string, versionId: string, revisionNumber: number, input?: { reason?: string }) {
+  return http<SongVersionRevision>(`/api/songs/${songId}/versions/${versionId}/revisions/${revisionNumber}/restore`, { method: 'POST', body: JSON.stringify(input || {}) });
+}
+
+export function getSetlists(filters?: { status?: SetlistStatus; search?: string; includeArchived?: boolean; page?: number; pageSize?: number }) {
+  const params = new URLSearchParams();
+  if (filters?.status) params.set('status', filters.status);
+  if (filters?.search) params.set('search', filters.search);
+  if (filters?.includeArchived) params.set('includeArchived', 'true');
+  if (filters?.page) params.set('page', String(filters.page));
+  if (filters?.pageSize) params.set('pageSize', String(filters.pageSize));
+  const query = params.toString();
+  return http<SetlistListResponse>(`/api/setlists${query ? `?${query}` : ''}`);
+}
+
+export function getSetlist(id: string) {
+  return http<SetlistDetail>(`/api/setlists/${id}`);
+}
+
+export function createSetlist(input: { name: string; description?: string; status?: 'DRAFT' | 'READY' | 'PUBLISHED' }) {
+  return http<SetlistDetail>('/api/setlists', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function updateSetlist(id: string, input: { name?: string; description?: string | null; status?: SetlistStatus }) {
+  return http<SetlistDetail>(`/api/setlists/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function archiveSetlist(id: string) {
+  return http<SetlistDetail>(`/api/setlists/${id}/archive`, { method: 'POST' });
+}
+
+export function publishSetlist(id: string) {
+  return http<SetlistDetail>(`/api/setlists/${id}/publish`, { method: 'POST' });
+}
+
+export function deleteSetlist(id: string) {
+  return http<{ ok: boolean }>(`/api/setlists/${id}`, { method: 'DELETE' });
+}
+
+export function getSetlistItems(setlistId: string) {
+  return http<SetlistItem[]>(`/api/setlists/${setlistId}/items`);
+}
+
+export function createSetlistItem(setlistId: string, input: CreateSetlistItemInput) {
+  return http<SetlistItem>(`/api/setlists/${setlistId}/items`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function updateSetlistItem(setlistId: string, itemId: string, input: UpdateSetlistItemInput) {
+  return http<SetlistItem>(`/api/setlists/${setlistId}/items/${itemId}`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function deleteSetlistItem(setlistId: string, itemId: string) {
+  return http<{ ok: boolean }>(`/api/setlists/${setlistId}/items/${itemId}`, { method: 'DELETE' });
+}
+
+export function duplicateSetlistItem(setlistId: string, itemId: string) {
+  return http<SetlistItem>(`/api/setlists/${setlistId}/items/${itemId}/duplicate`, { method: 'POST' });
+}
+
+export function reorderSetlistItems(setlistId: string, itemIds: string[]) {
+  return http<SetlistItem[]>(`/api/setlists/${setlistId}/items/reorder`, { method: 'PATCH', body: JSON.stringify({ itemIds }) });
 }
