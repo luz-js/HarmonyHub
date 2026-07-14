@@ -1,11 +1,14 @@
 import { ArrowDown, ArrowUp, ChevronDown, ChevronRight, Copy, GripVertical, Trash2 } from 'lucide-react';
 import type { SongSection, SongSectionType } from '../../types/song-content.types';
 import { sectionTypeLabels } from '../../utils';
+import { SectionCommentTrigger } from '../collaboration';
 import { SectionTypeBadge } from './SectionTypeBadge';
 
 export function SongSectionHeader({
   section,
   readOnly,
+  songId,
+  versionId,
   onChange,
   onDuplicate,
   onDelete,
@@ -14,6 +17,8 @@ export function SongSectionHeader({
 }: {
   section: SongSection;
   readOnly?: boolean;
+  songId?: string;
+  versionId?: string;
   onChange: (patch: Partial<SongSection>) => void;
   onDuplicate: () => void;
   onDelete: () => void;
@@ -39,14 +44,17 @@ export function SongSectionHeader({
       ) : (
         <h3 className="text-base font-bold text-white">{section.name}</h3>
       )}
-      {!readOnly && (
-        <div className="ml-auto flex flex-wrap gap-1">
-          <button type="button" className="icon-button" aria-label="Mover seccion arriba" onClick={() => onMove('UP')}><ArrowUp className="h-4 w-4" /></button>
-          <button type="button" className="icon-button" aria-label="Mover seccion abajo" onClick={() => onMove('DOWN')}><ArrowDown className="h-4 w-4" /></button>
-          <button type="button" className="icon-button" aria-label="Duplicar seccion" onClick={onDuplicate}><Copy className="h-4 w-4" /></button>
-          <button type="button" className="icon-button text-red-200" aria-label="Borrar seccion" onClick={onDelete}><Trash2 className="h-4 w-4" /></button>
-        </div>
-      )}
+      <div className="ml-auto flex flex-wrap gap-1">
+        {songId && versionId && <SectionCommentTrigger songId={songId} versionId={versionId} sectionId={section.id} sectionName={section.name} />}
+        {!readOnly && (
+          <>
+            <button type="button" className="icon-button" aria-label="Mover seccion arriba" onClick={() => onMove('UP')}><ArrowUp className="h-4 w-4" /></button>
+            <button type="button" className="icon-button" aria-label="Mover seccion abajo" onClick={() => onMove('DOWN')}><ArrowDown className="h-4 w-4" /></button>
+            <button type="button" className="icon-button" aria-label="Duplicar seccion" onClick={onDuplicate}><Copy className="h-4 w-4" /></button>
+            <button type="button" className="icon-button text-red-200" aria-label="Borrar seccion" onClick={onDelete}><Trash2 className="h-4 w-4" /></button>
+          </>
+        )}
+      </div>
     </div>
   );
 }

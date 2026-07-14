@@ -1,5 +1,5 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { MembershipRole } from '@prisma/client';
+import { MembershipRole, Prisma, SongNoteVisibility } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 type Permission = 'organization.manage' | 'members.manage' | 'invitations.manage' | 'songs.manage' | 'events.manage' | 'setlists.manage' | 'read';
@@ -46,6 +46,64 @@ export class PermissionsService {
 
   canViewOrganization(role: MembershipRole) {
     return this.can(role, 'read');
+  }
+
+  // --- Notas y colaboracion (SongNote / SongCommentThread / SongComment) ---
+  // Centralizado aqui para no repetir comparaciones de rol en cada controller.
+
+  /** OWNER/ADMIN/LEADER: unico conjunto de roles con visibilidad/gestion "de liderazgo" (LEADERS_ONLY, threads). */
+  isLeadershipRole(role: MembershipRole) {
+    return role === 'OWNER' || role === 'ADMIN' || role === 'LEADER';
+  }
+
+  canCreateSongNoteVisibility(role: MembershipRole, visibility: SongNoteVisibility) {
+    if (visibility === 'LEADERS_ONLY') return this.isLeadershipRole(role);
+    if (visibility === 'ORGANIZATION' || visibility === 'PRIVATE') return role !== 'GUEST';
+    return false;
+  }
+
+  /** Filtro Prisma que garantiza que un usuario nunca reciba PRIVATE ajenas ni LEADERS_ONLY fuera de su rol. */
+  buildVisibleSongNoteWhere(userId: string, role: MembershipRole): Prisma.SongNoteWhereInput {
+    const conditions: Prisma.SongNoteWhereInput[] = [
+      { visibility: 'ORGANIZATION' },
+      { visibility: 'PRIVATE', authorId: userId },
+    ];
+    if (this.isLeadershipRole(role)) conditions.push({ visibility: 'LEADERS_ONLY' });
+    return { OR: conditions };
+  }
+
+  /** Autor siempre puede modificar la suya; PRIVATE de otros nunca; compartidas (ORGANIZATION/LEADERS_ONLY) solo OWNER/ADMIN ademas del autor. */
+  canModifySongNote(role: MembershipRole, note: { authorId: string; visibility: SongNoteVisibility }, userId: string) {
+    if (note.authorId === userId) return true;
+    if (note.visibility === 'PRIVATE') return false;
+    return role === 'OWNER' || role === 'ADMIN';
+  }
+
+  canResolveSongThread(role: MembershipRole, isCreator: boolean) {
+    return this.isLeadershipRole(role) || isCreator;
+  }
+
+  canModerateSongComment(role: MembershipRole) {
+    return role === 'OWNER' || role === 'ADMIN';
+  }
+
+  // --- Setlists (Setlist / SetlistItem) ---
+  // Centralizado aqui para no repetir comparaciones de rol en cada controller.
+
+  canViewSetlists(role: MembershipRole) {
+    return this.can(role, 'read');
+  }
+
+  canPublishSetlists(role: MembershipRole) {
+    return this.isLeadershipRole(role);
+  }
+
+  canArchiveSetlists(role: MembershipRole) {
+    return this.isLeadershipRole(role);
+  }
+
+  canDeleteSetlists(role: MembershipRole) {
+    return role === 'OWNER' || role === 'ADMIN';
   }
 
   async getMembership(userId: string, organizationId: string) {

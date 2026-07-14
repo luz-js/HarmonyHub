@@ -6,6 +6,8 @@ export function SongSectionCard({
   section,
   showChords,
   readOnly,
+  songId,
+  versionId,
   onChange,
   onLineChange,
   onAddLine,
@@ -23,6 +25,8 @@ export function SongSectionCard({
   section: SongSection;
   showChords: boolean;
   readOnly?: boolean;
+  songId?: string;
+  versionId?: string;
   onChange: (patch: Partial<SongSection>) => void;
   onLineChange: (lineId: string, patch: Partial<SongLine>) => void;
   onAddLine: (afterLineId?: string) => void;
@@ -39,7 +43,7 @@ export function SongSectionCard({
 }) {
   return (
     <article className="rounded-lg border border-[#1b2c40] bg-[#091522] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.18)]" draggable={!readOnly} onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop}>
-      <SongSectionHeader section={section} readOnly={readOnly} onChange={onChange} onDuplicate={onDuplicate} onDelete={onDelete} onMove={onMove} onToggle={onToggle} />
+      <SongSectionHeader section={section} readOnly={readOnly} songId={songId} versionId={versionId} onChange={onChange} onDuplicate={onDuplicate} onDelete={onDelete} onMove={onMove} onToggle={onToggle} />
       {!section.collapsed && (
         <div className="mt-4 space-y-3">
           {!readOnly && (

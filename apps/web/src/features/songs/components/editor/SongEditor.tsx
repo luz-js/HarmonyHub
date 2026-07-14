@@ -238,6 +238,8 @@ export function SongEditor({ songId, versionId, readOnly, onSaved }: SongEditorP
           content={content}
           showChords={showChords}
           readOnly={readOnly}
+          songId={songId}
+          versionId={versionId}
           onAddSection={(type) => dispatch({ type: 'ADD_SECTION', payload: createSection(type, undefined, content.sections) })}
           onUpdateSection={(sectionId, patch) => dispatch({ type: 'UPDATE_SECTION', sectionId, patch })}
           onDeleteSection={(sectionId) => {

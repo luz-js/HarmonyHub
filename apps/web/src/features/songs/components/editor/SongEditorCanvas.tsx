@@ -5,6 +5,8 @@ export function SongEditorCanvas({
   content,
   showChords,
   readOnly,
+  songId,
+  versionId,
   onAddSection,
   onUpdateSection,
   onDeleteSection,
@@ -21,6 +23,8 @@ export function SongEditorCanvas({
   content: SongContent;
   showChords: boolean;
   readOnly?: boolean;
+  songId?: string;
+  versionId?: string;
   onAddSection: (type: SongSectionType) => void;
   onUpdateSection: (sectionId: string, patch: Partial<SongSection>) => void;
   onDeleteSection: (sectionId: string) => void;
@@ -54,6 +58,8 @@ export function SongEditorCanvas({
           section={section}
           showChords={showChords}
           readOnly={readOnly}
+          songId={songId}
+          versionId={versionId}
           onChange={(patch) => onUpdateSection(section.id, patch)}
           onLineChange={(lineId, patch) => onUpdateLine(section.id, lineId, patch)}
           onAddLine={(afterLineId) => onAddLine(section.id, afterLineId)}
