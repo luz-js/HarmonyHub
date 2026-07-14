@@ -23,6 +23,130 @@ export type SongVersion = {
   isDefault: boolean;
 };
 
+export type SongLinkProvider =
+  | 'YOUTUBE'
+  | 'SPOTIFY'
+  | 'APPLE_MUSIC'
+  | 'SOUNDCLOUD'
+  | 'VIMEO'
+  | 'BANDCAMP'
+  | 'WEBSITE'
+  | 'OTHER';
+
+export type SongLink = {
+  id: string;
+  songId: string;
+  versionId: string | null;
+  provider: SongLinkProvider;
+  title: string | null;
+  url: string;
+  externalId: string | null;
+  embedUrl: string | null;
+  thumbnailUrl: string | null;
+  isPrimary: boolean;
+  sortOrder: number;
+  active: boolean;
+  version?: { id: string; name: string; key: string; isDefault: boolean } | null;
+  createdBy?: { id: string; name: string; avatarUrl?: string | null } | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SongTrackType =
+  | 'FULL_TRACK'
+  | 'BACKING_TRACK'
+  | 'CLICK'
+  | 'PAD'
+  | 'DRUMS'
+  | 'BASS'
+  | 'GUITAR'
+  | 'KEYS'
+  | 'VOCALS'
+  | 'CHOIR'
+  | 'GUIDE'
+  | 'REFERENCE'
+  | 'OTHER';
+
+export type TrackProvider =
+  | 'UPLOAD'
+  | 'EXTERNAL_URL'
+  | 'LOCAL'
+  | 'S3'
+  | 'R2'
+  | 'SUPABASE'
+  | 'OTHER';
+
+export type SongTrack = {
+  id: string;
+  songId: string;
+  versionId: string | null;
+  name: string;
+  type: SongTrackType;
+  instrument?: string | null;
+  mimeType?: string | null;
+  sizeBytes?: number | null;
+  durationSec?: number | null;
+  originalFileName?: string | null;
+  url: string;
+  provider: TrackProvider;
+  volumeDefault: number;
+  panDefault: number;
+  isPrimary: boolean;
+  sortOrder: number;
+  active: boolean;
+  version?: { id: string; name: string; key: string; isDefault: boolean } | null;
+  uploadedBy?: { id: string; name: string; avatarUrl?: string | null } | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SongFileCategory =
+  | 'LYRIC_PDF'
+  | 'CHORD_CHART'
+  | 'SHEET_MUSIC'
+  | 'LEAD_SHEET'
+  | 'PIANO_SCORE'
+  | 'GUITAR_SCORE'
+  | 'BASS_SCORE'
+  | 'DRUM_SCORE'
+  | 'VOCAL_SCORE'
+  | 'IMAGE'
+  | 'DOCUMENT'
+  | 'PRESENTATION'
+  | 'MIDI'
+  | 'MUSIC_XML'
+  | 'VIDEO'
+  | 'OTHER'
+  // Categorias legacy: solo aparecen en filas existentes, no seleccionables al crear.
+  | 'AUDIO'
+  | 'STEM'
+  | 'BACKING_TRACK';
+
+export type SongFile = {
+  id: string;
+  songId: string;
+  versionId: string | null;
+  category: SongFileCategory;
+  title: string;
+  description?: string | null;
+  isPrimary: boolean;
+  sortOrder: number;
+  active: boolean;
+  version?: { id: string; name: string; key: string; isDefault: boolean } | null;
+  file: {
+    id: string;
+    name: string;
+    originalName?: string | null;
+    mimeType: string | null;
+    sizeBytes: number | null;
+    url: string;
+    createdAt: string;
+    uploadedBy?: { id: string; name: string; avatarUrl?: string | null } | null;
+  };
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type SongSummary = {
   id: string;
   organizationId: string;
@@ -42,17 +166,73 @@ export type SongSummary = {
   tags: string[];
   status: string;
   updatedAt?: string;
-  versions?: SongVersion[];
+  /** Solo presente en el listado resumido; SongDetail trae `versions` completo por separado. */
+  defaultVersion?: { id: string; name: string; key: string; bpm: number | null; durationSec: number | null } | null;
+  versionsCount?: number;
+  tracksCount?: number;
+  filesCount?: number;
 };
 
 export type SongDetail = SongSummary & {
   activeVersion?: SongVersion | null;
   versions: SongVersion[];
-  tracks: Array<{ id: string; name: string; type: string; instrument?: string | null; durationSec?: number | null; url?: string | null; isPrimary: boolean; sortOrder: number }>;
-  links: Array<{ id: string; provider: string; url: string; title?: string | null; isPrimary: boolean }>;
-  songNotes: Array<{ id: string; content: string; visibility: string; createdAt: string }>;
-  songFiles: Array<{ id: string; category: string; file: { id: string; name: string; type: string; sizeBytes?: number | null; url?: string | null; storageKey?: string | null } }>;
-  files: Array<{ id: string; name: string; type: string; sizeBytes?: number | null; url?: string | null; storageKey?: string | null }>;
+  tracks: SongTrack[];
+  links: SongLink[];
+  songFiles: SongFile[];
+  files: Array<{ id: string; name: string; originalName?: string | null; type: string; mimeType?: string | null; sizeBytes?: number | null; createdAt: string }>;
+};
+
+export type SongNoteVisibility = 'PRIVATE' | 'ORGANIZATION' | 'LEADERS_ONLY';
+
+export type SongNote = {
+  id: string;
+  songId: string;
+  versionId: string | null;
+  title: string | null;
+  content: string;
+  visibility: SongNoteVisibility;
+  isPinned: boolean;
+  isArchived: boolean;
+  version?: { id: string; name: string; key: string; isDefault: boolean } | null;
+  author?: { id: string; name: string; avatarUrl?: string | null } | null;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SongCommentTarget = 'SONG' | 'VERSION' | 'SECTION' | 'TRACK' | 'FILE' | 'LINK';
+export type SongThreadStatus = 'OPEN' | 'RESOLVED';
+
+export type SongCollaborationUserRef = { id: string; name: string; avatarUrl?: string | null };
+
+export type SongComment = {
+  id: string;
+  threadId: string;
+  content: string | null;
+  isDeleted: boolean;
+  editedAt: string | null;
+  author: SongCollaborationUserRef | null;
+  mentionedUserIds: string[];
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type SongCommentThread = {
+  id: string;
+  songId: string;
+  versionId: string | null;
+  targetType: SongCommentTarget;
+  targetRef: string | null;
+  title: string | null;
+  status: SongThreadStatus;
+  resolvedAt: string | null;
+  resolvedBy?: SongCollaborationUserRef | null;
+  createdBy?: SongCollaborationUserRef | null;
+  version?: { id: string; name: string; key: string; isDefault: boolean } | null;
+  commentsCount: number;
+  lastComment?: { id: string; content: string | null; isDeleted: boolean; author: SongCollaborationUserRef | null; createdAt: string } | null;
+  comments?: SongComment[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type SongPayload = Omit<Partial<SongSummary>, 'tags'> & {
@@ -61,4 +241,83 @@ export type SongPayload = Omit<Partial<SongSummary>, 'tags'> & {
   chords?: string;
   notes?: string;
   youtubeUrl?: string;
+};
+
+export type SongActivityType =
+  | 'SONG_CREATED' | 'SONG_UPDATED' | 'SONG_ARCHIVED' | 'FAVORITE_CHANGED'
+  | 'VERSION_CREATED' | 'VERSION_UPDATED' | 'VERSION_DELETED' | 'VERSION_SET_DEFAULT' | 'VERSION_TRANSPOSED' | 'VERSION_RESTORED'
+  | 'TRACK_ADDED' | 'TRACK_UPDATED' | 'TRACK_DELETED' | 'TRACK_SET_PRIMARY'
+  | 'LINK_ADDED' | 'LINK_UPDATED' | 'LINK_DELETED' | 'LINK_SET_PRIMARY'
+  | 'FILE_ADDED' | 'FILE_UPDATED' | 'FILE_DELETED' | 'FILE_SET_PRIMARY'
+  | 'NOTE_CREATED' | 'NOTE_UPDATED' | 'NOTE_ARCHIVED' | 'NOTE_DELETED' | 'NOTE_PINNED'
+  | 'THREAD_CREATED' | 'THREAD_RESOLVED' | 'THREAD_REOPENED' | 'COMMENT_ADDED';
+
+export type SongEntityType = 'SONG' | 'VERSION' | 'TRACK' | 'LINK' | 'FILE' | 'NOTE' | 'THREAD' | 'COMMENT';
+
+export type SongActivity = {
+  id: string;
+  songId: string;
+  versionId: string | null;
+  action: SongActivityType;
+  entityType: SongEntityType;
+  entityId: string | null;
+  summary: string;
+  metadata: Record<string, unknown> | null;
+  actor: { id: string; name: string; avatarUrl?: string | null } | null;
+  version?: { id: string; name: string } | null;
+  createdAt: string;
+};
+
+export type SongActivityPage = {
+  items: SongActivity[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+};
+
+export type RevisionSource = 'MANUAL_SAVE' | 'TRANSPOSE' | 'RESTORE' | 'IMPORT' | 'MIGRATION';
+
+export type SongVersionRevision = {
+  id: string;
+  songId: string;
+  versionId: string;
+  revisionNumber: number;
+  reason: string | null;
+  source: RevisionSource;
+  name: string;
+  key: string | null;
+  bpm: number | null;
+  durationSec: number | null;
+  contentJson?: SongContent | null;
+  structureJson?: Record<string, unknown> | null;
+  lyrics: string | null;
+  chords: string | null;
+  notes: string | null;
+  createdBy: { id: string; name: string; avatarUrl?: string | null } | null;
+  createdAt: string;
+};
+
+export type SongRevisionScalarChange = { field: string; before: unknown; after: unknown };
+
+export type SongRevisionSectionChange = {
+  sectionId: string;
+  sectionName: string;
+  linesAdded: number;
+  linesRemoved: number;
+  lyricsChanged: boolean;
+  chordsChanged: boolean;
+};
+
+export type SongRevisionDiff = {
+  scalarChanges: SongRevisionScalarChange[];
+  sectionsAdded: string[];
+  sectionsRemoved: string[];
+  sectionsChanged: SongRevisionSectionChange[];
+};
+
+export type SongRevisionDiffResult = {
+  before: { revisionNumber: number; label: string };
+  after: { revisionNumber: number | null; label: string };
+  diff: SongRevisionDiff;
 };

@@ -2,30 +2,21 @@ import { FormEvent, ReactNode, useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   Copy,
-  Download,
   Edit3,
   Eye,
   EyeOff,
-  FileText,
-  Link as LinkIcon,
   MoreHorizontal,
   Music2,
-  Pause,
-  Play,
   Plus,
   Save,
   Search,
   SlidersHorizontal,
   Star,
   Trash2,
-  Upload,
 } from 'lucide-react';
 import {
   archiveSong,
   createSong,
-  createSongLink,
-  createSongNote,
-  createSongTrack,
   createSongVersion,
   getSong,
   listSongs,
@@ -34,17 +25,18 @@ import {
   SongSummary,
   SongVersion,
   updateSong,
-  updateSongLink,
-  updateSongNote,
   updateSongVersion,
 } from './api';
-import { SongEditor as StructuredSongEditor, TransposeButton, TransposeDialog } from './features/songs/components';
+import { SongCollaborationPanel, SongEditor as StructuredSongEditor, SongFilesPanel, SongHistoryPanel, SongLinksPanel, SongNotesPanel, SongTracksPanel, TransposeButton, TransposeDialog } from './features/songs/components';
+import { useSongNotes } from './features/songs/hooks';
+import { AudioPlayerProvider } from './features/songs/player';
 import type { SongContent as StructuredSongContent } from './features/songs/types/song-content.types';
 import { legacyFieldsToSongContent, normalizeSongContent } from './features/songs/utils/song-content.utils';
+import { getCurrentOrganizationId } from './shared/api/http';
 
 type Navigate = (href: string) => void;
 type User = { currentOrganizationId?: string };
-type DetailTab = 'vista' | 'editor' | 'versiones' | 'pistas' | 'archivos' | 'links' | 'notas' | 'historial';
+type DetailTab = 'vista' | 'editor' | 'versiones' | 'pistas' | 'archivos' | 'links' | 'notas' | 'colaboracion' | 'historial';
 
 const emptySongForm = {
   title: '',
@@ -419,7 +411,8 @@ export function SongDetailPage({ id, navigate }: { id: string; navigate: Navigat
   if (error || !song) return <section className="panel p-5 text-red-200">{error || 'Canción no encontrada'}</section>;
 
   return (
-    <div className="space-y-5">
+    <AudioPlayerProvider>
+      <div className="space-y-5">
       <button className="btn-ghost" onClick={() => navigate('/songs')}><ArrowLeft className="h-4 w-4" /> Volver a canciones</button>
 
       <section className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -456,6 +449,7 @@ export function SongDetailPage({ id, navigate }: { id: string; navigate: Navigat
           ['archivos', 'Archivos'],
           ['links', 'Links'],
           ['notas', 'Notas'],
+          ['colaboracion', 'Colaboración'],
           ['historial', 'Historial'],
         ].map(([key, label]) => <button key={key} className={tab === key ? 'btn-primary' : 'btn-ghost'} onClick={() => setTab(key as DetailTab)}>{label}</button>)}
       </nav>
@@ -471,19 +465,13 @@ export function SongDetailPage({ id, navigate }: { id: string; navigate: Navigat
 
       {tab === 'editor' && activeVersion && <StructuredSongEditor songId={song.id} versionId={activeVersion.id} readOnly={!canEditSong} onSaved={load} />}
       {tab === 'versiones' && <VersionsTab song={song} onSaved={load} />}
-      {tab === 'pistas' && <TracksTab song={song} onSaved={load} />}
-      {tab === 'archivos' && <FilesTab song={song} />}
-      {tab === 'links' && <LinksTab song={song} onSaved={load} />}
-      {tab === 'notas' && <NotesTab song={song} onSaved={load} />}
-      {tab === 'historial' && <Panel title="Historial"><p className="text-sm text-muted">Historial de cambios preparado para auditoría futura.</p></Panel>}
+      {tab === 'pistas' && <SongTracksPanel songId={song.id} songTitle={song.title} versions={song.versions} activeVersionId={activeVersion?.id || null} canManage={canEditSong} onChanged={load} />}
+      {tab === 'archivos' && <SongFilesPanel songId={song.id} songTitle={song.title} versions={song.versions} activeVersionId={activeVersion?.id || null} canManage={canEditSong} onChanged={load} />}
+      {tab === 'links' && <SongLinksPanel songId={song.id} versions={song.versions} activeVersionId={activeVersion?.id || null} canManage={canEditSong} onChanged={load} />}
+      {tab === 'notas' && <SongNotesPanel songId={song.id} versions={song.versions} activeVersionId={activeVersion?.id || null} onChanged={load} />}
+      {tab === 'colaboracion' && <SongCollaborationPanel songId={song.id} versions={song.versions} activeVersionId={activeVersion?.id || null} onChanged={load} />}
+      {tab === 'historial' && <SongHistoryPanel songId={song.id} versions={song.versions} activeVersionId={activeVersion?.id || null} canManage={canEditSong} onChanged={load} />}
 
-      {song.tracks.length > 0 && (
-        <section className="sticky bottom-4 z-20 panel flex flex-wrap items-center gap-3 p-3">
-          <button className="icon-tile"><Play className="h-4 w-4" /></button>
-          <div className="min-w-[180px] flex-1"><div className="h-1.5 rounded-full bg-[#1b2c40]"><div className="h-1.5 w-1/3 rounded-full bg-primary" /></div></div>
-          <span className="text-xs text-muted">{song.tracks[0].name} · {duration(song.tracks[0].durationSec)}</span>
-        </section>
-      )}
       {activeVersion && (
         <TransposeDialog
           open={transposeOpen}
@@ -504,11 +492,16 @@ export function SongDetailPage({ id, navigate }: { id: string; navigate: Navigat
           onSaved={load}
         />
       )}
-    </div>
+      </div>
+    </AudioPlayerProvider>
   );
 }
 
 function RightRail({ song, activeVersion }: { song: SongDetail; activeVersion: SongVersion | null }) {
+  const organizationId = getCurrentOrganizationId() || '';
+  const notesQuery = useSongNotes(organizationId, song.id);
+  const notes = notesQuery.data || [];
+
   return (
     <div className="space-y-5">
       <section className="panel overflow-hidden">
@@ -523,7 +516,7 @@ function RightRail({ song, activeVersion }: { song: SongDetail; activeVersion: S
       <CompactPanel title="Links externos" items={song.links.map((link) => `${link.provider}: ${link.title || link.url}`)} />
       <CompactPanel title="Pistas principales" items={song.tracks.slice(0, 4).map((track) => `${track.name} · ${duration(track.durationSec)}`)} />
       <CompactPanel title="Archivos" items={song.songFiles.map((item) => `${item.category}: ${item.file.name}`)} />
-      <CompactPanel title="Notas" items={song.songNotes.slice(0, 3).map((note) => note.content)} />
+      <CompactPanel title="Notas" items={notes.slice(0, 3).map((note) => note.content)} />
     </div>
   );
 }
@@ -725,210 +718,6 @@ function VersionsTab({ song, onSaved }: { song: SongDetail; onSaved: () => void 
               <button className="btn-ghost" onClick={() => duplicate(version)}><Copy className="h-4 w-4" /> Duplicar</button>
               {!version.isDefault && <button className="btn-primary" onClick={() => makeDefault(version)}>Marcar default</button>}
             </div>
-          </article>
-        ))}
-      </div>
-    </Panel>
-  );
-}
-
-function TracksTab({ song, onSaved }: { song: SongDetail; onSaved: () => void }) {
-  const [name, setName] = useState('');
-  const [type, setType] = useState('FULL_TRACK');
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    await createSongTrack(song.id, { name, type, isPrimary: song.tracks.length === 0 });
-    setName('');
-    onSaved();
-  }
-
-  return (
-    <Panel title="Pistas">
-      <form className="mb-4 grid gap-3 md:grid-cols-[1fr_180px_auto]" onSubmit={submit}>
-        <input className="input" value={name} onChange={(event) => setName(event.target.value)} placeholder="Nombre de pista" />
-        <select className="select" value={type} onChange={(event) => setType(event.target.value)}>
-          {['FULL_TRACK','BACKING_TRACK','CLICK','PAD','DRUMS','BASS','GUITAR','KEYS','VOCALS','CHOIR','GUIDE','OTHER'].map((item) => <option key={item}>{item}</option>)}
-        </select>
-        <button className="btn-primary"><Upload className="h-4 w-4" /> Agregar</button>
-      </form>
-      <TrackList tracks={song.tracks} />
-    </Panel>
-  );
-}
-
-function TrackList({ tracks }: { tracks: SongDetail['tracks'] }) {
-  return (
-    <div className="space-y-2">
-      {tracks.length === 0 && <p className="text-sm text-muted">Sin pistas registradas.</p>}
-      {tracks.map((track, index) => (
-        <div key={track.id} className="flex items-center gap-3 rounded-md border border-[#1b2c40] bg-[#091522] p-3">
-          <button className="icon-tile h-8 w-8">{index === 0 ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}</button>
-          <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold text-white">{track.name}</p><p className="text-xs text-muted">{track.type} · {duration(track.durationSec)}</p></div>
-          {track.isPrimary && <span className="badge badge-primary">Principal</span>}
-          <button className="btn-ghost h-8 w-8 p-0"><Download className="h-4 w-4" /></button>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function FilesTab({ song }: { song: SongDetail }) {
-  return (
-    <Panel title="Archivos">
-      <div className="mb-4 flex flex-wrap gap-2">
-        {['PDF', 'Partitura', 'Letra', 'Acordes', 'Documento', 'Imagen'].map((item) => <button key={item} className="btn-ghost"><Upload className="h-4 w-4" /> {item}</button>)}
-      </div>
-      <div className="space-y-2">
-        {song.songFiles.length === 0 && <p className="text-sm text-muted">Sin archivos clasificados.</p>}
-        {song.songFiles.map((item) => (
-          <div key={item.id} className="flex items-center gap-3 rounded-md border border-[#1b2c40] bg-[#091522] p-3">
-            <FileText className="h-4 w-4 text-primary" />
-            <span className="min-w-0 flex-1 truncate text-sm text-white">{item.file.name}</span>
-            <span className="badge">{item.category}</span>
-            <button className="btn-ghost h-8 w-8 p-0"><Download className="h-4 w-4" /></button>
-          </div>
-        ))}
-      </div>
-    </Panel>
-  );
-}
-
-function LinksTab({ song, onSaved }: { song: SongDetail; onSaved: () => void }) {
-  const [provider, setProvider] = useState('YOUTUBE');
-  const [url, setUrl] = useState('');
-  const [title, setTitle] = useState('');
-  const [editingId, setEditingId] = useState('');
-  const [editProvider, setEditProvider] = useState('YOUTUBE');
-  const [editUrl, setEditUrl] = useState('');
-  const [editTitle, setEditTitle] = useState('');
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    await createSongLink(song.id, { provider, url, title, isPrimary: song.links.length === 0 });
-    setUrl('');
-    setTitle('');
-    onSaved();
-  }
-
-  function startEdit(link: SongDetail['links'][number]) {
-    setEditingId(link.id);
-    setEditProvider(link.provider);
-    setEditUrl(link.url);
-    setEditTitle(link.title || '');
-  }
-
-  async function saveEdit(event: FormEvent) {
-    event.preventDefault();
-    await updateSongLink(song.id, editingId, { provider: editProvider, url: editUrl, title: editTitle });
-    setEditingId('');
-    onSaved();
-  }
-
-  return (
-    <Panel title="Links externos">
-      <form className="mb-4 grid gap-3 md:grid-cols-[160px_1fr_220px_auto]" onSubmit={submit}>
-        <select className="select" value={provider} onChange={(event) => setProvider(event.target.value)}>
-          {['YOUTUBE','SPOTIFY','APPLE_MUSIC','SOUNDCLOUD','VIMEO','OTHER'].map((item) => <option key={item}>{item}</option>)}
-        </select>
-        <input className="input" value={url} onChange={(event) => setUrl(event.target.value)} placeholder="URL" />
-        <input className="input" value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Título" />
-        <button className="btn-primary"><LinkIcon className="h-4 w-4" /> Agregar</button>
-      </form>
-      <div className="grid gap-3 md:grid-cols-2">
-        {song.links.map((link) => (
-          <article key={link.id} className="panel-soft p-4">
-            {editingId === link.id ? (
-              <form className="space-y-3" onSubmit={saveEdit}>
-                <select className="select" value={editProvider} onChange={(event) => setEditProvider(event.target.value)}>
-                  {['YOUTUBE','SPOTIFY','APPLE_MUSIC','SOUNDCLOUD','VIMEO','OTHER'].map((item) => <option key={item}>{item}</option>)}
-                </select>
-                <input className="input" value={editUrl} onChange={(event) => setEditUrl(event.target.value)} />
-                <input className="input" value={editTitle} onChange={(event) => setEditTitle(event.target.value)} />
-                <div className="flex gap-2">
-                  <button className="btn-primary"><Save className="h-4 w-4" /> Guardar</button>
-                  <button type="button" className="btn-ghost" onClick={() => setEditingId('')}>Cancelar</button>
-                </div>
-              </form>
-            ) : (
-              <>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="badge badge-blue">{link.provider}</span>
-                  <button className="btn-ghost px-3" onClick={() => startEdit(link)}><Edit3 className="h-4 w-4" /> Editar</button>
-                </div>
-                <a href={link.url} target="_blank" rel="noreferrer" className="mt-3 block font-semibold text-white hover:text-primary">{link.title || link.url}</a>
-              </>
-            )}
-          </article>
-        ))}
-      </div>
-    </Panel>
-  );
-}
-
-function NotesTab({ song, onSaved }: { song: SongDetail; onSaved: () => void }) {
-  const [content, setContent] = useState('');
-  const [visibility, setVisibility] = useState('ORGANIZATION');
-  const [editingId, setEditingId] = useState('');
-  const [editContent, setEditContent] = useState('');
-  const [editVisibility, setEditVisibility] = useState('ORGANIZATION');
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    await createSongNote(song.id, { content, visibility });
-    setContent('');
-    onSaved();
-  }
-
-  function startEdit(note: SongDetail['songNotes'][number]) {
-    setEditingId(note.id);
-    setEditContent(note.content);
-    setEditVisibility(note.visibility);
-  }
-
-  async function saveEdit(event: FormEvent) {
-    event.preventDefault();
-    await updateSongNote(song.id, editingId, { content: editContent, visibility: editVisibility });
-    setEditingId('');
-    onSaved();
-  }
-
-  return (
-    <Panel title="Notas">
-      <form className="mb-4 grid gap-3 md:grid-cols-[1fr_180px_auto]" onSubmit={submit}>
-        <input className="input" value={content} onChange={(event) => setContent(event.target.value)} placeholder="Nueva nota" />
-        <select className="select" value={visibility} onChange={(event) => setVisibility(event.target.value)}>
-          <option value="PRIVATE">Privada</option>
-          <option value="ORGANIZATION">Organización</option>
-          <option value="LEADERS_ONLY">Solo líderes</option>
-        </select>
-        <button className="btn-primary"><Plus className="h-4 w-4" /> Agregar</button>
-      </form>
-      <div className="space-y-3">
-        {song.songNotes.map((note) => (
-          <article key={note.id} className="rounded-md border border-[#1b2c40] bg-[#091522] p-4">
-            {editingId === note.id ? (
-              <form className="grid gap-3 md:grid-cols-[1fr_180px_auto]" onSubmit={saveEdit}>
-                <input className="input" value={editContent} onChange={(event) => setEditContent(event.target.value)} />
-                <select className="select" value={editVisibility} onChange={(event) => setEditVisibility(event.target.value)}>
-                  <option value="PRIVATE">Privada</option>
-                  <option value="ORGANIZATION">Organización</option>
-                  <option value="LEADERS_ONLY">Solo líderes</option>
-                </select>
-                <div className="flex gap-2">
-                  <button className="btn-primary"><Save className="h-4 w-4" /> Guardar</button>
-                  <button type="button" className="btn-ghost" onClick={() => setEditingId('')}>Cancelar</button>
-                </div>
-              </form>
-            ) : (
-              <>
-                <div className="flex items-center justify-between gap-3">
-                  <span className="badge">{note.visibility}</span>
-                  <button className="btn-ghost px-3" onClick={() => startEdit(note)}><Edit3 className="h-4 w-4" /> Editar</button>
-                </div>
-                <p className="mt-3 text-sm leading-6 text-white">{note.content}</p>
-              </>
-            )}
           </article>
         ))}
       </div>
