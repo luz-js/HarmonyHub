@@ -4,8 +4,13 @@ import type { SongTrack } from '../../../shared/types';
 
 const VOLUME_STORAGE_KEY = 'harmonyhub.audio.volume';
 
+export interface AudioPlayerTrackMeta {
+  songTitle: string;
+}
+
 export interface AudioPlayerContextValue {
   currentTrack: SongTrack | null;
+  currentTrackMeta: AudioPlayerTrackMeta | null;
   isPlaying: boolean;
   isLoading: boolean;
   currentTime: number;
@@ -16,7 +21,7 @@ export interface AudioPlayerContextValue {
   error: string | null;
   hasNext: boolean;
   hasPrevious: boolean;
-  playTrack: (track: SongTrack) => Promise<void>;
+  playTrack: (track: SongTrack, meta?: AudioPlayerTrackMeta) => Promise<void>;
   togglePlay: () => void;
   pause: () => void;
   seek: (time: number) => void;
@@ -48,6 +53,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const currentTrackRef = useRef<SongTrack | null>(null);
   const lastVolumeRef = useRef(1);
   const [currentTrack, setCurrentTrack] = useState<SongTrack | null>(null);
+  const [currentTrackMeta, setCurrentTrackMeta] = useState<AudioPlayerTrackMeta | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -182,7 +188,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     audio.load();
   }
 
-  async function playTrack(track: SongTrack) {
+  async function playTrack(track: SongTrack, meta?: AudioPlayerTrackMeta) {
     const audio = audioRef.current;
     if (!audio) return;
 
@@ -192,6 +198,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     const trackChanged = currentTrackRef.current?.id !== track.id;
     currentTrackRef.current = track;
     setCurrentTrack(track);
+    if (meta) setCurrentTrackMeta(meta);
 
     if (trackChanged) {
       audio.pause();
@@ -303,6 +310,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     audio.currentTime = 0;
     audio.src = '';
     setCurrentTrack(null);
+    setCurrentTrackMeta(null);
     currentTrackRef.current = null;
     setCurrentTime(0);
     setDuration(0);
@@ -319,6 +327,7 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
     <AudioPlayerContext.Provider
       value={{
         currentTrack,
+        currentTrackMeta,
         isPlaying,
         isLoading,
         currentTime,

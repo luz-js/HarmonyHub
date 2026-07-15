@@ -12,14 +12,9 @@ import {
   Pause,
   Play,
   Plus,
-  SkipBack,
-  SkipForward,
   Star,
   Trash2,
   Upload,
-  Volume2,
-  VolumeX,
-  X,
 } from 'lucide-react';
 import { downloadSongTrack } from '../../api/songs.client';
 import { useCopySongTrackReferences, useCreateSongTrack, useDeleteSongTrack, useReorderSongTracks, useSetPrimarySongTrack, useSongTracks, useUpdateSongTrack, useUploadSongTrack } from '../../hooks';
@@ -27,7 +22,7 @@ import { useAudioPlayer } from '../../player';
 import { OverlayDialog } from '../shared/OverlayDialog';
 import type { SongTrack, SongTrackType, SongVersion } from '../../../../shared/types';
 import { getCurrentOrganizationId } from '../../../../shared/api/http';
-import { formatAudioTime, formatBytes, formatTrackDuration, groupTracksByVersion, normalizeTrackOrder, trackTypeLabels } from './track.utils';
+import { formatBytes, formatTrackDuration, groupTracksByVersion, normalizeTrackOrder, trackTypeLabels } from './track.utils';
 
 const TRACK_TYPE_OPTIONS: SongTrackType[] = ['FULL_TRACK', 'BACKING_TRACK', 'CLICK', 'PAD', 'DRUMS', 'BASS', 'GUITAR', 'KEYS', 'VOCALS', 'CHOIR', 'GUIDE', 'REFERENCE', 'OTHER'];
 const STEM_TYPES = new Set<SongTrackType>(['PAD', 'DRUMS', 'BASS', 'GUITAR', 'KEYS', 'VOCALS', 'CHOIR']);
@@ -115,45 +110,6 @@ function TrackTypeBadge({ type }: { type: SongTrackType }) {
   return <span className="rounded-full border border-[#173347] bg-[#081821] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#8cdff0]">{trackTypeLabels[type]}</span>;
 }
 
-function AudioProgressBar({ currentTime, duration, onSeek }: { currentTime: number; duration: number; onSeek: (value: number) => void }) {
-  return (
-    <div className="flex items-center gap-3">
-      <span className="w-12 text-right text-[11px] text-muted">{formatAudioTime(currentTime)}</span>
-      <input
-        aria-label="Posicion de reproduccion"
-        className="h-1.5 flex-1 cursor-pointer accent-[#00E6A3]"
-        type="range"
-        min={0}
-        max={duration || 0}
-        step={0.1}
-        value={Math.min(currentTime, duration || 0)}
-        onChange={(event) => onSeek(Number(event.target.value))}
-      />
-      <span className="w-12 text-[11px] text-muted">{formatAudioTime(duration)}</span>
-    </div>
-  );
-}
-
-function VolumeControl({ volume, muted, onVolumeChange, onToggleMute }: { volume: number; muted: boolean; onVolumeChange: (value: number) => void; onToggleMute: () => void }) {
-  return (
-    <div className="flex items-center gap-2">
-      <button type="button" className="btn-ghost h-9 w-9 p-0" aria-label={muted ? 'Activar audio' : 'Silenciar'} onClick={onToggleMute}>
-        {muted || volume === 0 ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
-      </button>
-      <input
-        aria-label="Volumen"
-        className="h-1.5 w-24 cursor-pointer accent-[#00E6A3]"
-        type="range"
-        min={0}
-        max={1}
-        step={0.01}
-        value={muted ? 0 : volume}
-        onChange={(event) => onVolumeChange(Number(event.target.value))}
-      />
-    </div>
-  );
-}
-
 function TrackEmptyState({ canManage, onUpload, onExternal }: { canManage: boolean; onUpload: () => void; onExternal: () => void }) {
   return (
     <div className="rounded-2xl border border-dashed border-[#1b2c40] bg-[#08131d] px-6 py-10 text-center">
@@ -217,75 +173,6 @@ function TrackFormFields({
         Marcar como pista principal dentro de este contexto
       </label>
     </div>
-  );
-}
-
-function PersistentAudioPlayer({ songTitle }: { songTitle: string }) {
-  const { currentTrack, currentTime, duration, isPlaying, isLoading, playbackRate, volume, muted, error, hasNext, hasPrevious, pause, playTrack, playNext, playPrevious, seek, setPlaybackRate, setVolume, stop, toggleMute, togglePlay } = useAudioPlayer();
-
-  if (!currentTrack) return null;
-
-  return (
-    <section className="sticky bottom-4 z-20 rounded-2xl border border-[#184056] bg-[#08131d]/95 p-4 shadow-[0_24px_90px_rgba(0,0,0,0.45)] backdrop-blur">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
-        <div className="flex min-w-0 items-center gap-3 lg:w-[340px]">
-          <button
-            type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#184056] bg-[#0b1b24] text-[#8cdff0] disabled:opacity-40"
-            onClick={playPrevious}
-            disabled={!hasPrevious}
-            aria-label="Pista anterior"
-          >
-            <SkipBack className="h-4 w-4" />
-          </button>
-          <button
-            type="button"
-            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#184056] bg-[#0b1b24] text-[#00E6A3]"
-            onClick={() => {
-              if (!currentTrack) return;
-              if (isPlaying) {
-                pause();
-                return;
-              }
-              void playTrack(currentTrack);
-            }}
-            aria-label={isPlaying ? 'Pausar pista' : 'Reproducir pista'}
-          >
-            {isLoading ? <LoaderCircle className="h-5 w-5 animate-spin" /> : isPlaying ? <Pause className="h-5 w-5" /> : <Play className="h-5 w-5" />}
-          </button>
-          <button
-            type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#184056] bg-[#0b1b24] text-[#8cdff0] disabled:opacity-40"
-            onClick={playNext}
-            disabled={!hasNext}
-            aria-label="Pista siguiente"
-          >
-            <SkipForward className="h-4 w-4" />
-          </button>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-semibold text-white">{currentTrack.name}</p>
-            <p className="truncate text-xs text-muted">{songTitle} · {currentTrack.version?.name || 'General'} · {trackTypeLabels[currentTrack.type]}</p>
-          </div>
-          <button type="button" className="btn-ghost h-9 w-9 p-0" onClick={stop} aria-label="Cerrar reproductor">
-            <X className="h-4 w-4" />
-          </button>
-        </div>
-
-        <div className="flex-1 space-y-3">
-          <AudioProgressBar currentTime={currentTime} duration={duration || currentTrack.durationSec || 0} onSeek={seek} />
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <button type="button" className="btn-ghost h-9 px-3" onClick={togglePlay}>{isPlaying ? 'Pausar' : 'Reproducir'}</button>
-              <select className="select h-9 py-0 text-xs" value={playbackRate} onChange={(event) => setPlaybackRate(Number(event.target.value))} aria-label="Velocidad de reproducción">
-                {[0.75, 1, 1.25, 1.5].map((rate) => <option key={rate} value={rate}>{rate.toFixed(2).replace('.00', '')}x</option>)}
-              </select>
-            </div>
-            <VolumeControl volume={volume} muted={muted} onVolumeChange={setVolume} onToggleMute={toggleMute} />
-          </div>
-          {error && <p className="text-xs text-red-200">{error}</p>}
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -650,7 +537,7 @@ export function SongTracksPanel({
                     canManage={canManage}
                     isCurrent={currentTrack?.id === track.id}
                     isPlaying={currentTrack?.id === track.id && isPlaying}
-                    onPlay={() => void playTrack(track)}
+                    onPlay={() => void playTrack(track, { songTitle })}
                     onDownload={() => void handleDownload(track)}
                     onEdit={() => {
                       setDraft({
@@ -694,7 +581,7 @@ export function SongTracksPanel({
                     canManage={canManage}
                     isCurrent={currentTrack?.id === track.id}
                     isPlaying={currentTrack?.id === track.id && isPlaying}
-                    onPlay={() => void playTrack(track)}
+                    onPlay={() => void playTrack(track, { songTitle })}
                     onDownload={() => void handleDownload(track)}
                     onEdit={() => {
                       setDraft({
@@ -738,7 +625,7 @@ export function SongTracksPanel({
                     canManage={canManage}
                     isCurrent={currentTrack?.id === track.id}
                     isPlaying={currentTrack?.id === track.id && isPlaying}
-                    onPlay={() => void playTrack(track)}
+                    onPlay={() => void playTrack(track, { songTitle })}
                     onDownload={() => void handleDownload(track)}
                     onEdit={() => {
                       setDraft({
@@ -768,7 +655,6 @@ export function SongTracksPanel({
 
       {playerError && <section className="rounded-md border border-[#ff5c77]/30 bg-red-500/10 p-4 text-sm text-red-200">{playerError}</section>}
       {playerLoading && <section className="rounded-md border border-[#1b2c40] bg-[#08131d] p-4 text-sm text-muted">Preparando reproducción...</section>}
-      <PersistentAudioPlayer songTitle={songTitle} />
 
       {showUploadDialog && (
         <OverlayDialog title="Subir pista" subtitle="Formatos admitidos: mp3, wav, ogg, m4a, aac, flac, webm · Máximo 100 MB" onClose={() => {

@@ -6,6 +6,7 @@ import { calculateRunningTimeline } from '../utils/calculateTimeline';
 import { useSetlistEditorLayout } from '../hooks/useSetlistEditorLayout';
 import { useSetlistInspector } from '../hooks/useSetlistInspector';
 import { useSetlistSelection } from '../hooks/useSetlistSelection';
+import { useSetlistWorkspaceLayout } from '../../workspace/hooks/useSetlistWorkspaceLayout';
 import { EmptyDropArea } from './EmptyDropArea';
 import { SetlistCanvas } from './SetlistCanvas';
 import { SetlistInspector } from './SetlistInspector';
@@ -35,6 +36,7 @@ export function SetlistEditor({
   const items = useMemo(() => itemsQuery.data || [], [itemsQuery.data]);
 
   const layout = useSetlistEditorLayout(setlistId);
+  const workspace = useSetlistWorkspaceLayout(setlistId);
   const deleteMutation = useDeleteSetlistItem(organizationId, setlistId);
   const [addDialogOpen, setAddDialogOpen] = useState(false);
 
@@ -99,6 +101,11 @@ export function SetlistEditor({
               onSelect={handleSelect}
               collapsedGroupIds={layout.collapsedGroupIds}
               onToggleGroup={layout.toggleGroupCollapsed}
+              expandedItemIds={workspace.expandedItemIds}
+              activeTabByItemId={workspace.activeTabByItemId}
+              onToggleExpand={workspace.toggleExpanded}
+              onCollapse={workspace.collapse}
+              onTabChange={workspace.setActiveTab}
             />
           </div>
 

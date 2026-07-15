@@ -18,6 +18,7 @@ import { events, files, musicians, notifications, setlists, songs } from './data
 import { loginRequest } from './api';
 import { DashboardPage as HomeDashboard } from './features/dashboard';
 import { SongDetailPage, SongsPage } from './features/songs';
+import { AudioPlayerProvider, PersistentAudioPlayer } from './features/songs/player';
 import { SetlistDetailPage, SetlistsPage as RealSetlistsPage } from './features/setlists';
 import { clearAuthSession } from './shared/api/http';
 
@@ -365,18 +366,21 @@ function App() {
   }
 
   return (
-    <Shell
-      user={user}
-      path={path}
-      navigate={navigate}
-      onLogout={() => {
-        clearAuthSession();
-        setUser(null);
-        navigate('/login');
-      }}
-    >
-      {page}
-    </Shell>
+    <AudioPlayerProvider>
+      <Shell
+        user={user}
+        path={path}
+        navigate={navigate}
+        onLogout={() => {
+          clearAuthSession();
+          setUser(null);
+          navigate('/login');
+        }}
+      >
+        {page}
+      </Shell>
+      <PersistentAudioPlayer />
+    </AudioPlayerProvider>
   );
 }
 

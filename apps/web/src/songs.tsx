@@ -29,7 +29,6 @@ import {
 } from './api';
 import { SongCollaborationPanel, SongEditor as StructuredSongEditor, SongFilesPanel, SongHistoryPanel, SongLinksPanel, SongNotesPanel, SongTracksPanel, TransposeButton, TransposeDialog } from './features/songs/components';
 import { useSongNotes } from './features/songs/hooks';
-import { AudioPlayerProvider } from './features/songs/player';
 import type { SongContent as StructuredSongContent } from './features/songs/types/song-content.types';
 import { legacyFieldsToSongContent, normalizeSongContent } from './features/songs/utils/song-content.utils';
 import { getCurrentOrganizationId } from './shared/api/http';
@@ -411,8 +410,7 @@ export function SongDetailPage({ id, navigate }: { id: string; navigate: Navigat
   if (error || !song) return <section className="panel p-5 text-red-200">{error || 'Canción no encontrada'}</section>;
 
   return (
-    <AudioPlayerProvider>
-      <div className="space-y-5">
+    <div className="space-y-5">
       <button className="btn-ghost" onClick={() => navigate('/songs')}><ArrowLeft className="h-4 w-4" /> Volver a canciones</button>
 
       <section className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -492,8 +490,7 @@ export function SongDetailPage({ id, navigate }: { id: string; navigate: Navigat
           onSaved={load}
         />
       )}
-      </div>
-    </AudioPlayerProvider>
+    </div>
   );
 }
 
