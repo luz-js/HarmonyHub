@@ -1,8 +1,9 @@
 import { memo } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical } from 'lucide-react';
+import { ChevronDown, GripVertical } from 'lucide-react';
 import type { SetlistItem } from '../../../../shared/types';
+import type { TeamSummary } from '../../assignments/utils/teamSummary';
 import { TYPE_ACCENT_CLASS } from '../utils/setlistItemTheme';
 import { BlockSetlistCard } from './BlockSetlistCard';
 import { CurrentPositionIndicator } from './CurrentPositionIndicator';
@@ -13,11 +14,19 @@ function SetlistCardImpl({
   startSec,
   isSelected,
   onSelect,
+  isExpanded,
+  onToggleExpand,
+  workspaceId,
+  teamSummary,
 }: {
   item: SetlistItem;
   startSec: number;
   isSelected: boolean;
   onSelect: (id: string) => void;
+  isExpanded: boolean;
+  onToggleExpand: (id: string) => void;
+  workspaceId: string;
+  teamSummary?: TeamSummary | null;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
 
@@ -55,7 +64,23 @@ function SetlistCardImpl({
 
       <CurrentPositionIndicator startSec={startSec} />
 
-      {item.type === 'SONG' ? <SongSetlistCard item={item} /> : <BlockSetlistCard item={item} />}
+      {item.type === 'SONG' ? <SongSetlistCard item={item} teamSummary={teamSummary} /> : <BlockSetlistCard item={item} />}
+
+      {item.type === 'SONG' && (
+        <button
+          type="button"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-muted transition-colors hover:bg-white/5 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--secondary)]"
+          aria-label={isExpanded ? 'Cerrar workspace de la canción' : 'Abrir workspace de la canción'}
+          aria-expanded={isExpanded}
+          aria-controls={workspaceId}
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleExpand(item.id);
+          }}
+        >
+          <ChevronDown className={`h-4 w-4 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+        </button>
+      )}
     </div>
   );
 }

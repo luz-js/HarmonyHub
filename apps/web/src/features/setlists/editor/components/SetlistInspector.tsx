@@ -1,9 +1,11 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import type { SetlistItem, UpdateSetlistItemInput } from '../../../../shared/types';
 import { formatBpm, formatDuration, formatKey } from '../../../../shared/utils/format';
 import { useSongVersions } from '../../../songs/hooks/useSongVersions';
+import { ItemAssignmentsSection } from '../../assignments/components/ItemAssignmentsSection';
 import { useDeleteSetlistItem, useUpdateSetlistItem } from '../../hooks';
+import { canManageSetlistsClientSide, getCurrentUser } from '../../utils';
 import type { InspectorMode } from '../hooks/useSetlistInspector';
 
 export function SetlistInspector({
@@ -21,6 +23,8 @@ export function SetlistInspector({
   isOpen: boolean;
   onClose: () => void;
 }) {
+  const currentUser = useMemo(() => getCurrentUser(), []);
+  const canManageTeam = canManageSetlistsClientSide(currentUser.role);
   const updateMutation = useUpdateSetlistItem(organizationId, setlistId);
   const deleteMutation = useDeleteSetlistItem(organizationId, setlistId);
 
@@ -230,6 +234,19 @@ export function SetlistInspector({
                 onBlur={() => saveField({ internalNote: internalNote || null })}
               />
             </label>
+          </section>
+
+          <section>
+            <p className="section-title">Equipo</p>
+            <div className="mt-2">
+              <ItemAssignmentsSection
+                organizationId={organizationId}
+                setlistId={setlistId}
+                item={item}
+                canManage={canManageTeam}
+                currentUserId={currentUser.id}
+              />
+            </div>
           </section>
 
           <button type="button" className="btn-ghost w-full text-red-300" onClick={handleDelete}>

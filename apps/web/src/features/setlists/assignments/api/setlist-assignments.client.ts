@@ -1,0 +1,17 @@
+export {
+  addSetlistParticipant,
+  copySetlistAssignments,
+  createSetlistAssignment,
+  createSetlistRoleRequirement,
+  deleteSetlistAssignment,
+  deleteSetlistRoleRequirement,
+  getSetlistItemAssignments,
+  getSetlistParticipants,
+  getSetlistRoleRequirements,
+  getSetlistTeam,
+  removeSetlistParticipant,
+  updateSetlistAssignment,
+  updateSetlistAssignmentPreparation,
+  updateSetlistParticipant,
+  updateSetlistRoleRequirement,
+} from '../../../../shared/api/api-client';

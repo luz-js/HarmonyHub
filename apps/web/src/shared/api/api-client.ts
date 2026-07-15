@@ -23,12 +23,24 @@ import type {
   SongVersion,
   SongVersionRevision,
   TrackProvider,
+  AddSetlistParticipantInput,
+  CopySetlistAssignmentsInput,
+  CreateSetlistAssignmentInput,
   CreateSetlistItemInput,
+  CreateSetlistRoleRequirementInput,
+  SetlistAssignment,
   SetlistDetail,
   SetlistItem,
   SetlistListResponse,
+  SetlistParticipant,
+  SetlistRoleRequirement,
   SetlistStatus,
+  SetlistTeam,
+  UpdateAssignmentPreparationInput,
+  UpdateSetlistAssignmentInput,
   UpdateSetlistItemInput,
+  UpdateSetlistParticipantInput,
+  UpdateSetlistRoleRequirementInput,
 } from '../types';
 import { buildAuthHeaders, http, requestBlob, setAuthToken, setCurrentOrganizationId } from './http';
 
@@ -557,4 +569,71 @@ export function duplicateSetlistItem(setlistId: string, itemId: string) {
 
 export function reorderSetlistItems(setlistId: string, itemIds: string[]) {
   return http<SetlistItem[]>(`/api/setlists/${setlistId}/items/reorder`, { method: 'PATCH', body: JSON.stringify({ itemIds }) });
+}
+
+export function getSetlistTeam(setlistId: string) {
+  return http<SetlistTeam>(`/api/setlists/${setlistId}/team`);
+}
+
+export function getSetlistParticipants(setlistId: string) {
+  return http<SetlistParticipant[]>(`/api/setlists/${setlistId}/participants`);
+}
+
+export function addSetlistParticipant(setlistId: string, input: AddSetlistParticipantInput) {
+  return http<SetlistParticipant>(`/api/setlists/${setlistId}/participants`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function updateSetlistParticipant(setlistId: string, participantId: string, input: UpdateSetlistParticipantInput) {
+  return http<SetlistParticipant>(`/api/setlists/${setlistId}/participants/${participantId}`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function removeSetlistParticipant(setlistId: string, participantId: string, removeAssignments?: boolean) {
+  const query = removeAssignments ? '?removeAssignments=true' : '';
+  return http<{ ok: boolean }>(`/api/setlists/${setlistId}/participants/${participantId}${query}`, { method: 'DELETE' });
+}
+
+export function getSetlistItemAssignments(setlistId: string, itemId: string) {
+  return http<SetlistAssignment[]>(`/api/setlists/${setlistId}/items/${itemId}/assignments`);
+}
+
+export function createSetlistAssignment(setlistId: string, itemId: string, input: CreateSetlistAssignmentInput) {
+  return http<SetlistAssignment>(`/api/setlists/${setlistId}/items/${itemId}/assignments`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function updateSetlistAssignment(setlistId: string, itemId: string, assignmentId: string, input: UpdateSetlistAssignmentInput) {
+  return http<SetlistAssignment>(`/api/setlists/${setlistId}/items/${itemId}/assignments/${assignmentId}`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function deleteSetlistAssignment(setlistId: string, itemId: string, assignmentId: string) {
+  return http<{ ok: boolean }>(`/api/setlists/${setlistId}/items/${itemId}/assignments/${assignmentId}`, { method: 'DELETE' });
+}
+
+export function updateSetlistAssignmentPreparation(setlistId: string, itemId: string, assignmentId: string, input: UpdateAssignmentPreparationInput) {
+  return http<SetlistAssignment>(`/api/setlists/${setlistId}/items/${itemId}/assignments/${assignmentId}/preparation`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function copySetlistAssignments(setlistId: string, itemId: string, input: CopySetlistAssignmentsInput) {
+  return http<SetlistAssignment[]>(`/api/setlists/${setlistId}/items/${itemId}/assignments/copy`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function getSetlistRoleRequirements(setlistId: string, itemId: string) {
+  return http<SetlistRoleRequirement[]>(`/api/setlists/${setlistId}/items/${itemId}/requirements`);
+}
+
+export function createSetlistRoleRequirement(setlistId: string, itemId: string, input: CreateSetlistRoleRequirementInput) {
+  return http<SetlistRoleRequirement>(`/api/setlists/${setlistId}/items/${itemId}/requirements`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function updateSetlistRoleRequirement(setlistId: string, itemId: string, requirementId: string, input: UpdateSetlistRoleRequirementInput) {
+  return http<SetlistRoleRequirement>(`/api/setlists/${setlistId}/items/${itemId}/requirements/${requirementId}`, {
+    method: 'PATCH',
+    body: JSON.stringify(input),
+  });
+}
+
+export function deleteSetlistRoleRequirement(setlistId: string, itemId: string, requirementId: string) {
+  return http<{ ok: boolean }>(`/api/setlists/${setlistId}/items/${itemId}/requirements/${requirementId}`, { method: 'DELETE' });
 }

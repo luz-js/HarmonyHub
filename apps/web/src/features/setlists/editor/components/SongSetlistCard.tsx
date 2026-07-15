@@ -1,8 +1,10 @@
 import { Music2, Speaker, StickyNote, Volume2 } from 'lucide-react';
 import type { SetlistItem } from '../../../../shared/types';
 import { formatBpm, formatDuration, formatKey } from '../../../../shared/utils/format';
+import { TeamSummaryRow } from '../../assignments/components/TeamSummaryRow';
+import type { TeamSummary } from '../../assignments/utils/teamSummary';
 
-export function SongSetlistCard({ item }: { item: SetlistItem }) {
+export function SongSetlistCard({ item, teamSummary }: { item: SetlistItem; teamSummary?: TeamSummary | null }) {
   return (
     <div className="flex min-w-0 flex-1 items-center gap-3">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#1b2c40] bg-[#0a1420]">
@@ -23,6 +25,7 @@ export function SongSetlistCard({ item }: { item: SetlistItem }) {
             <StickyNote className="h-3 w-3 shrink-0" /> {item.internalNote}
           </p>
         )}
+        <TeamSummaryRow summary={teamSummary ?? null} />
       </div>
 
       <div className="flex shrink-0 items-center gap-2 text-xs text-muted">

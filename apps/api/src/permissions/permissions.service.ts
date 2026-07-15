@@ -106,6 +106,34 @@ export class PermissionsService {
     return role === 'OWNER' || role === 'ADMIN';
   }
 
+  // --- Asignaciones musicales (SetlistParticipant / SetlistAssignment / SetlistRoleRequirement) ---
+  // Centralizado aqui para no repetir comparaciones de rol en cada controller.
+
+  canViewSetlistAssignments(role: MembershipRole) {
+    return this.can(role, 'read');
+  }
+
+  canManageSetlistParticipants(role: MembershipRole) {
+    return this.isLeadershipRole(role);
+  }
+
+  canManageSetlistAssignments(role: MembershipRole) {
+    return this.isLeadershipRole(role);
+  }
+
+  canManageSetlistRequirements(role: MembershipRole) {
+    return this.isLeadershipRole(role);
+  }
+
+  /** Cualquier rol puede actualizar su propio estado de preparacion si la asignacion es suya. */
+  canUpdateOwnPreparationStatus(isAssignee: boolean) {
+    return isAssignee;
+  }
+
+  canUpdateAnyPreparationStatus(role: MembershipRole) {
+    return this.isLeadershipRole(role);
+  }
+
   async getMembership(userId: string, organizationId: string) {
     if (!organizationId) throw new BadRequestException('Organizacion activa requerida');
     return this.prisma.membership.findUnique({

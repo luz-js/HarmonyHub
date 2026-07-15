@@ -230,6 +230,8 @@ model User {
   songVersionRevisions SongVersionRevision[]
   createdSetlists     Setlist[]           @relation("SetlistCreatedBy")
   updatedSetlists     Setlist[]           @relation("SetlistUpdatedBy")
+  addedSetlistParticipants  SetlistParticipant[] @relation("SetlistParticipantAddedBy")
+  createdSetlistAssignments SetlistAssignment[]  @relation("SetlistAssignmentCreatedBy")
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
@@ -270,6 +272,7 @@ model Membership {
   user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   eventMusicians EventMusician[]
+  setlistParticipations SetlistParticipant[]
 
   @@unique([userId, organizationId])
   @@index([organizationId, role])
@@ -681,6 +684,7 @@ model Setlist {
   items          SetlistItem[]
   events         Event[]
   files          File[]
+  participants   SetlistParticipant[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
@@ -712,6 +716,8 @@ model SetlistItem {
   setlist             Setlist         @relation(fields: [setlistId], references: [id], onDelete: Cascade)
   song                Song?           @relation(fields: [songId], references: [id], onDelete: SetNull)
   songVersion         SongVersion?    @relation(fields: [songVersionId], references: [id], onDelete: Restrict)
+  assignments         SetlistAssignment[]
+  roleRequirements    SetlistRoleRequirement[]
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
 
@@ -719,6 +725,135 @@ model SetlistItem {
   @@index([setlistId, type])
   @@index([songId])
   @@index([songVersionId])
+}
+
+enum SetlistParticipantStatus {
+  INVITED
+  CONFIRMED
+  DECLINED
+  TENTATIVE
+  NOT_REQUIRED
+}
+
+enum SetlistMusicalRole {
+  MUSIC_DIRECTOR
+  BAND_LEADER
+  LEAD_VOCAL
+  BACKING_VOCAL
+  CHOIR
+
+  ACOUSTIC_GUITAR
+  ELECTRIC_GUITAR
+  BASS
+  DRUMS
+  PERCUSSION
+  PIANO
+  KEYS
+  ORGAN
+  SYNTH
+  STRINGS
+  BRASS
+  WOODWIND
+  VIOLIN
+  CELLO
+
+  TRACKS
+  CLICK
+  PAD
+
+  AUDIO_ENGINEER
+  MONITOR_ENGINEER
+  LIGHTING
+  VIDEO
+
+  SPEAKER
+  PRAYER_LEADER
+  ANNOUNCER
+
+  OTHER
+}
+
+enum AssignmentPreparationStatus {
+  PENDING
+  IN_PROGRESS
+  READY
+  NEEDS_REVIEW
+  BLOCKED
+  NOT_APPLICABLE
+}
+
+model SetlistParticipant {
+  id           String                   @id @default(cuid())
+  setlistId    String
+  membershipId String
+
+  status       SetlistParticipantStatus @default(INVITED)
+  generalRole  String?
+  generalNote  String?
+
+  addedById    String?
+  respondedAt  DateTime?
+
+  createdAt    DateTime                 @default(now())
+  updatedAt    DateTime                 @updatedAt
+
+  setlist      Setlist                  @relation(fields: [setlistId], references: [id], onDelete: Cascade)
+  membership   Membership               @relation(fields: [membershipId], references: [id], onDelete: Cascade)
+  addedBy      User?                    @relation("SetlistParticipantAddedBy", fields: [addedById], references: [id], onDelete: SetNull)
+
+  assignments  SetlistAssignment[]
+
+  @@unique([setlistId, membershipId])
+  @@index([setlistId, status])
+  @@index([membershipId])
+}
+
+model SetlistAssignment {
+  id                String                       @id @default(cuid())
+  setlistItemId     String
+  participantId     String
+
+  role              SetlistMusicalRole
+  instrument        String?
+  label             String?
+
+  isPrimary         Boolean                      @default(false)
+  isRequired        Boolean                      @default(true)
+
+  preparationStatus AssignmentPreparationStatus  @default(PENDING)
+  preparationNote   String?
+
+  sortOrder         Int                          @default(0)
+
+  createdById       String?
+  createdAt         DateTime                     @default(now())
+  updatedAt         DateTime                     @updatedAt
+
+  setlistItem       SetlistItem                  @relation(fields: [setlistItemId], references: [id], onDelete: Cascade)
+  participant       SetlistParticipant           @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  createdBy         User?                        @relation("SetlistAssignmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+
+  @@unique([setlistItemId, participantId, role])
+  @@index([setlistItemId, role])
+  @@index([participantId])
+  @@index([setlistItemId, preparationStatus])
+}
+
+model SetlistRoleRequirement {
+  id            String             @id @default(cuid())
+  setlistItemId String
+  role          SetlistMusicalRole
+  label         String?
+  minimumCount  Int                @default(1)
+  isRequired    Boolean            @default(true)
+
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  setlistItem   SetlistItem        @relation(fields: [setlistItemId], references: [id], onDelete: Cascade)
+
+  @@unique([setlistItemId, role])
+  @@index([setlistItemId, isRequired])
 }
 
 model File {

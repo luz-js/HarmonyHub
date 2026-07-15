@@ -75,6 +75,8 @@ export function SetlistEditor({
   return (
     <div className="space-y-4" onKeyDown={selection.handleKeyDown}>
       <SetlistToolbar
+        organizationId={organizationId}
+        setlistId={setlistId}
         name={name}
         status={status}
         items={items}

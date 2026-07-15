@@ -91,3 +91,28 @@ test('canDeleteSetlists solo OWNER/ADMIN', () => {
   assert.equal(permissions.canDeleteSetlists('ADMIN'), true);
   assert.equal(permissions.canDeleteSetlists('LEADER'), false);
 });
+
+test('canViewSetlistAssignments permite a cualquier miembro activo (incluido GUEST)', () => {
+  assert.equal(permissions.canViewSetlistAssignments('GUEST'), true);
+  assert.equal(permissions.canViewSetlistAssignments('MUSICIAN'), true);
+});
+
+test('canManageSetlistParticipants/Assignments/Requirements solo roles de liderazgo', () => {
+  for (const method of ['canManageSetlistParticipants', 'canManageSetlistAssignments', 'canManageSetlistRequirements'] as const) {
+    assert.equal(permissions[method]('OWNER'), true);
+    assert.equal(permissions[method]('ADMIN'), true);
+    assert.equal(permissions[method]('LEADER'), true);
+    assert.equal(permissions[method]('MUSICIAN'), false);
+    assert.equal(permissions[method]('GUEST'), false);
+  }
+});
+
+test('canUpdateOwnPreparationStatus depende exclusivamente de ser el asignado', () => {
+  assert.equal(permissions.canUpdateOwnPreparationStatus(true), true);
+  assert.equal(permissions.canUpdateOwnPreparationStatus(false), false);
+});
+
+test('canUpdateAnyPreparationStatus solo roles de liderazgo', () => {
+  assert.equal(permissions.canUpdateAnyPreparationStatus('LEADER'), true);
+  assert.equal(permissions.canUpdateAnyPreparationStatus('MUSICIAN'), false);
+});
