@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Prisma, SetlistMusicalRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { matchesCopyMode, type CopyAssignmentsMode } from './setlist-assignment.utils';
 
 const assignmentInclude = {
   participant: {
@@ -74,11 +75,12 @@ export class SetlistAssignmentsRepository {
     return this.prisma.setlistAssignment.delete({ where: { id } });
   }
 
-  async copy(sourceItemId: string, targetItemId: string, replaceExisting: boolean) {
+  async copy(sourceItemId: string, targetItemId: string, mode: CopyAssignmentsMode, replaceExisting: boolean) {
     return this.prisma.$transaction(async (tx) => {
       if (replaceExisting) await tx.setlistAssignment.deleteMany({ where: { setlistItemId: targetItemId } });
 
-      const sourceAssignments = await tx.setlistAssignment.findMany({ where: { setlistItemId: sourceItemId } });
+      const allSourceAssignments = await tx.setlistAssignment.findMany({ where: { setlistItemId: sourceItemId } });
+      const sourceAssignments = allSourceAssignments.filter((assignment) => matchesCopyMode(assignment.role, mode));
       const existingCount = await tx.setlistAssignment.count({ where: { setlistItemId: targetItemId } });
       let sortOrder = existingCount;
 

@@ -90,3 +90,17 @@ export function computeCoverage(assignments: CoverageAssignment[], requirements:
 export function resetPreparationForCopy(_source: AssignmentPreparationStatus): AssignmentPreparationStatus {
   return 'PENDING';
 }
+
+export const COPY_ASSIGNMENTS_MODES = ['ALL', 'MUSICIANS_ONLY', 'VOCALS_ONLY', 'TECH_ONLY'] as const;
+export type CopyAssignmentsMode = (typeof COPY_ASSIGNMENTS_MODES)[number];
+
+const VOCAL_ROLES = new Set<SetlistMusicalRole>(['LEAD_VOCAL', 'BACKING_VOCAL', 'CHOIR']);
+const TECH_ROLES = new Set<SetlistMusicalRole>(['AUDIO_ENGINEER', 'MONITOR_ENGINEER', 'LIGHTING', 'VIDEO', 'TRACKS', 'CLICK', 'PAD']);
+
+/** Usado por `POST .../assignments/copy` para filtrar que subconjunto de roles se copia (`mode`). */
+export function matchesCopyMode(role: SetlistMusicalRole, mode: CopyAssignmentsMode): boolean {
+  if (mode === 'ALL') return true;
+  if (mode === 'VOCALS_ONLY') return VOCAL_ROLES.has(role);
+  if (mode === 'TECH_ONLY') return TECH_ROLES.has(role);
+  return !VOCAL_ROLES.has(role) && !TECH_ROLES.has(role);
+}

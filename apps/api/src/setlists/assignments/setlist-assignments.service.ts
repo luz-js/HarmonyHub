@@ -4,7 +4,7 @@ import { PermissionsService } from '../../permissions/permissions.service';
 import { SetlistItemsRepository } from '../items/setlist-items.repository';
 import { SetlistsRepository } from '../setlists.repository';
 import { mapSetlistAssignment, mapSetlistParticipant, mapSetlistRoleRequirement } from './setlist-assignment.mapper';
-import { ASSIGNMENT_PREPARATION_STATUSES, computeCoverage, SETLIST_MUSICAL_ROLES } from './setlist-assignment.utils';
+import { ASSIGNMENT_PREPARATION_STATUSES, computeCoverage, COPY_ASSIGNMENTS_MODES, SETLIST_MUSICAL_ROLES } from './setlist-assignment.utils';
 import { SetlistAssignmentsRepository } from './setlist-assignments.repository';
 import { SetlistParticipantsRepository } from './setlist-participants.repository';
 import { SetlistRoleRequirementsRepository } from './setlist-role-requirements.repository';
@@ -33,6 +33,7 @@ const preparationSchema = z.object({
 
 const copySchema = z.object({
   sourceItemId: z.string().trim().min(1),
+  mode: z.enum(COPY_ASSIGNMENTS_MODES).optional(),
   replaceExisting: z.boolean().optional(),
 });
 
@@ -126,7 +127,7 @@ export class SetlistAssignmentsService {
     const source = await this.itemsRepository.findItem(setlistId, parsed.data.sourceItemId);
     if (!source) throw new BadRequestException('El item de origen no pertenece a este setlist');
 
-    const copied = await this.assignmentsRepository.copy(parsed.data.sourceItemId, itemId, parsed.data.replaceExisting ?? false);
+    const copied = await this.assignmentsRepository.copy(parsed.data.sourceItemId, itemId, parsed.data.mode ?? 'ALL', parsed.data.replaceExisting ?? false);
     return copied.map(mapSetlistAssignment);
   }
 

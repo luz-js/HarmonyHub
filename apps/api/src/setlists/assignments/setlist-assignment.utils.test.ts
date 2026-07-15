@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { computeCoverage, isSinglePrimaryRole, resetPreparationForCopy, ROLES_BY_ITEM_TYPE } from './setlist-assignment.utils';
+import { computeCoverage, isSinglePrimaryRole, matchesCopyMode, resetPreparationForCopy, ROLES_BY_ITEM_TYPE } from './setlist-assignment.utils';
 
 test('isSinglePrimaryRole identifica los roles de principal unico', () => {
   assert.equal(isSinglePrimaryRole('LEAD_VOCAL'), true);
@@ -71,4 +71,33 @@ test('resetPreparationForCopy siempre devuelve PENDING, nunca copia READY', () =
   assert.equal(resetPreparationForCopy('READY'), 'PENDING');
   assert.equal(resetPreparationForCopy('NEEDS_REVIEW'), 'PENDING');
   assert.equal(resetPreparationForCopy('PENDING'), 'PENDING');
+});
+
+test('matchesCopyMode: ALL copia cualquier role', () => {
+  assert.equal(matchesCopyMode('LEAD_VOCAL', 'ALL'), true);
+  assert.equal(matchesCopyMode('DRUMS', 'ALL'), true);
+  assert.equal(matchesCopyMode('AUDIO_ENGINEER', 'ALL'), true);
+});
+
+test('matchesCopyMode: VOCALS_ONLY solo roles vocales', () => {
+  assert.equal(matchesCopyMode('LEAD_VOCAL', 'VOCALS_ONLY'), true);
+  assert.equal(matchesCopyMode('BACKING_VOCAL', 'VOCALS_ONLY'), true);
+  assert.equal(matchesCopyMode('CHOIR', 'VOCALS_ONLY'), true);
+  assert.equal(matchesCopyMode('DRUMS', 'VOCALS_ONLY'), false);
+  assert.equal(matchesCopyMode('AUDIO_ENGINEER', 'VOCALS_ONLY'), false);
+});
+
+test('matchesCopyMode: TECH_ONLY solo roles tecnicos/produccion', () => {
+  assert.equal(matchesCopyMode('AUDIO_ENGINEER', 'TECH_ONLY'), true);
+  assert.equal(matchesCopyMode('CLICK', 'TECH_ONLY'), true);
+  assert.equal(matchesCopyMode('TRACKS', 'TECH_ONLY'), true);
+  assert.equal(matchesCopyMode('LEAD_VOCAL', 'TECH_ONLY'), false);
+  assert.equal(matchesCopyMode('DRUMS', 'TECH_ONLY'), false);
+});
+
+test('matchesCopyMode: MUSICIANS_ONLY excluye vocales y tecnicos', () => {
+  assert.equal(matchesCopyMode('DRUMS', 'MUSICIANS_ONLY'), true);
+  assert.equal(matchesCopyMode('MUSIC_DIRECTOR', 'MUSICIANS_ONLY'), true);
+  assert.equal(matchesCopyMode('LEAD_VOCAL', 'MUSICIANS_ONLY'), false);
+  assert.equal(matchesCopyMode('AUDIO_ENGINEER', 'MUSICIANS_ONLY'), false);
 });

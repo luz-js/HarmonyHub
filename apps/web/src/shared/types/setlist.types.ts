@@ -207,8 +207,11 @@ export type UpdateAssignmentPreparationInput = {
   preparationNote?: string | null;
 };
 
+export type CopyAssignmentsMode = 'ALL' | 'MUSICIANS_ONLY' | 'VOCALS_ONLY' | 'TECH_ONLY';
+
 export type CopySetlistAssignmentsInput = {
   sourceItemId: string;
+  mode?: CopyAssignmentsMode;
   replaceExisting?: boolean;
 };
 

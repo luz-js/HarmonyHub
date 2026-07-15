@@ -1,4 +1,4 @@
-import { Trash2 } from 'lucide-react';
+import { AlertTriangle, Trash2 } from 'lucide-react';
 import type { SetlistParticipant, SetlistParticipantStatus } from '../../../../shared/types';
 import { PARTICIPANT_STATUS_LABELS } from '../utils/assignmentLabels';
 
@@ -21,6 +21,11 @@ export function ParticipantCard({
           {participant.membership.instrument || participant.membership.role} · {participant.assignmentsCount} asignacion(es)
           {participant.assignmentsCount > 0 ? ` · ${participant.readyCount}/${participant.assignmentsCount} listos` : ''}
         </p>
+        {participant.status === 'DECLINED' && participant.assignmentsCount > 0 && (
+          <p className="mt-0.5 flex items-center gap-1 text-[11px] text-[#ffd37b]">
+            <AlertTriangle className="h-3 w-3 shrink-0" /> Rechazo la invitacion pero tiene asignaciones sin quitar
+          </p>
+        )}
       </div>
       <div className="flex shrink-0 items-center gap-2">
         {canManage ? (
