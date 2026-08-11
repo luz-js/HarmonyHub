@@ -32,8 +32,15 @@ export function useDeleteSetlistItem(organizationId: string, setlistId: string) 
 
 export function useDuplicateSetlistItem(organizationId: string, setlistId: string) {
   return useMutation({
-    mutationFn: (itemId: string) => duplicateSetlistItem(setlistId, itemId),
-    onSuccess: () => invalidateItemQueries(organizationId, setlistId),
+    mutationFn: (input: string | { itemId: string; includeCues?: boolean }) => {
+      const { itemId, includeCues } = typeof input === 'string' ? { itemId: input, includeCues: undefined } : input;
+      return duplicateSetlistItem(setlistId, itemId, includeCues);
+    },
+    onSuccess: () => {
+      invalidateItemQueries(organizationId, setlistId);
+      queryClient.invalidateQueries({ queryKey: ['setlistProduction', organizationId, setlistId] });
+      queryClient.invalidateQueries({ queryKey: ['setlistCues', organizationId, setlistId] });
+    },
   });
 }
 

@@ -41,7 +41,13 @@ export class SetlistItemsController {
   }
 
   @Post(':setlistId/items/:itemId/duplicate')
-  duplicate(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('setlistId') setlistId: string, @Param('itemId') itemId: string) {
-    return this.itemsService.duplicate(user.id, organizationId, setlistId, itemId);
+  duplicate(
+    @CurrentUser() user: CurrentUserPayload,
+    @Headers('x-organization-id') organizationId: string,
+    @Param('setlistId') setlistId: string,
+    @Param('itemId') itemId: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.itemsService.duplicate(user.id, organizationId, setlistId, itemId, body?.includeCues === true);
   }
 }

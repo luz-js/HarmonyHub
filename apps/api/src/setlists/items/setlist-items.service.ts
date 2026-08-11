@@ -197,14 +197,14 @@ export class SetlistItemsService {
     return { ok: true };
   }
 
-  async duplicate(userId: string, organizationId: string, setlistId: string, itemId: string) {
+  async duplicate(userId: string, organizationId: string, setlistId: string, itemId: string, includeCues = false) {
     await this.assertManage(userId, organizationId);
     await this.assertSetlistInOrg(organizationId, setlistId);
 
     const existing = await this.itemsRepository.findItem(setlistId, itemId);
     if (!existing) throw new NotFoundException('Item no encontrado');
 
-    const created = await this.itemsRepository.duplicate(setlistId, itemId);
+    const created = await this.itemsRepository.duplicate(setlistId, itemId, includeCues);
     await this.setlistsRepository.recalculateStats(setlistId);
     return mapSetlistItemDetail(created);
   }

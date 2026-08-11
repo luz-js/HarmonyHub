@@ -4,6 +4,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { ChevronDown, GripVertical } from 'lucide-react';
 import type { SetlistItem } from '../../../../shared/types';
 import type { TeamSummary } from '../../assignments/utils/teamSummary';
+import type { CuesSummary } from '../../cues/utils/cuesSummary';
 import { TYPE_ACCENT_CLASS } from '../utils/setlistItemTheme';
 import { BlockSetlistCard } from './BlockSetlistCard';
 import { CurrentPositionIndicator } from './CurrentPositionIndicator';
@@ -18,6 +19,7 @@ function SetlistCardImpl({
   onToggleExpand,
   workspaceId,
   teamSummary,
+  cuesSummary,
 }: {
   item: SetlistItem;
   startSec: number;
@@ -27,6 +29,7 @@ function SetlistCardImpl({
   onToggleExpand: (id: string) => void;
   workspaceId: string;
   teamSummary?: TeamSummary | null;
+  cuesSummary?: CuesSummary | null;
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
 
@@ -64,7 +67,11 @@ function SetlistCardImpl({
 
       <CurrentPositionIndicator startSec={startSec} />
 
-      {item.type === 'SONG' ? <SongSetlistCard item={item} teamSummary={teamSummary} /> : <BlockSetlistCard item={item} />}
+      {item.type === 'SONG' ? (
+        <SongSetlistCard item={item} teamSummary={teamSummary} cuesSummary={cuesSummary} />
+      ) : (
+        <BlockSetlistCard item={item} cuesSummary={cuesSummary} />
+      )}
 
       {item.type === 'SONG' && (
         <button

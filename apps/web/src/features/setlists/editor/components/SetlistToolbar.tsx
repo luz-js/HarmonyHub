@@ -1,10 +1,12 @@
 import { useState } from 'react';
-import { Eye, LoaderCircle, Plus, Send, Users } from 'lucide-react';
+import { Eye, ListOrdered, LoaderCircle, Plus, Send, Users } from 'lucide-react';
 import type { SetlistItem, SetlistStatus } from '../../../../shared/types';
 import { SetlistStatusBadge } from '../../components/SetlistStatusBadge';
 import { formatDuration } from '../../../../shared/utils/format';
 import { SetlistTeamPanel } from '../../assignments/components/SetlistTeamPanel';
 import { useSetlistTeam } from '../../assignments/hooks/useSetlistTeam';
+import { SetlistProductionPanel } from '../../cues/components/SetlistProductionPanel';
+import { useSetlistProduction } from '../../cues/hooks/useSetlistProduction';
 import { calculateTotalDuration } from '../utils/calculateDurations';
 import { SetlistPreviewDialog } from './SetlistPreviewDialog';
 
@@ -33,19 +35,26 @@ export function SetlistToolbar({
 }) {
   const [previewOpen, setPreviewOpen] = useState(false);
   const [teamOpen, setTeamOpen] = useState(false);
+  const [productionOpen, setProductionOpen] = useState(false);
   const teamQuery = useSetlistTeam(organizationId, setlistId);
+  const productionQuery = useSetlistProduction(organizationId, setlistId);
 
   const songs = items.filter((item) => item.type === 'SONG' && !item.isHidden).length;
   const blocks = items.filter((item) => item.type !== 'SONG' && !item.isHidden).length;
   const totalSec = calculateTotalDuration(items);
   const canPublishNow = canPublish && status !== 'PUBLISHED' && status !== 'ARCHIVED';
 
+  const cueRiskCount =
+    (productionQuery.data?.coverage.critical ?? 0) + (productionQuery.data?.coverage.blocked ?? 0) + (productionQuery.data?.coverage.needsReview ?? 0);
+
   function handlePublishClick() {
     const missingRolesCount = teamQuery.data?.missingRolesCount ?? 0;
-    if (missingRolesCount > 0) {
-      const confirmed = window.confirm(
-        `Este setlist tiene ${missingRolesCount} rol(es) sin cubrir. Puedes publicarlo igual, pero el equipo vera roles pendientes. Publicar de todas formas?`,
-      );
+    const warnings: string[] = [];
+    if (missingRolesCount > 0) warnings.push(`${missingRolesCount} rol(es) sin cubrir`);
+    if (cueRiskCount > 0) warnings.push(`${cueRiskCount} cue(s) criticos, bloqueados o que necesitan revision`);
+
+    if (warnings.length > 0) {
+      const confirmed = window.confirm(`Este setlist tiene ${warnings.join(' y ')}. Puedes publicarlo igual. Publicar de todas formas?`);
       if (!confirmed) return;
     }
     onPublish();
@@ -73,6 +82,11 @@ export function SetlistToolbar({
           {(teamQuery.data?.missingRolesCount ?? 0) > 0 && <span className="badge badge-warning">{teamQuery.data?.missingRolesCount}</span>}
         </button>
 
+        <button type="button" className="btn-ghost" onClick={() => setProductionOpen(true)}>
+          <ListOrdered className="h-4 w-4" /> Produccion
+          {cueRiskCount > 0 && <span className="badge badge-warning">{cueRiskCount}</span>}
+        </button>
+
         <button type="button" className="btn-ghost" onClick={() => setPreviewOpen(true)}>
           <Eye className="h-4 w-4" /> Preview
         </button>
@@ -86,6 +100,9 @@ export function SetlistToolbar({
 
       {previewOpen && <SetlistPreviewDialog name={name} items={items} onClose={() => setPreviewOpen(false)} />}
       {teamOpen && <SetlistTeamPanel organizationId={organizationId} setlistId={setlistId} items={items} onClose={() => setTeamOpen(false)} />}
+      {productionOpen && (
+        <SetlistProductionPanel organizationId={organizationId} setlistId={setlistId} items={items} onClose={() => setProductionOpen(false)} />
+      )}
     </div>
   );
 }

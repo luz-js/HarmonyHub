@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X } from 'lucide-react';
+import { Copy, X } from 'lucide-react';
 import type { SetlistItem, UpdateSetlistItemInput } from '../../../../shared/types';
 import { formatBpm, formatDuration, formatKey } from '../../../../shared/utils/format';
 import { useSongVersions } from '../../../songs/hooks/useSongVersions';
 import { ItemAssignmentsSection } from '../../assignments/components/ItemAssignmentsSection';
-import { useDeleteSetlistItem, useUpdateSetlistItem } from '../../hooks';
+import { ItemCuesSection } from '../../cues/components/ItemCuesSection';
+import { useDeleteSetlistItem, useDuplicateSetlistItem, useUpdateSetlistItem } from '../../hooks';
 import { canManageSetlistsClientSide, getCurrentUser } from '../../utils';
 import type { InspectorMode } from '../hooks/useSetlistInspector';
 
@@ -27,6 +28,8 @@ export function SetlistInspector({
   const canManageTeam = canManageSetlistsClientSide(currentUser.role);
   const updateMutation = useUpdateSetlistItem(organizationId, setlistId);
   const deleteMutation = useDeleteSetlistItem(organizationId, setlistId);
+  const duplicateMutation = useDuplicateSetlistItem(organizationId, setlistId);
+  const [duplicateIncludeCues, setDuplicateIncludeCues] = useState(false);
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -75,6 +78,11 @@ export function SetlistInspector({
     if (!window.confirm(`Eliminar "${item.title}"?`)) return;
     deleteMutation.mutate(item.id);
     onClose();
+  }
+
+  function handleDuplicate() {
+    if (!item) return;
+    duplicateMutation.mutate({ itemId: item.id, includeCues: duplicateIncludeCues });
   }
 
   const containerClass =
@@ -248,6 +256,25 @@ export function SetlistInspector({
               />
             </div>
           </section>
+
+          <section>
+            <p className="section-title">Cues y produccion</p>
+            <div className="mt-2">
+              <ItemCuesSection organizationId={organizationId} setlistId={setlistId} item={item} canManage={canManageTeam} currentUserId={currentUser.id} />
+            </div>
+          </section>
+
+          {canManageTeam && (
+            <div className="space-y-2 border-t border-[#1b2c40] pt-3">
+              <label className="flex items-center gap-2 text-sm text-muted">
+                <input type="checkbox" checked={duplicateIncludeCues} onChange={(event) => setDuplicateIncludeCues(event.target.checked)} />
+                Incluir cues al duplicar
+              </label>
+              <button type="button" className="btn-ghost w-full" disabled={duplicateMutation.isPending} onClick={handleDuplicate}>
+                <Copy className="h-4 w-4" /> Duplicar item
+              </button>
+            </div>
+          )}
 
           <button type="button" className="btn-ghost w-full text-red-300" onClick={handleDelete}>
             Eliminar item

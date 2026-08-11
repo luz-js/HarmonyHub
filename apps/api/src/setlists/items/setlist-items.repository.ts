@@ -1,6 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { copyCuesForItemDuplication } from '../cues/setlist-cues.repository';
 
 const itemDetailInclude = {
   song: { select: { id: true, title: true, artist: true, coverUrl: true } },
@@ -75,7 +76,7 @@ export class SetlistItemsRepository {
     });
   }
 
-  duplicate(setlistId: string, sourceItemId: string) {
+  duplicate(setlistId: string, sourceItemId: string, includeCues = false) {
     return this.prisma.$transaction(async (tx) => {
       const source = await tx.setlistItem.findFirst({ where: { id: sourceItemId, setlistId } });
       if (!source) throw new NotFoundException('Item no encontrado');
@@ -89,6 +90,8 @@ export class SetlistItemsRepository {
       const insertIndex = withoutNew.findIndex((item) => item.id === sourceItemId) + 1;
       withoutNew.splice(insertIndex, 0, { id: created.id });
       await this.applyOrder(tx, withoutNew.map((item) => item.id));
+
+      if (includeCues) await copyCuesForItemDuplication(tx, sourceItemId, created.id);
 
       return created;
     });

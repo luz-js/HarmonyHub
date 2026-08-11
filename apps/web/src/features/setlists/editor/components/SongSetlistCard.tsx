@@ -3,8 +3,18 @@ import type { SetlistItem } from '../../../../shared/types';
 import { formatBpm, formatDuration, formatKey } from '../../../../shared/utils/format';
 import { TeamSummaryRow } from '../../assignments/components/TeamSummaryRow';
 import type { TeamSummary } from '../../assignments/utils/teamSummary';
+import { CuesSummaryRow } from '../../cues/components/CuesSummaryRow';
+import type { CuesSummary } from '../../cues/utils/cuesSummary';
 
-export function SongSetlistCard({ item, teamSummary }: { item: SetlistItem; teamSummary?: TeamSummary | null }) {
+export function SongSetlistCard({
+  item,
+  teamSummary,
+  cuesSummary,
+}: {
+  item: SetlistItem;
+  teamSummary?: TeamSummary | null;
+  cuesSummary?: CuesSummary | null;
+}) {
   return (
     <div className="flex min-w-0 flex-1 items-center gap-3">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#1b2c40] bg-[#0a1420]">
@@ -26,6 +36,7 @@ export function SongSetlistCard({ item, teamSummary }: { item: SetlistItem; team
           </p>
         )}
         <TeamSummaryRow summary={teamSummary ?? null} />
+        <CuesSummaryRow summary={cuesSummary ?? null} />
       </div>
 
       <div className="flex shrink-0 items-center gap-2 text-xs text-muted">

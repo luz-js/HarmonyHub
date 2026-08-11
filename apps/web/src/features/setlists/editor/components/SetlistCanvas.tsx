@@ -11,6 +11,8 @@ import { ResourceBadges } from '../../workspace/components/ResourceBadges';
 import type { WorkspaceTab } from '../../workspace/utils/workspaceTabs';
 import { useSetlistTeam } from '../../assignments/hooks/useSetlistTeam';
 import { buildTeamSummary } from '../../assignments/utils/teamSummary';
+import { useSetlistProduction } from '../../cues/hooks/useSetlistProduction';
+import { buildCuesSummaryByItem } from '../../cues/utils/cuesSummary';
 import { CollapsedGroup } from './CollapsedGroup';
 import { QuickInsertBar } from './QuickInsertBar';
 import { SetlistCard } from './SetlistCard';
@@ -52,6 +54,8 @@ export function SetlistCanvas({
     const entries = teamQuery.data?.items ?? [];
     return new Map(entries.map((entry) => [entry.itemId, buildTeamSummary(entry)]));
   }, [teamQuery.data]);
+  const productionQuery = useSetlistProduction(organizationId, setlistId);
+  const cuesSummaryByItemId = useMemo(() => buildCuesSummaryByItem(productionQuery.data?.cues ?? []), [productionQuery.data]);
 
   function handleDragStart(event: DragStartEvent) {
     onCollapse(String(event.active.id));
@@ -135,6 +139,7 @@ export function SetlistCanvas({
                   onToggleExpand={onToggleExpand}
                   workspaceId={workspaceId}
                   teamSummary={teamSummaryByItemId.get(item.id)}
+                  cuesSummary={cuesSummaryByItemId.get(item.id)}
                 />
                 {item.type === 'SONG' && !isExpanded && everExpandedIds.has(item.id) && item.songId && (
                   <div className="ml-9 mt-0.5">

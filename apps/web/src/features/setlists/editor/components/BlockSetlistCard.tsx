@@ -1,8 +1,10 @@
 import type { SetlistItem } from '../../../../shared/types';
 import { formatDuration } from '../../../../shared/utils/format';
+import { CuesSummaryRow } from '../../cues/components/CuesSummaryRow';
+import type { CuesSummary } from '../../cues/utils/cuesSummary';
 import { TYPE_BADGE_CLASS, TYPE_ICONS } from '../utils/setlistItemTheme';
 
-export function BlockSetlistCard({ item }: { item: SetlistItem }) {
+export function BlockSetlistCard({ item, cuesSummary }: { item: SetlistItem; cuesSummary?: CuesSummary | null }) {
   const Icon = TYPE_ICONS[item.type];
 
   return (
@@ -15,6 +17,7 @@ export function BlockSetlistCard({ item }: { item: SetlistItem }) {
         <p className="truncate text-sm font-bold text-white">{item.title}</p>
         {item.description && <p className="truncate text-xs text-muted">{item.description}</p>}
         {item.transitionNote && <p className="mt-0.5 truncate text-[11px] text-faint">Transicion: {item.transitionNote}</p>}
+        <CuesSummaryRow summary={cuesSummary ?? null} />
       </div>
 
       {item.effective.durationSec != null && (
