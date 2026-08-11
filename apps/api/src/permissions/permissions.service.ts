@@ -134,6 +134,25 @@ export class PermissionsService {
     return this.isLeadershipRole(role);
   }
 
+  // --- Cues y produccion (SetlistCue) ---
+
+  canViewSetlistCues(role: MembershipRole) {
+    return this.can(role, 'read');
+  }
+
+  canManageSetlistCues(role: MembershipRole) {
+    return this.isLeadershipRole(role);
+  }
+
+  /** Cualquier rol puede actualizar el status de un cue si es su responsable. */
+  canUpdateOwnCueStatus(isResponsible: boolean) {
+    return isResponsible;
+  }
+
+  canUpdateAnyCueStatus(role: MembershipRole) {
+    return this.isLeadershipRole(role);
+  }
+
   async getMembership(userId: string, organizationId: string) {
     if (!organizationId) throw new BadRequestException('Organizacion activa requerida');
     return this.prisma.membership.findUnique({

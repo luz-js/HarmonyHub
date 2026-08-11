@@ -25,19 +25,26 @@ import type {
   TrackProvider,
   AddSetlistParticipantInput,
   CopySetlistAssignmentsInput,
+  CopySetlistCuesInput,
   CreateSetlistAssignmentInput,
+  CreateSetlistCueInput,
   CreateSetlistItemInput,
   CreateSetlistRoleRequirementInput,
+  ReorderSetlistCuesInput,
   SetlistAssignment,
+  SetlistCue,
   SetlistDetail,
   SetlistItem,
   SetlistListResponse,
   SetlistParticipant,
+  SetlistProduction,
   SetlistRoleRequirement,
   SetlistStatus,
   SetlistTeam,
   UpdateAssignmentPreparationInput,
   UpdateSetlistAssignmentInput,
+  UpdateSetlistCueInput,
+  UpdateSetlistCueStatusInput,
   UpdateSetlistItemInput,
   UpdateSetlistParticipantInput,
   UpdateSetlistRoleRequirementInput,
@@ -563,8 +570,8 @@ export function deleteSetlistItem(setlistId: string, itemId: string) {
   return http<{ ok: boolean }>(`/api/setlists/${setlistId}/items/${itemId}`, { method: 'DELETE' });
 }
 
-export function duplicateSetlistItem(setlistId: string, itemId: string) {
-  return http<SetlistItem>(`/api/setlists/${setlistId}/items/${itemId}/duplicate`, { method: 'POST' });
+export function duplicateSetlistItem(setlistId: string, itemId: string, includeCues?: boolean) {
+  return http<SetlistItem>(`/api/setlists/${setlistId}/items/${itemId}/duplicate`, { method: 'POST', body: JSON.stringify({ includeCues: includeCues ?? false }) });
 }
 
 export function reorderSetlistItems(setlistId: string, itemIds: string[]) {
@@ -636,4 +643,44 @@ export function updateSetlistRoleRequirement(setlistId: string, itemId: string, 
 
 export function deleteSetlistRoleRequirement(setlistId: string, itemId: string, requirementId: string) {
   return http<{ ok: boolean }>(`/api/setlists/${setlistId}/items/${itemId}/requirements/${requirementId}`, { method: 'DELETE' });
+}
+
+export function getSetlistProduction(setlistId: string) {
+  return http<SetlistProduction>(`/api/setlists/${setlistId}/production`);
+}
+
+export function getSetlistCues(setlistId: string) {
+  return http<SetlistCue[]>(`/api/setlists/${setlistId}/cues`);
+}
+
+export function getSetlistItemCues(setlistId: string, itemId: string) {
+  return http<SetlistCue[]>(`/api/setlists/${setlistId}/items/${itemId}/cues`);
+}
+
+export function createSetlistCue(setlistId: string, input: CreateSetlistCueInput) {
+  return http<SetlistCue>(`/api/setlists/${setlistId}/cues`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function updateSetlistCue(setlistId: string, cueId: string, input: UpdateSetlistCueInput) {
+  return http<SetlistCue>(`/api/setlists/${setlistId}/cues/${cueId}`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function updateSetlistCueStatus(setlistId: string, cueId: string, input: UpdateSetlistCueStatusInput) {
+  return http<SetlistCue>(`/api/setlists/${setlistId}/cues/${cueId}/status`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function deleteSetlistCue(setlistId: string, cueId: string) {
+  return http<{ ok: boolean }>(`/api/setlists/${setlistId}/cues/${cueId}`, { method: 'DELETE' });
+}
+
+export function reorderSetlistCues(setlistId: string, input: ReorderSetlistCuesInput) {
+  return http<SetlistCue[]>(`/api/setlists/${setlistId}/cues/reorder`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function duplicateSetlistCue(setlistId: string, cueId: string) {
+  return http<SetlistCue>(`/api/setlists/${setlistId}/cues/${cueId}/duplicate`, { method: 'POST' });
+}
+
+export function copySetlistCues(setlistId: string, itemId: string, input: CopySetlistCuesInput) {
+  return http<SetlistCue[]>(`/api/setlists/${setlistId}/items/${itemId}/cues/copy`, { method: 'POST', body: JSON.stringify(input) });
 }

@@ -116,3 +116,26 @@ test('canUpdateAnyPreparationStatus solo roles de liderazgo', () => {
   assert.equal(permissions.canUpdateAnyPreparationStatus('LEADER'), true);
   assert.equal(permissions.canUpdateAnyPreparationStatus('MUSICIAN'), false);
 });
+
+test('canViewSetlistCues permite a cualquier miembro activo (incluido GUEST)', () => {
+  assert.equal(permissions.canViewSetlistCues('GUEST'), true);
+  assert.equal(permissions.canViewSetlistCues('MUSICIAN'), true);
+});
+
+test('canManageSetlistCues solo roles de liderazgo', () => {
+  assert.equal(permissions.canManageSetlistCues('OWNER'), true);
+  assert.equal(permissions.canManageSetlistCues('ADMIN'), true);
+  assert.equal(permissions.canManageSetlistCues('LEADER'), true);
+  assert.equal(permissions.canManageSetlistCues('MUSICIAN'), false);
+  assert.equal(permissions.canManageSetlistCues('GUEST'), false);
+});
+
+test('canUpdateOwnCueStatus depende exclusivamente de ser el responsable', () => {
+  assert.equal(permissions.canUpdateOwnCueStatus(true), true);
+  assert.equal(permissions.canUpdateOwnCueStatus(false), false);
+});
+
+test('canUpdateAnyCueStatus solo roles de liderazgo', () => {
+  assert.equal(permissions.canUpdateAnyCueStatus('LEADER'), true);
+  assert.equal(permissions.canUpdateAnyCueStatus('MUSICIAN'), false);
+});

@@ -232,6 +232,8 @@ model User {
   updatedSetlists     Setlist[]           @relation("SetlistUpdatedBy")
   addedSetlistParticipants  SetlistParticipant[] @relation("SetlistParticipantAddedBy")
   createdSetlistAssignments SetlistAssignment[]  @relation("SetlistAssignmentCreatedBy")
+  createdSetlistCues        SetlistCue[]         @relation("SetlistCueCreatedBy")
+  completedSetlistCues      SetlistCue[]         @relation("SetlistCueCompletedBy")
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
@@ -685,6 +687,7 @@ model Setlist {
   events         Event[]
   files          File[]
   participants   SetlistParticipant[]
+  cues           SetlistCue[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
@@ -718,6 +721,7 @@ model SetlistItem {
   songVersion         SongVersion?    @relation(fields: [songVersionId], references: [id], onDelete: Restrict)
   assignments         SetlistAssignment[]
   roleRequirements    SetlistRoleRequirement[]
+  cues                SetlistCue[]
   createdAt           DateTime        @default(now())
   updatedAt           DateTime        @updatedAt
 
@@ -802,6 +806,7 @@ model SetlistParticipant {
   addedBy      User?                    @relation("SetlistParticipantAddedBy", fields: [addedById], references: [id], onDelete: SetNull)
 
   assignments  SetlistAssignment[]
+  responsibleCues SetlistCue[]     @relation("SetlistCueResponsibleParticipant")
 
   @@unique([setlistId, membershipId])
   @@index([setlistId, status])
@@ -832,6 +837,7 @@ model SetlistAssignment {
   setlistItem       SetlistItem                  @relation(fields: [setlistItemId], references: [id], onDelete: Cascade)
   participant       SetlistParticipant           @relation(fields: [participantId], references: [id], onDelete: Cascade)
   createdBy         User?                        @relation("SetlistAssignmentCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  responsibleCues   SetlistCue[]                 @relation("SetlistCueResponsibleAssignment")
 
   @@unique([setlistItemId, participantId, role])
   @@index([setlistItemId, role])
@@ -854,6 +860,131 @@ model SetlistRoleRequirement {
 
   @@unique([setlistItemId, role])
   @@index([setlistItemId, isRequired])
+}
+
+enum SetlistCueType {
+  COUNT_IN
+  CLICK_START
+  CLICK_STOP
+  PAD_START
+  PAD_STOP
+  TRACK_START
+  TRACK_STOP
+
+  MUSIC_ENTRY
+  MUSIC_STOP
+  DYNAMICS_UP
+  DYNAMICS_DOWN
+  REPEAT_SECTION
+  SKIP_SECTION
+  MODULATION
+  TEMPO_CHANGE
+  FREE_TIME
+  HOLD
+  ENDING
+
+  SPEAKING
+  PRAYER
+  ANNOUNCEMENT
+  SILENCE
+
+  VIDEO_START
+  VIDEO_STOP
+  SLIDE_CHANGE
+  LYRICS_ON
+  LYRICS_OFF
+
+  LIGHTS_SCENE
+  LIGHTS_BLACKOUT
+  LIGHTS_FADE
+
+  AUDIO_MUTE
+  AUDIO_UNMUTE
+  AUDIO_LEVEL
+  MONITOR_CHANGE
+
+  INSTRUMENT_CHANGE
+  CAPO_CHANGE
+  PATCH_CHANGE
+  TUNING_CHANGE
+
+  ENTER_STAGE
+  EXIT_STAGE
+  POSITION_CHANGE
+
+  TIMER
+  MARKER
+  CUSTOM
+}
+
+enum SetlistCuePhase {
+  BEFORE
+  DURING
+  AFTER
+  GLOBAL
+}
+
+enum SetlistCueStatus {
+  PENDING
+  READY
+  NEEDS_REVIEW
+  BLOCKED
+  COMPLETED
+  SKIPPED
+}
+
+enum SetlistCuePriority {
+  LOW
+  NORMAL
+  HIGH
+  CRITICAL
+}
+
+model SetlistCue {
+  id                       String             @id @default(cuid())
+  setlistId                String
+  setlistItemId            String?
+
+  type                     SetlistCueType
+  phase                    SetlistCuePhase    @default(BEFORE)
+  status                   SetlistCueStatus   @default(PENDING)
+  priority                 SetlistCuePriority @default(NORMAL)
+
+  title                    String
+  description              String?
+
+  offsetSec                Int?
+  durationSec              Int?
+  sortOrder                Int                @default(0)
+
+  metadata                 Json?
+
+  isOptional               Boolean            @default(false)
+  isHidden                 Boolean            @default(false)
+
+  responsibleParticipantId String?
+  responsibleAssignmentId  String?
+
+  createdById              String?
+  completedById            String?
+  completedAt              DateTime?
+
+  createdAt                DateTime           @default(now())
+  updatedAt                DateTime           @updatedAt
+
+  setlist                 Setlist             @relation(fields: [setlistId], references: [id], onDelete: Cascade)
+  setlistItem             SetlistItem?        @relation(fields: [setlistItemId], references: [id], onDelete: Cascade)
+  responsibleParticipant  SetlistParticipant? @relation("SetlistCueResponsibleParticipant", fields: [responsibleParticipantId], references: [id], onDelete: SetNull)
+  responsibleAssignment   SetlistAssignment?  @relation("SetlistCueResponsibleAssignment", fields: [responsibleAssignmentId], references: [id], onDelete: SetNull)
+  createdBy               User?               @relation("SetlistCueCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  completedBy             User?               @relation("SetlistCueCompletedBy", fields: [completedById], references: [id], onDelete: SetNull)
+
+  @@index([setlistId, sortOrder])
+  @@index([setlistItemId, phase, sortOrder])
+  @@index([setlistId, type])
+  @@index([setlistId, status])
+  @@index([responsibleParticipantId])
+  @@index([responsibleAssignmentId])
 }
 
 model File {

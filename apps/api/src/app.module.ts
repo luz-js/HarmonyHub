@@ -36,6 +36,9 @@ import { SetlistAssignmentsService } from './setlists/assignments/setlist-assign
 import { SetlistRoleRequirementsController } from './setlists/assignments/setlist-role-requirements.controller';
 import { SetlistRoleRequirementsRepository } from './setlists/assignments/setlist-role-requirements.repository';
 import { SetlistRoleRequirementsService } from './setlists/assignments/setlist-role-requirements.service';
+import { SetlistCuesController } from './setlists/cues/setlist-cues.controller';
+import { SetlistCuesRepository } from './setlists/cues/setlist-cues.repository';
+import { SetlistCuesService } from './setlists/cues/setlist-cues.service';
 import { OrganizationsController } from './organizations/organizations.controller';
 import { OrganizationsService } from './organizations/organizations.service';
 import { MembershipsController } from './memberships/memberships.controller';
@@ -56,6 +59,7 @@ import { PermissionsService } from './permissions/permissions.service';
     SetlistParticipantsController,
     SetlistAssignmentsController,
     SetlistRoleRequirementsController,
+    SetlistCuesController,
     OrganizationsController,
     MembershipsController,
     InvitationsController,
@@ -87,6 +91,8 @@ import { PermissionsService } from './permissions/permissions.service';
     SetlistAssignmentsService,
     SetlistRoleRequirementsRepository,
     SetlistRoleRequirementsService,
+    SetlistCuesRepository,
+    SetlistCuesService,
     OrganizationsService,
     MembershipsService,
     InvitationsService,

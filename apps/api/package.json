@@ -7,7 +7,7 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
-    "test": "tsx --test src/songs/storage/storage-path.test.ts src/songs/links/song-link.utils.test.ts src/songs/files/song-file.utils.test.ts src/songs/collaboration/song-collaboration.utils.test.ts src/permissions/permissions.service.test.ts src/songs/history/song-revision.utils.test.ts src/setlists/setlist.utils.test.ts src/setlists/assignments/setlist-assignment.utils.test.ts",
+    "test": "tsx --test src/songs/storage/storage-path.test.ts src/songs/links/song-link.utils.test.ts src/songs/files/song-file.utils.test.ts src/songs/collaboration/song-collaboration.utils.test.ts src/permissions/permissions.service.test.ts src/songs/history/song-revision.utils.test.ts src/setlists/setlist.utils.test.ts src/setlists/assignments/setlist-assignment.utils.test.ts src/setlists/cues/setlist-cue.utils.test.ts",
     "lint": "npm run typecheck"
   },
   "dependencies": {
