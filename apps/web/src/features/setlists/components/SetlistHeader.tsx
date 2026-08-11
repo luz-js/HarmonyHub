@@ -1,4 +1,4 @@
-import { Archive, ArrowLeft, LoaderCircle, Pencil, Send, Trash2 } from 'lucide-react';
+import { Archive, ArrowLeft, LoaderCircle, Pencil, Presentation, Send, Trash2 } from 'lucide-react';
 import type { SetlistDetail } from '../../../shared/types';
 import { formatSetlistDuration } from '../utils';
 import { SetlistStatusBadge } from './SetlistStatusBadge';
@@ -17,6 +17,7 @@ export function SetlistHeader({
   onPublish,
   onArchive,
   onDelete,
+  onEnterStageMode,
 }: {
   setlist: SetlistDetail;
   canManage: boolean;
@@ -31,6 +32,7 @@ export function SetlistHeader({
   onPublish: () => void;
   onArchive: () => void;
   onDelete: () => void;
+  onEnterStageMode: () => void;
 }) {
   return (
     <section className="panel p-5">
@@ -47,6 +49,7 @@ export function SetlistHeader({
         </div>
 
         <div className="flex flex-wrap gap-2">
+          <button className="btn-primary" onClick={onEnterStageMode}><Presentation className="h-4 w-4" /> Stage Mode</button>
           {canManage && <button className="btn-ghost" onClick={onEdit}><Pencil className="h-4 w-4" /> Editar</button>}
           {canPublish && setlist.status !== 'PUBLISHED' && setlist.status !== 'ARCHIVED' && (
             <button className="btn-ghost" onClick={onPublish} disabled={publishing}>

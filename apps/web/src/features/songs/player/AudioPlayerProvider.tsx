@@ -1,6 +1,7 @@
 import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { streamSongTrack } from '../api/songs.client';
 import type { SongTrack } from '../../../shared/types';
+import { isAudioHotkeysSuspended } from './stageModeHotkeys';
 
 const VOLUME_STORAGE_KEY = 'harmonyhub.audio.volume';
 
@@ -42,6 +43,7 @@ function isExternalTrack(track: SongTrack) {
 }
 
 function canUseHotkeys(target: EventTarget | null) {
+  if (isAudioHotkeysSuspended()) return false;
   if (!(target instanceof HTMLElement)) return true;
   if (target.closest('input, textarea, select, [contenteditable="true"]')) return false;
   return true;

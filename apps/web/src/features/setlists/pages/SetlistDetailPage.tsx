@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { getCurrentOrganizationId } from '../../../shared/api/http';
 import { SetlistEditor } from '../editor';
 import { SetlistFormDialog, SetlistHeader } from '../components';
+import { StageMode } from '../stage-mode/components/StageMode';
 import { useArchiveSetlist, useDeleteSetlist, usePublishSetlist, useSetlist, useUpdateSetlist } from '../hooks';
 import { canManageSetlistsClientSide, getCurrentUser } from '../utils';
 
@@ -15,6 +16,7 @@ export function SetlistDetailPage({ id, navigate }: { id: string; navigate: Navi
 
   const [showEdit, setShowEdit] = useState(false);
   const [formError, setFormError] = useState('');
+  const [stageModeOpen, setStageModeOpen] = useState(false);
 
   const setlistQuery = useSetlist(organizationId, id);
   const updateMutation = useUpdateSetlist(organizationId);
@@ -68,6 +70,17 @@ export function SetlistDetailPage({ id, navigate }: { id: string; navigate: Navi
   const setlist = setlistQuery.data;
   if (!setlist) return null;
 
+  if (stageModeOpen) {
+    return (
+      <StageMode
+        organizationId={organizationId}
+        setlistId={id}
+        setlistName={setlist.name}
+        onExit={() => setStageModeOpen(false)}
+      />
+    );
+  }
+
   return (
     <div className="space-y-5">
       <SetlistHeader
@@ -84,6 +97,7 @@ export function SetlistDetailPage({ id, navigate }: { id: string; navigate: Navi
         onPublish={() => void handlePublish()}
         onArchive={() => void handleArchive()}
         onDelete={() => void handleDelete()}
+        onEnterStageMode={() => setStageModeOpen(true)}
       />
 
       <SetlistEditor
