@@ -13,13 +13,28 @@ const itemDetailInclude = {
   songVersion: { select: { id: true, name: true, key: true, bpm: true, durationSec: true, isDefault: true } },
 } satisfies Prisma.SetlistItemInclude;
 
+const roleRequirementInclude = {
+  roleRequirements: true,
+} satisfies Prisma.SetlistItemInclude;
+
+type CloneSetlistInput = {
+  sourceSetlistId: string;
+  organizationId: string;
+  name: string;
+  description: string | null;
+  isTemplate: boolean;
+  createdById: string;
+  updatedById: string;
+};
+
 @Injectable()
 export class SetlistsRepository {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
-  async list(organizationId: string, filters: { status?: SetlistStatus; search?: string; includeArchived?: boolean; skip: number; take: number }) {
+  async list(organizationId: string, filters: { status?: SetlistStatus; search?: string; includeArchived?: boolean; isTemplate?: boolean; skip: number; take: number }) {
     const where: Prisma.SetlistWhereInput = {
       organizationId,
+      isTemplate: filters.isTemplate ?? false,
       status: filters.status || (filters.includeArchived ? undefined : { not: 'ARCHIVED' }),
       ...(filters.search ? { name: { contains: filters.search, mode: 'insensitive' } } : {}),
     };
@@ -65,6 +80,114 @@ export class SetlistsRepository {
 
   delete(id: string) {
     return this.prisma.setlist.delete({ where: { id } });
+  }
+
+  async cloneSetlist(input: CloneSetlistInput) {
+    return this.prisma.$transaction(async (tx) => {
+      const source = await tx.setlist.findUnique({
+        where: { id: input.sourceSetlistId },
+        include: {
+          items: {
+            orderBy: { order: 'asc' },
+            include: roleRequirementInclude,
+          },
+          cues: {
+            orderBy: [{ setlistItemId: 'asc' }, { sortOrder: 'asc' }],
+          },
+        },
+      });
+
+      if (!source) throw new Error('Source setlist not found');
+
+      const created = await tx.setlist.create({
+        data: {
+          organizationId: input.organizationId,
+          name: input.name,
+          description: input.description,
+          status: 'DRAFT',
+          isTemplate: input.isTemplate,
+          estimatedSec: 0,
+          itemCount: 0,
+          createdById: input.createdById,
+          updatedById: input.updatedById,
+        },
+      });
+
+      const itemIdMap = new Map<string, string>();
+
+      for (const item of source.items) {
+        const createdItem = await tx.setlistItem.create({
+          data: {
+            setlistId: created.id,
+            type: item.type,
+            songId: item.songId,
+            songVersionId: item.songVersionId,
+            title: item.title,
+            description: item.description,
+            order: item.order,
+            estimatedSec: item.estimatedSec,
+            keyOverride: item.keyOverride,
+            bpmOverride: item.bpmOverride,
+            durationOverrideSec: item.durationOverrideSec,
+            capo: item.capo,
+            transitionNote: item.transitionNote,
+            internalNote: item.internalNote,
+            includeClick: item.includeClick,
+            includePad: item.includePad,
+            isOptional: item.isOptional,
+            isHidden: item.isHidden,
+          },
+        });
+        itemIdMap.set(item.id, createdItem.id);
+
+        for (const requirement of item.roleRequirements) {
+          await tx.setlistRoleRequirement.create({
+            data: {
+              setlistItemId: createdItem.id,
+              role: requirement.role,
+              label: requirement.label,
+              minimumCount: requirement.minimumCount,
+              isRequired: requirement.isRequired,
+            },
+          });
+        }
+      }
+
+      for (const cue of source.cues) {
+        await tx.setlistCue.create({
+          data: {
+            setlistId: created.id,
+            setlistItemId: cue.setlistItemId ? (itemIdMap.get(cue.setlistItemId) ?? null) : null,
+            type: cue.type,
+            phase: cue.phase,
+            status: 'PENDING',
+            priority: cue.priority,
+            title: cue.title,
+            description: cue.description,
+            offsetSec: cue.offsetSec,
+            durationSec: cue.durationSec,
+            sortOrder: cue.sortOrder,
+            metadata: cue.metadata as Prisma.InputJsonValue | undefined,
+            isOptional: cue.isOptional,
+            isHidden: cue.isHidden,
+            responsibleParticipantId: null,
+            responsibleAssignmentId: null,
+            createdById: input.createdById,
+            completedById: null,
+            completedAt: null,
+          },
+        });
+      }
+
+      await this.recalculateStats(created.id, tx);
+
+      return await tx.setlist.findUniqueOrThrow({
+        where: { id: created.id },
+        include: {
+          items: { orderBy: { order: 'asc' }, include: itemDetailInclude },
+        },
+      });
+    });
   }
 
   async recalculateStats(setlistId: string, tx?: Prisma.TransactionClient) {

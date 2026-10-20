@@ -1,8 +1,8 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { z } from 'zod';
-import { PermissionsService } from '../../permissions/permissions.service';
 import { clean } from '../../shared/object.utils';
 import { mapSetlistItemDetail } from '../setlist.mapper';
+import { SetlistsAccessService } from '../setlists-access.service';
 import { assertReorderPayloadValid, computeInsertOrder, normalizeSetlistItemInput } from '../setlist.utils';
 import { SetlistsRepository } from '../setlists.repository';
 import { SetlistItemsRepository } from './setlist-items.repository';
@@ -48,27 +48,27 @@ export class SetlistItemsService {
   constructor(
     @Inject(SetlistItemsRepository) private readonly itemsRepository: SetlistItemsRepository,
     @Inject(SetlistsRepository) private readonly setlistsRepository: SetlistsRepository,
-    @Inject(PermissionsService) private readonly permissions: PermissionsService,
+    @Inject(SetlistsAccessService) private readonly access: SetlistsAccessService,
   ) {}
 
   async list(userId: string, organizationId: string, setlistId: string) {
-    await this.assertView(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertViewSetlists(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
     const items = await this.itemsRepository.listItems(setlistId);
     return items.map(mapSetlistItemDetail);
   }
 
   async get(userId: string, organizationId: string, setlistId: string, itemId: string) {
-    await this.assertView(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertViewSetlists(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
     const item = await this.itemsRepository.findItem(setlistId, itemId);
     if (!item) throw new NotFoundException('Item no encontrado');
     return mapSetlistItemDetail(item);
   }
 
   async create(userId: string, organizationId: string, setlistId: string, body: Record<string, unknown>) {
-    await this.assertManage(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertManageSetlists(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const parsed = createItemSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
@@ -129,8 +129,8 @@ export class SetlistItemsService {
   }
 
   async update(userId: string, organizationId: string, setlistId: string, itemId: string, body: Record<string, unknown>) {
-    await this.assertManage(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertManageSetlists(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const existing = await this.itemsRepository.findItem(setlistId, itemId);
     if (!existing) throw new NotFoundException('Item no encontrado');
@@ -186,8 +186,8 @@ export class SetlistItemsService {
   }
 
   async remove(userId: string, organizationId: string, setlistId: string, itemId: string) {
-    await this.assertManage(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertManageSetlists(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const existing = await this.itemsRepository.findItem(setlistId, itemId);
     if (!existing) throw new NotFoundException('Item no encontrado');
@@ -198,8 +198,8 @@ export class SetlistItemsService {
   }
 
   async duplicate(userId: string, organizationId: string, setlistId: string, itemId: string, includeCues = false) {
-    await this.assertManage(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertManageSetlists(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const existing = await this.itemsRepository.findItem(setlistId, itemId);
     if (!existing) throw new NotFoundException('Item no encontrado');
@@ -210,8 +210,8 @@ export class SetlistItemsService {
   }
 
   async reorder(userId: string, organizationId: string, setlistId: string, body: Record<string, unknown>) {
-    await this.assertManage(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertManageSetlists(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const parsed = reorderSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
@@ -224,21 +224,4 @@ export class SetlistItemsService {
     return updated.map(mapSetlistItemDetail);
   }
 
-  private async assertView(userId: string, organizationId: string) {
-    const membership = await this.permissions.assertOrganizationMember(userId, organizationId);
-    if (!this.permissions.canViewSetlists(membership.role)) throw new ForbiddenException('No tienes permisos para ver setlists');
-    return membership;
-  }
-
-  private async assertManage(userId: string, organizationId: string) {
-    const membership = await this.permissions.assertOrganizationMember(userId, organizationId);
-    if (!this.permissions.canManageSetlists(membership.role)) throw new ForbiddenException('No tienes permisos para gestionar setlists');
-    return membership;
-  }
-
-  private async assertSetlistInOrg(organizationId: string, setlistId: string) {
-    const setlist = await this.setlistsRepository.findById(setlistId, organizationId);
-    if (!setlist) throw new NotFoundException('Setlist no encontrado');
-    return setlist;
-  }
 }

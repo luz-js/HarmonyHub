@@ -65,6 +65,31 @@ export function assertSetlistStatusTransition(from: SetlistStatus, to: SetlistSt
   }
 }
 
+export class InvalidSetlistTemplateActionError extends Error {}
+
+export type SetlistTemplateAction = 'publish' | 'archive' | 'status-change';
+
+const TEMPLATE_ACTION_MESSAGES: Record<SetlistTemplateAction, string> = {
+  publish: 'Las plantillas no se publican',
+  archive: 'Las plantillas no se archivan',
+  'status-change': 'Las plantillas no usan flujo de publicacion ni archivado',
+};
+
+/** Las plantillas son estructuras reutilizables: nunca entran al ciclo DRAFT -> READY -> PUBLISHED -> ARCHIVED. */
+export function assertTemplateAllowsAction(isTemplate: boolean, action: SetlistTemplateAction) {
+  if (isTemplate) throw new InvalidSetlistTemplateActionError(TEMPLATE_ACTION_MESSAGES[action]);
+}
+
+/** Query params llegan como string: "false" debe ser false (z.coerce.boolean lo convertiria en true). */
+export function parseBooleanQueryParam(value: unknown): boolean | undefined {
+  if (value === undefined || value === null || value === '') return undefined;
+  if (typeof value === 'boolean') return value;
+  const normalized = String(value).trim().toLowerCase();
+  if (normalized === 'true' || normalized === '1') return true;
+  if (normalized === 'false' || normalized === '0') return false;
+  return undefined;
+}
+
 /** Valida que la lista de reordenamiento sea exactamente el conjunto de items existentes, sin duplicados ni faltantes. */
 export function assertReorderPayloadValid(itemIds: string[], existingIds: string[]) {
   if (itemIds.length === 0) throw new BadRequestException('La lista de reordenamiento no puede estar vacia');

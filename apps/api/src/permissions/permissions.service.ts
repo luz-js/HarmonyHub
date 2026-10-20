@@ -153,6 +153,21 @@ export class PermissionsService {
     return this.isLeadershipRole(role);
   }
 
+  // --- Eventos (Event / EventMusician) ---
+
+  canViewEvents(role: MembershipRole) {
+    return this.can(role, 'read');
+  }
+
+  canDeleteEvents(role: MembershipRole) {
+    return role === 'OWNER' || role === 'ADMIN';
+  }
+
+  /** El propio musico confirma o rechaza su asistencia; los lideres pueden ajustar la de cualquiera. */
+  canUpdateEventAttendance(role: MembershipRole, isSelf: boolean) {
+    return isSelf || this.can(role, 'events.manage');
+  }
+
   async getMembership(userId: string, organizationId: string) {
     if (!organizationId) throw new BadRequestException('Organizacion activa requerida');
     return this.prisma.membership.findUnique({

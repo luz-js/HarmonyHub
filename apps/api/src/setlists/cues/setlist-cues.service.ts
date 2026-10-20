@@ -4,7 +4,7 @@ import { PermissionsService } from '../../permissions/permissions.service';
 import { clean } from '../../shared/object.utils';
 import { assertReorderPayloadValid } from '../setlist.utils';
 import { SetlistItemsRepository } from '../items/setlist-items.repository';
-import { SetlistsRepository } from '../setlists.repository';
+import { SetlistsAccessService } from '../setlists-access.service';
 import { SetlistParticipantsRepository } from '../assignments/setlist-participants.repository';
 import { mapSetlistCue } from './setlist-cue.mapper';
 import {
@@ -81,34 +81,34 @@ export class SetlistCuesService {
     @Inject(SetlistCuesRepository) private readonly cuesRepository: SetlistCuesRepository,
     @Inject(SetlistItemsRepository) private readonly itemsRepository: SetlistItemsRepository,
     @Inject(SetlistParticipantsRepository) private readonly participantsRepository: SetlistParticipantsRepository,
-    @Inject(SetlistsRepository) private readonly setlistsRepository: SetlistsRepository,
     @Inject(PermissionsService) private readonly permissions: PermissionsService,
+    @Inject(SetlistsAccessService) private readonly access: SetlistsAccessService,
   ) {}
 
   async list(userId: string, organizationId: string, setlistId: string) {
-    await this.assertView(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertViewCues(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
     const cues = await this.cuesRepository.listBySetlist(setlistId);
     return this.mapListWithTimeline(setlistId, cues);
   }
 
   async listByItem(userId: string, organizationId: string, setlistId: string, itemId: string) {
-    await this.assertView(userId, organizationId);
-    await this.assertItemInSetlist(organizationId, setlistId, itemId);
+    await this.access.assertViewCues(userId, organizationId);
+    await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
     const cues = await this.cuesRepository.listByItem(itemId);
     return this.mapListWithTimeline(setlistId, cues);
   }
 
   async get(userId: string, organizationId: string, setlistId: string, cueId: string) {
-    await this.assertView(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertViewCues(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
     const cue = await this.findCue(setlistId, cueId);
     return this.mapSingleWithTimeline(setlistId, cue);
   }
 
   async create(userId: string, organizationId: string, setlistId: string, body: Record<string, unknown>) {
-    await this.assertManage(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertManageCues(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const parsed = createCueSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
@@ -151,8 +151,8 @@ export class SetlistCuesService {
   }
 
   async update(userId: string, organizationId: string, setlistId: string, cueId: string, body: Record<string, unknown>) {
-    await this.assertManage(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertManageCues(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
     const existing = await this.findCue(setlistId, cueId);
 
     const parsed = updateCueSchema.safeParse(body);
@@ -189,7 +189,7 @@ export class SetlistCuesService {
 
   async updateStatus(userId: string, organizationId: string, setlistId: string, cueId: string, body: Record<string, unknown>) {
     const membership = await this.permissions.assertOrganizationMember(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
     const cue = await this.findCue(setlistId, cueId);
 
     const isResponsible = cue.responsibleParticipant?.membership.user.id === userId;
@@ -204,8 +204,8 @@ export class SetlistCuesService {
   }
 
   async remove(userId: string, organizationId: string, setlistId: string, cueId: string) {
-    await this.assertManage(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertManageCues(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
     await this.findCue(setlistId, cueId);
 
     await this.cuesRepository.delete(cueId);
@@ -213,14 +213,14 @@ export class SetlistCuesService {
   }
 
   async reorder(userId: string, organizationId: string, setlistId: string, body: Record<string, unknown>) {
-    await this.assertManage(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertManageCues(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const parsed = reorderSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
     const { setlistItemId, phase, cueIds } = parsed.data;
 
-    if (setlistItemId) await this.assertItemInSetlist(organizationId, setlistId, setlistItemId);
+    if (setlistItemId) await this.access.assertItemInSetlist(organizationId, setlistId, setlistItemId);
 
     const scopeCues = await this.cuesRepository.listByScope(setlistId, setlistItemId, phase);
     assertReorderPayloadValid(cueIds, scopeCues.map((cue) => cue.id));
@@ -231,16 +231,16 @@ export class SetlistCuesService {
   }
 
   async duplicate(userId: string, organizationId: string, setlistId: string, cueId: string) {
-    await this.assertManage(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertManageCues(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const created = await this.cuesRepository.duplicate(setlistId, cueId);
     return this.mapSingleWithTimeline(setlistId, created);
   }
 
   async copy(userId: string, organizationId: string, setlistId: string, targetItemId: string, body: Record<string, unknown>) {
-    await this.assertManage(userId, organizationId);
-    await this.assertItemInSetlist(organizationId, setlistId, targetItemId);
+    await this.access.assertManageCues(userId, organizationId);
+    await this.access.assertItemInSetlist(organizationId, setlistId, targetItemId);
 
     const parsed = copySchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
@@ -259,8 +259,8 @@ export class SetlistCuesService {
   }
 
   async production(userId: string, organizationId: string, setlistId: string) {
-    await this.assertView(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertViewCues(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const [cues, items, participants] = await Promise.all([
       this.cuesRepository.listBySetlist(setlistId),
@@ -392,28 +392,4 @@ export class SetlistCuesService {
     return mapSetlistCue(cue, timelinePositionSec);
   }
 
-  private async assertView(userId: string, organizationId: string) {
-    const membership = await this.permissions.assertOrganizationMember(userId, organizationId);
-    if (!this.permissions.canViewSetlistCues(membership.role)) throw new ForbiddenException('No tienes permisos para ver la produccion del setlist');
-    return membership;
-  }
-
-  private async assertManage(userId: string, organizationId: string) {
-    const membership = await this.permissions.assertOrganizationMember(userId, organizationId);
-    if (!this.permissions.canManageSetlistCues(membership.role)) throw new ForbiddenException('No tienes permisos para gestionar cues');
-    return membership;
-  }
-
-  private async assertSetlistInOrg(organizationId: string, setlistId: string) {
-    const setlist = await this.setlistsRepository.findById(setlistId, organizationId);
-    if (!setlist) throw new NotFoundException('Setlist no encontrado');
-    return setlist;
-  }
-
-  private async assertItemInSetlist(organizationId: string, setlistId: string, itemId: string) {
-    await this.assertSetlistInOrg(organizationId, setlistId);
-    const item = await this.itemsRepository.findItem(setlistId, itemId);
-    if (!item) throw new NotFoundException('Item no encontrado');
-    return item;
-  }
 }

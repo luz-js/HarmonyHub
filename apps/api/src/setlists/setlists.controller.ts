@@ -23,6 +23,16 @@ export class SetlistsController {
     return this.setlistsService.create(user.id, organizationId, body ?? {});
   }
 
+  @Post(':id/save-as-template')
+  saveAsTemplate(
+    @CurrentUser() user: CurrentUserPayload,
+    @Headers('x-organization-id') organizationId: string,
+    @Param('id') id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    return this.setlistsService.saveAsTemplate(user.id, organizationId, id, body ?? {});
+  }
+
   @Patch(':id')
   update(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Body() body: Record<string, unknown>) {
     return this.setlistsService.update(user.id, organizationId, id, body ?? {});

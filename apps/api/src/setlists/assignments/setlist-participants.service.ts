@@ -1,7 +1,6 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { z } from 'zod';
-import { PermissionsService } from '../../permissions/permissions.service';
-import { SetlistsRepository } from '../setlists.repository';
+import { SetlistsAccessService } from '../setlists-access.service';
 import { mapSetlistParticipant } from './setlist-assignment.mapper';
 import { SetlistParticipantsRepository } from './setlist-participants.repository';
 
@@ -24,13 +23,12 @@ const updateParticipantSchema = z.object({
 export class SetlistParticipantsService {
   constructor(
     @Inject(SetlistParticipantsRepository) private readonly participantsRepository: SetlistParticipantsRepository,
-    @Inject(SetlistsRepository) private readonly setlistsRepository: SetlistsRepository,
-    @Inject(PermissionsService) private readonly permissions: PermissionsService,
+    @Inject(SetlistsAccessService) private readonly access: SetlistsAccessService,
   ) {}
 
   async list(userId: string, organizationId: string, setlistId: string) {
-    await this.assertView(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertViewAssignments(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
     const participants = await this.participantsRepository.list(setlistId);
     const counts = await this.participantsRepository.assignmentCounts(participants.map((participant) => participant.id));
     return participants.map((participant) => mapSetlistParticipant(participant, counts));
@@ -44,8 +42,8 @@ export class SetlistParticipantsService {
   }
 
   async add(userId: string, organizationId: string, setlistId: string, body: Record<string, unknown>) {
-    await this.assertManage(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertManageParticipants(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const parsed = addParticipantSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
@@ -69,8 +67,8 @@ export class SetlistParticipantsService {
   }
 
   async update(userId: string, organizationId: string, setlistId: string, participantId: string, body: Record<string, unknown>) {
-    await this.assertManage(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertManageParticipants(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
     await this.findParticipant(setlistId, participantId);
 
     const parsed = updateParticipantSchema.safeParse(body);
@@ -87,8 +85,8 @@ export class SetlistParticipantsService {
   }
 
   async remove(userId: string, organizationId: string, setlistId: string, participantId: string, removeAssignments: boolean) {
-    await this.assertManage(userId, organizationId);
-    await this.assertSetlistInOrg(organizationId, setlistId);
+    await this.access.assertManageParticipants(userId, organizationId);
+    await this.access.assertSetlistInOrg(organizationId, setlistId);
     await this.findParticipant(setlistId, participantId);
 
     const assignmentsCount = await this.participantsRepository.countAssignments(participantId);
@@ -106,23 +104,5 @@ export class SetlistParticipantsService {
     const participant = await this.participantsRepository.findById(setlistId, participantId);
     if (!participant) throw new NotFoundException('Participante no encontrado');
     return participant;
-  }
-
-  private async assertView(userId: string, organizationId: string) {
-    const membership = await this.permissions.assertOrganizationMember(userId, organizationId);
-    if (!this.permissions.canViewSetlistAssignments(membership.role)) throw new ForbiddenException('No tienes permisos para ver el equipo del setlist');
-    return membership;
-  }
-
-  private async assertManage(userId: string, organizationId: string) {
-    const membership = await this.permissions.assertOrganizationMember(userId, organizationId);
-    if (!this.permissions.canManageSetlistParticipants(membership.role)) throw new ForbiddenException('No tienes permisos para gestionar participantes');
-    return membership;
-  }
-
-  private async assertSetlistInOrg(organizationId: string, setlistId: string) {
-    const setlist = await this.setlistsRepository.findById(setlistId, organizationId);
-    if (!setlist) throw new NotFoundException('Setlist no encontrado');
-    return setlist;
   }
 }

@@ -44,7 +44,7 @@ export class OrganizationsService {
     return this.prisma.organization.create({
       data: {
         name,
-        slug: slugify(name),
+        slug: await this.uniqueSlug(name),
         type,
         description,
         primaryColor: primaryColor || '#18e0ae',
@@ -54,6 +54,17 @@ export class OrganizationsService {
       },
       include: { memberships: true },
     });
+  }
+
+  /** El slug es unico: si "alabanza" ya existe se usa "alabanza-2", "alabanza-3"... */
+  private async uniqueSlug(name: string) {
+    const base = slugify(name);
+    const taken = await this.prisma.organization.findMany({ where: { slug: { startsWith: base } }, select: { slug: true } });
+    const used = new Set(taken.map((item) => item.slug));
+    if (!used.has(base)) return base;
+    let suffix = 2;
+    while (used.has(`${base}-${suffix}`)) suffix += 1;
+    return `${base}-${suffix}`;
   }
 
   async detail(userId: string, id: string) {

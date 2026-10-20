@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Inject, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Ip, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { CurrentUser, CurrentUserPayload } from './current-user.decorator';
@@ -8,8 +8,8 @@ export class AuthController {
   constructor(@Inject(AuthService) private readonly authService: AuthService) {}
 
   @Post('login')
-  async login(@Body() body: unknown) {
-    const session = await this.authService.login(body ?? {});
+  async login(@Body() body: unknown, @Ip() ip: string) {
+    const session = await this.authService.login(body ?? {}, ip);
     return { ok: true, ...session };
   }
 

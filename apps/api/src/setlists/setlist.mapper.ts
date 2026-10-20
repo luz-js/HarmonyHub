@@ -28,6 +28,7 @@ type MapperSetlistSummary = {
   name: string;
   description: string | null;
   status: string;
+  isTemplate: boolean;
   estimatedSec: number;
   itemCount: number;
   updatedAt: Date;
@@ -40,6 +41,7 @@ type MapperSetlistDetail = {
   name: string;
   description: string | null;
   status: string;
+  isTemplate: boolean;
   estimatedSec: number;
   itemCount: number;
   createdAt: Date;
@@ -80,6 +82,7 @@ export function mapSetlistSummary(setlist: MapperSetlistSummary) {
     name: setlist.name,
     description: setlist.description,
     status: setlist.status,
+    isTemplate: setlist.isTemplate,
     estimatedSec: setlist.estimatedSec,
     itemCount: setlist.itemCount,
     songsCount,
@@ -95,6 +98,7 @@ export function mapSetlistDetail(setlist: MapperSetlistDetail) {
     name: setlist.name,
     description: setlist.description,
     status: setlist.status,
+    isTemplate: setlist.isTemplate,
     estimatedSec: setlist.estimatedSec,
     itemCount: setlist.itemCount,
     createdAt: setlist.createdAt.toISOString(),

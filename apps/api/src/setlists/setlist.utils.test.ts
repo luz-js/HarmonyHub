@@ -6,6 +6,9 @@ import {
   calculateSetlistEstimatedSec,
   computeInsertOrder,
   InvalidSetlistStatusTransitionError,
+  InvalidSetlistTemplateActionError,
+  assertTemplateAllowsAction,
+  parseBooleanQueryParam,
   normalizeSetlistItemInput,
   resolveSetlistItemEffectiveValues,
 } from './setlist.utils';
@@ -96,4 +99,27 @@ test('computeInsertOrder inserta al final cuando el indice es igual o mayor a la
 
 test('computeInsertOrder no permite indices negativos (clampa a 0)', () => {
   assert.deepEqual(computeInsertOrder(['a', 'b', 'new'], 'new', -5), ['new', 'a', 'b']);
+});
+
+test('assertTemplateAllowsAction bloquea publicar, archivar y cambiar estado en plantillas', () => {
+  assert.throws(() => assertTemplateAllowsAction(true, 'publish'), InvalidSetlistTemplateActionError);
+  assert.throws(() => assertTemplateAllowsAction(true, 'archive'), /no se archivan/);
+  assert.throws(() => assertTemplateAllowsAction(true, 'status-change'), InvalidSetlistTemplateActionError);
+});
+
+test('assertTemplateAllowsAction permite todo en setlists normales', () => {
+  assert.doesNotThrow(() => assertTemplateAllowsAction(false, 'publish'));
+  assert.doesNotThrow(() => assertTemplateAllowsAction(false, 'archive'));
+  assert.doesNotThrow(() => assertTemplateAllowsAction(false, 'status-change'));
+});
+
+test('parseBooleanQueryParam interpreta "false" como false y valores vacios como undefined', () => {
+  assert.equal(parseBooleanQueryParam('true'), true);
+  assert.equal(parseBooleanQueryParam('false'), false);
+  assert.equal(parseBooleanQueryParam('1'), true);
+  assert.equal(parseBooleanQueryParam('0'), false);
+  assert.equal(parseBooleanQueryParam(true), true);
+  assert.equal(parseBooleanQueryParam(undefined), undefined);
+  assert.equal(parseBooleanQueryParam(''), undefined);
+  assert.equal(parseBooleanQueryParam('quizas'), undefined);
 });
