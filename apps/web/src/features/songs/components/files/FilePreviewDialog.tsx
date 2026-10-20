@@ -64,23 +64,23 @@ export function FilePreviewDialog({ songFile, songTitle, onClose }: { songFile: 
     <OverlayDialog title={songFile.title} subtitle={`${formatBytes(songFile.file.sizeBytes)} · ${songFile.file.mimeType || 'Tipo desconocido'}`} onClose={onClose}>
       <div className="space-y-4">
         {!previewable && (
-          <div className="rounded-xl border border-dashed border-[#1b2c40] bg-[#081821] p-6 text-center text-sm text-muted">
+          <div className="rounded-xl border border-dashed border-[#30333A] bg-[#1C2436] p-6 text-center text-sm text-muted">
             No hay un visor seguro disponible para este tipo de archivo. Descárgalo para abrirlo.
           </div>
         )}
         {previewable && loading && (
-          <div className="flex h-72 items-center justify-center rounded-xl border border-[#1b2c40] bg-[#081821] text-muted">
+          <div className="flex h-72 items-center justify-center rounded-xl border border-[#30333A] bg-[#1C2436] text-muted">
             <LoaderCircle className="h-6 w-6 animate-spin" />
           </div>
         )}
-        {previewable && error && <p className="text-sm text-red-200">{error}</p>}
+        {previewable && error && <p className="text-sm text-[#F7A39A]">{error}</p>}
         {previewable && !loading && !error && objectUrl && isPdfFile(songFile.file.mimeType) && (
-          <object data={objectUrl} type="application/pdf" className="h-[70vh] w-full rounded-xl border border-[#1b2c40]">
+          <object data={objectUrl} type="application/pdf" className="h-[70vh] w-full rounded-xl border border-[#30333A]">
             <p className="p-4 text-sm text-muted">Tu navegador no puede previsualizar este PDF. Descárgalo para verlo.</p>
           </object>
         )}
         {previewable && !loading && !error && objectUrl && isImageFile(songFile.file.mimeType) && (
-          <img src={objectUrl} alt={songFile.title} className="max-h-[70vh] w-full rounded-xl border border-[#1b2c40] object-contain" loading="lazy" />
+          <img src={objectUrl} alt={songFile.title} className="max-h-[70vh] w-full rounded-xl border border-[#30333A] object-contain" loading="lazy" />
         )}
         <div className="flex justify-end">
           <button type="button" className="btn-primary" onClick={() => void handleDownload()}><Download className="h-4 w-4" /> Descargar</button>

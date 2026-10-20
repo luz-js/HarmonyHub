@@ -32,7 +32,7 @@ export function SetlistItemsList({
   }
 
   async function handleDelete(item: SetlistItem) {
-    if (!window.confirm(`Eliminar "${item.title}" del setlist?`)) return;
+    if (!window.confirm(`¿Quitar "${item.title}" del setlist?`)) return;
     await deleteMutation.mutateAsync(item.id);
   }
 

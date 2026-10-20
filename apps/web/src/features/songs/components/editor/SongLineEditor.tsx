@@ -50,7 +50,7 @@ export function SongLineEditor({
             value={line.lyrics}
             onChange={(event) => onChange({ lyrics: event.target.value })}
             onKeyDown={handleLyricsKeyDown}
-            placeholder="Letra de la linea"
+            placeholder="Letra de la línea"
             readOnly={readOnly}
             spellCheck={false}
           />
@@ -58,11 +58,11 @@ export function SongLineEditor({
       </div>
       {!readOnly && (
         <div className="flex items-center gap-1 opacity-80 md:opacity-0 md:group-hover:opacity-100">
-          <button type="button" className="icon-button" aria-label="Mover linea arriba" onClick={() => onMove('UP')}><ArrowUp className="h-3.5 w-3.5" /></button>
-          <button type="button" className="icon-button" aria-label="Mover linea abajo" onClick={() => onMove('DOWN')}><ArrowDown className="h-3.5 w-3.5" /></button>
-          <button type="button" className="icon-button" aria-label="Duplicar linea" onClick={onDuplicate}><Copy className="h-3.5 w-3.5" /></button>
-          <button type="button" className="icon-button" aria-label="Insertar linea debajo" onClick={onInsertAfter}><Plus className="h-3.5 w-3.5" /></button>
-          <button type="button" className="icon-button text-red-200" aria-label="Borrar linea" onClick={onDelete}><Trash2 className="h-3.5 w-3.5" /></button>
+          <button type="button" className="icon-button" aria-label="Mover línea arriba" onClick={() => onMove('UP')}><ArrowUp className="h-3.5 w-3.5" /></button>
+          <button type="button" className="icon-button" aria-label="Mover línea abajo" onClick={() => onMove('DOWN')}><ArrowDown className="h-3.5 w-3.5" /></button>
+          <button type="button" className="icon-button" aria-label="Duplicar línea" onClick={onDuplicate}><Copy className="h-3.5 w-3.5" /></button>
+          <button type="button" className="icon-button" aria-label="Insertar línea debajo" onClick={onInsertAfter}><Plus className="h-3.5 w-3.5" /></button>
+          <button type="button" className="icon-button text-[#F7A39A]" aria-label="Borrar línea" onClick={onDelete}><Trash2 className="h-3.5 w-3.5" /></button>
         </div>
       )}
     </div>

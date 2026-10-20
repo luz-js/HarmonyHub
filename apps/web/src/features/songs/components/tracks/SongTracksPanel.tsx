@@ -107,13 +107,13 @@ function songTrackFileName(songTitle: string, track: SongTrack) {
 }
 
 function TrackTypeBadge({ type }: { type: SongTrackType }) {
-  return <span className="rounded-full border border-[#173347] bg-[#081821] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#8cdff0]">{trackTypeLabels[type]}</span>;
+  return <span className="rounded-full border border-[#30333A] bg-[#1C2436] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#8FB4FF]">{trackTypeLabels[type]}</span>;
 }
 
 function TrackEmptyState({ canManage, onUpload, onExternal }: { canManage: boolean; onUpload: () => void; onExternal: () => void }) {
   return (
-    <div className="rounded-2xl border border-dashed border-[#1b2c40] bg-[#08131d] px-6 py-10 text-center">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#173347] bg-[#0b1b24] text-[#00E6A3]">
+    <div className="rounded-2xl border border-dashed border-[#30333A] bg-[#141518] px-6 py-10 text-center">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#30333A] bg-[#23252A] text-primary">
         <FileAudio className="h-6 w-6" />
       </div>
       <h3 className="mt-5 text-lg font-bold text-white">Esta canción todavía no tiene pistas.</h3>
@@ -206,16 +206,16 @@ function TrackRow({
   canMoveDown: boolean;
 }) {
   return (
-    <article className={`rounded-2xl border p-4 transition ${isCurrent ? 'border-[#00E6A3]/35 bg-[#0c1e22]' : 'border-[#1b2c40] bg-[#091522]'}`}>
+    <article className={`rounded-2xl border p-4 transition ${isCurrent ? 'border-primary/35 bg-primary-tint' : 'border-[#30333A] bg-[#141518]'}`}>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="flex items-center gap-3">
-          <button type="button" className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#184056] bg-[#071118] text-[#00E6A3]" onClick={onPlay} aria-label={isPlaying ? 'Pausar' : 'Reproducir'}>
+          <button type="button" className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#3D4048] bg-[#141518] text-primary" onClick={onPlay} aria-label={isPlaying ? 'Pausar' : 'Reproducir'}>
             {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
           </button>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <p className="truncate text-sm font-semibold text-white">{track.name}</p>
-              {track.isPrimary && <span className="rounded-full border border-[#00E6A3]/25 bg-[#00E6A3]/12 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#7ef7cc]">Principal</span>}
+              {track.isPrimary && <span className="rounded-full border border-primary/25 bg-primary/12 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-primary-soft">Principal</span>}
               {!track.active && <span className="badge">Inactiva</span>}
             </div>
             <p className="mt-1 text-xs text-muted">
@@ -469,7 +469,7 @@ export function SongTracksPanel({
   }
 
   async function handleDelete(track: SongTrack) {
-    if (!window.confirm(`Eliminar la pista "${track.name}"?`)) return;
+    if (!window.confirm(`¿Eliminar la pista "${track.name}"?`)) return;
     await deleteMutation.mutateAsync(track.id);
     notifyChange();
   }
@@ -479,10 +479,10 @@ export function SongTracksPanel({
 
   return (
     <div className="space-y-5">
-      <section className="rounded-2xl border border-[#1b2c40] bg-[#07131d] p-4">
+      <section className="rounded-2xl border border-[#30333A] bg-[#141518] p-4">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#00D4C8]">Biblioteca de pistas</p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Biblioteca de pistas</p>
             <h2 className="mt-2 text-xl font-bold text-white">Audios de ensayo, stems y referencias</h2>
             <p className="mt-1 text-sm text-muted">Reproduce una pista a la vez, ordénalas por contexto y define una principal por canción o por versión.</p>
           </div>
@@ -514,7 +514,7 @@ export function SongTracksPanel({
       </section>
 
       {loading && <section className="panel p-5 text-muted">Cargando pistas...</section>}
-      {error && <section className="rounded-md border border-[#ff5c77]/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</section>}
+      {error && <section className="rounded-md border border-[#F27A6E]/30 bg-[#2A1817] p-4 text-sm text-[#F7A39A]">{error}</section>}
       {!loading && !error && filteredTracks.length === 0 && <TrackEmptyState canManage={canManage} onUpload={() => setShowUploadDialog(true)} onExternal={() => setShowExternalDialog(true)} />}
 
       {!loading && !error && filteredTracks.length > 0 && (
@@ -653,8 +653,8 @@ export function SongTracksPanel({
         </div>
       )}
 
-      {playerError && <section className="rounded-md border border-[#ff5c77]/30 bg-red-500/10 p-4 text-sm text-red-200">{playerError}</section>}
-      {playerLoading && <section className="rounded-md border border-[#1b2c40] bg-[#08131d] p-4 text-sm text-muted">Preparando reproducción...</section>}
+      {playerError && <section className="rounded-md border border-[#F27A6E]/30 bg-[#2A1817] p-4 text-sm text-[#F7A39A]">{playerError}</section>}
+      {playerLoading && <section className="rounded-md border border-[#30333A] bg-[#141518] p-4 text-sm text-muted">Preparando reproducción...</section>}
 
       {showUploadDialog && (
         <OverlayDialog title="Subir pista" subtitle="Formatos admitidos: mp3, wav, ogg, m4a, aac, flac, webm · Máximo 100 MB" onClose={() => {
@@ -662,24 +662,24 @@ export function SongTracksPanel({
           setShowUploadDialog(false);
         }}>
           <form className="space-y-4" onSubmit={submitUpload}>
-            <label className="block rounded-2xl border border-dashed border-[#1b2c40] bg-[#06101a] p-4 text-sm text-muted">
+            <label className="block rounded-2xl border border-dashed border-[#30333A] bg-[#0C0D0F] p-4 text-sm text-muted">
               <span className="mb-2 block text-white">Archivo de audio</span>
               <input type="file" accept=".mp3,.wav,.ogg,.m4a,.aac,.flac,.webm,audio/*" onChange={(event) => void handleUploadFileChange(event)} />
               {uploadFile && <p className="mt-2 text-xs text-muted">{uploadFile.name} · {formatBytes(uploadFile.size)}</p>}
             </label>
             <TrackFormFields draft={draft} versions={versions} onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))} />
             {uploadProgress !== null && (
-              <div className="rounded-xl border border-[#173347] bg-[#081821] p-3 text-sm text-muted">
+              <div className="rounded-xl border border-[#30333A] bg-[#1C2436] p-3 text-sm text-muted">
                 <div className="flex items-center justify-between gap-3">
                   <span>Subiendo...</span>
                   <span>{uploadProgress}%</span>
                 </div>
-                <div className="mt-2 h-2 rounded-full bg-[#102635]">
-                  <div className="h-2 rounded-full bg-[#00E6A3]" style={{ width: `${uploadProgress}%` }} />
+                <div className="mt-2 h-2 rounded-full bg-[#23252A]">
+                  <div className="h-2 rounded-full bg-primary" style={{ width: `${uploadProgress}%` }} />
                 </div>
               </div>
             )}
-            {uploadError && <p className="text-sm text-red-200">{uploadError}</p>}
+            {uploadError && <p className="text-sm text-[#F7A39A]">{uploadError}</p>}
             <div className="flex justify-end gap-3">
               <button type="button" className="btn-ghost" onClick={() => {
                 resetUploadState();
@@ -701,7 +701,7 @@ export function SongTracksPanel({
         }}>
           <form className="space-y-4" onSubmit={submitExternal}>
             <TrackFormFields draft={externalDraft} versions={versions} onChange={(patch) => setExternalDraft((current) => ({ ...current, ...patch }))} allowUrl />
-            {externalError && <p className="text-sm text-red-200">{externalError}</p>}
+            {externalError && <p className="text-sm text-[#F7A39A]">{externalError}</p>}
             <div className="flex justify-end gap-3">
               <button type="button" className="btn-ghost" onClick={() => {
                 resetExternalState();
@@ -724,7 +724,7 @@ export function SongTracksPanel({
               <input type="checkbox" checked={draft.active} onChange={(event) => setDraft((current) => ({ ...current, active: event.target.checked }))} />
               Pista activa
             </label>
-            {editError && <p className="text-sm text-red-200">{editError}</p>}
+            {editError && <p className="text-sm text-[#F7A39A]">{editError}</p>}
             <div className="flex justify-end gap-3">
               <button type="button" className="btn-ghost" onClick={() => setEditingTrack(null)}>Cancelar</button>
               <button className="btn-primary" disabled={updateMutation.isPending}>
@@ -760,8 +760,8 @@ export function SongTracksPanel({
               </label>
             </div>
             <p className="text-xs text-muted">Solo se copian las pistas asociadas a la versión de origen. Las pistas generales de la canción no se incluyen.</p>
-            {copyError && <p className="text-sm text-red-200">{copyError}</p>}
-            {copyResult && <p className="text-sm text-[#7ef7cc]">{copyResult}</p>}
+            {copyError && <p className="text-sm text-[#F7A39A]">{copyError}</p>}
+            {copyResult && <p className="text-sm text-warning-soft">{copyResult}</p>}
             <div className="flex justify-end gap-3">
               <button type="button" className="btn-ghost" onClick={() => setShowCopyDialog(false)}>Cerrar</button>
               <button className="btn-primary" disabled={copyMutation.isPending}>

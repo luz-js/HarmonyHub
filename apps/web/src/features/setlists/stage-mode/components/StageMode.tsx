@@ -42,7 +42,7 @@ export function StageMode({ organizationId, setlistId, setlistName, onExit }: { 
   });
 
   return (
-    <div ref={containerRef} className="fixed inset-0 z-50 flex flex-col bg-[#050c13]">
+    <div ref={containerRef} className="fixed inset-0 z-50 flex flex-col bg-[#111214]">
       <StageTopBar
         name={setlistName}
         showClock={state.showClock}

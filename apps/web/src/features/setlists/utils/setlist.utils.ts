@@ -83,3 +83,16 @@ export function swapItemOrder(items: Array<{ id: string }>, index: number, direc
   [ids[index], ids[targetIndex]] = [ids[targetIndex], ids[index]];
   return ids;
 }
+
+/** Opciones para el selector "Partir desde plantilla" del dialogo de creacion. */
+export function toTemplateOptions(setlists: Array<{ id: string; name: string; description: string | null; isTemplate: boolean }>) {
+  return setlists.filter((setlist) => setlist.isTemplate).map(({ id, name, description }) => ({ id, name, description }));
+}
+
+/** Normaliza el borrador del dialogo; devuelve null si falta el nombre. Un setlist desde plantilla siempre nace en borrador. */
+export function buildCreateSetlistInput(draft: { name: string; description: string; sourceTemplateId?: string | null }) {
+  const name = draft.name.trim();
+  if (!name) return null;
+  const description = draft.description.trim() || undefined;
+  return draft.sourceTemplateId ? { name, description, sourceTemplateId: draft.sourceTemplateId } : { name, description };
+}

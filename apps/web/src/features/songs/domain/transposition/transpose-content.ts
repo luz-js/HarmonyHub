@@ -34,21 +34,21 @@ export function validateTranspositionIntegrity(before: SongContent, after: SongC
   const source = normalizeSongContent(before);
   const target = normalizeSongContent(after);
   const errors: string[] = [];
-  if (source.sections.length !== target.sections.length) errors.push('La cantidad de secciones cambio.');
+  if (source.sections.length !== target.sections.length) errors.push('La cantidad de secciones cambió.');
 
   source.sections.forEach((section, sectionIndex) => {
     const nextSection = target.sections[sectionIndex];
     if (!nextSection) return;
-    if (section.id !== nextSection.id) errors.push(`La seccion ${section.name} cambio de id.`);
-    if (section.order !== nextSection.order) errors.push(`La seccion ${section.name} cambio de orden.`);
-    if (section.lyrics !== nextSection.lyrics) errors.push(`La letra de ${section.name} cambio.`);
-    if (section.lines.length !== nextSection.lines.length) errors.push(`La cantidad de lineas de ${section.name} cambio.`);
+    if (section.id !== nextSection.id) errors.push(`La sección ${section.name} cambió de id.`);
+    if (section.order !== nextSection.order) errors.push(`La sección ${section.name} cambió de orden.`);
+    if (section.lyrics !== nextSection.lyrics) errors.push(`La letra de ${section.name} cambió.`);
+    if (section.lines.length !== nextSection.lines.length) errors.push(`La cantidad de líneas de ${section.name} cambió.`);
     section.lines.forEach((line, lineIndex) => {
       const nextLine = nextSection.lines[lineIndex];
       if (!nextLine) return;
-      if (line.id !== nextLine.id) errors.push(`Una linea de ${section.name} cambio de id.`);
-      if (line.order !== nextLine.order) errors.push(`Una linea de ${section.name} cambio de orden.`);
-      if (line.lyrics !== nextLine.lyrics) errors.push(`Una letra de ${section.name} cambio.`);
+      if (line.id !== nextLine.id) errors.push(`Una línea de ${section.name} cambió de id.`);
+      if (line.order !== nextLine.order) errors.push(`Una línea de ${section.name} cambió de orden.`);
+      if (line.lyrics !== nextLine.lyrics) errors.push(`Una letra de ${section.name} cambió.`);
     });
   });
 

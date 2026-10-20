@@ -47,7 +47,7 @@ export function ThreadDetail({
       onClose={onClose}
     >
       {threadQuery.isLoading && <div className="flex justify-center py-8"><LoaderCircle className="h-6 w-6 animate-spin text-muted" /></div>}
-      {threadQuery.error && <p className="text-sm text-red-200">No se pudo cargar la conversación.</p>}
+      {threadQuery.error && <p className="text-sm text-[#F7A39A]">No se pudo cargar la conversación.</p>}
 
       {thread && (
         <div className="space-y-4">

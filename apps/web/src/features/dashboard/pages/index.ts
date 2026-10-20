@@ -1,1 +1,2 @@
-export { Dashboard as DashboardPage } from '../../../dashboard';
+export * from './ActivityPage';
+export * from './DashboardPage';

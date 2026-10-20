@@ -27,7 +27,7 @@ export function RestoreRevisionDialog({
   return (
     <OverlayDialog title={`Restaurar revisión ${revision.revisionNumber}`} onClose={onClose}>
       <form className="space-y-4" onSubmit={submit}>
-        <p className="rounded-xl border border-amber-300/20 bg-amber-500/10 p-3 text-sm text-amber-100">
+        <p className="rounded-xl border border-warning/25 bg-warning-tint p-3 text-sm text-warning-soft">
           Restaurar esta revisión reemplazará el contenido actual de la versión. El estado actual quedará guardado en el historial.
         </p>
         <div className="grid gap-2 text-sm text-muted">
@@ -40,7 +40,7 @@ export function RestoreRevisionDialog({
           <span className="label">Razón (opcional)</span>
           <input className="input" value={reason} onChange={(event) => setReason(event.target.value)} maxLength={300} placeholder="Motivo de la restauración" />
         </label>
-        {error && <p className="text-sm text-red-200">{error}</p>}
+        {error && <p className="text-sm text-[#F7A39A]">{error}</p>}
         <div className="flex justify-end gap-3">
           <button type="button" className="btn-ghost" onClick={onClose}>Cancelar</button>
           <button className="btn-primary" disabled={submitting}>

@@ -60,10 +60,10 @@ export function SongCollaborationPanel({
 
   return (
     <div className="space-y-5">
-      <section className="rounded-2xl border border-[#1b2c40] bg-[#07131d] p-4">
+      <section className="rounded-2xl border border-[#30333A] bg-[#141518] p-4">
         <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#00D4C8]">Colaboración</p>
+            <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Colaboración</p>
             <h2 className="mt-2 text-xl font-bold text-white">Conversaciones del equipo</h2>
             <p className="mt-1 text-sm text-muted">Discute decisiones sobre la canción, una versión o una sección específica.</p>
           </div>
@@ -78,11 +78,11 @@ export function SongCollaborationPanel({
       </section>
 
       {loading && <section className="panel p-5 text-muted">Cargando conversaciones...</section>}
-      {error && <section className="rounded-md border border-[#ff5c77]/30 bg-red-500/10 p-4 text-sm text-red-200">{error}</section>}
+      {error && <section className="rounded-md border border-[#F27A6E]/30 bg-[#2A1817] p-4 text-sm text-[#F7A39A]">{error}</section>}
 
       {!loading && !error && visibleThreads.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-[#1b2c40] bg-[#08131d] px-6 py-10 text-center">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#173347] bg-[#0b1b24] text-[#00E6A3]">
+        <div className="rounded-2xl border border-dashed border-[#30333A] bg-[#141518] px-6 py-10 text-center">
+          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#30333A] bg-[#23252A] text-primary">
             <MessagesSquare className="h-6 w-6" />
           </div>
           <h3 className="mt-5 text-lg font-bold text-white">Todavía no hay conversaciones.</h3>

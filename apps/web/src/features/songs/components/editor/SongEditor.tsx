@@ -198,17 +198,17 @@ export function SongEditor({ songId, versionId, readOnly, onSaved }: SongEditorP
   }
 
   if (versionQuery.isLoading) return <div className="panel animate-pulse p-5 text-muted">Cargando editor...</div>;
-  if (versionQuery.error) return <div className="panel border-red-500/30 p-5 text-red-200">No se pudo cargar esta version.</div>;
-  if (!versionQuery.data) return <div className="panel p-5 text-muted">Selecciona una version para editar.</div>;
+  if (versionQuery.error) return <div className="panel border-[#F27A6E]/30 p-5 text-[#F7A39A]">No se pudo cargar esta versión.</div>;
+  if (!versionQuery.data) return <div className="panel p-5 text-muted">Selecciona una versión para editar.</div>;
 
   return (
     <section className="space-y-4">
       {legacyNotice && (
-        <div className="rounded-md border border-amber-300/20 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
-          Esta version usa un formato anterior. Al guardar, se convertira al nuevo editor estructurado.
+        <div className="rounded-md border border-warning/25 bg-warning-tint px-4 py-3 text-sm text-warning-soft">
+          Esta versión usa un formato anterior. Al guardar, se convertirá al nuevo editor estructurado.
         </div>
       )}
-      {readOnly && <div className="rounded-md border border-white/10 bg-[#091522] px-4 py-3 text-sm text-muted">Modo solo lectura. Tu rol actual no permite modificar esta version.</div>}
+      {readOnly && <div className="rounded-md border border-white/10 bg-[#141518] px-4 py-3 text-sm text-muted">Modo solo lectura. Tu rol actual no permite modificar esta versión.</div>}
       <SongEditorToolbar
         versionName={versionQuery.data.name}
         saveState={saveState}
@@ -231,7 +231,7 @@ export function SongEditor({ songId, versionId, readOnly, onSaved }: SongEditorP
           dispatch({ type: 'LOAD_CONTENT', payload: undoTransposeSnapshot });
           setUndoTransposeSnapshot(null);
           setTemporaryKey('');
-        }}>Deshacer transposicion</button>}
+        }}>Deshacer transposición</button>}
       </div>
       <div className={showPreview ? 'grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]' : 'grid gap-5'}>
         <SongEditorCanvas
@@ -245,7 +245,7 @@ export function SongEditor({ songId, versionId, readOnly, onSaved }: SongEditorP
           onDeleteSection={(sectionId) => {
             const section = content.sections.find((item) => item.id === sectionId);
             const hasContent = section?.lines.some((line) => line.chords.trim() || line.lyrics.trim()) || section?.notes?.trim();
-            if (!hasContent || window.confirm('Esta seccion tiene contenido. Deseas borrarla?')) dispatch({ type: 'DELETE_SECTION', sectionId });
+            if (!hasContent || window.confirm('Esta sección tiene contenido. ¿Deseas borrarla?')) dispatch({ type: 'DELETE_SECTION', sectionId });
           }}
           onDuplicateSection={(sectionId) => dispatch({ type: 'DUPLICATE_SECTION', sectionId })}
           onMoveSection={(sectionId, direction) => dispatch({ type: 'MOVE_SECTION', sectionId, direction })}
@@ -275,7 +275,7 @@ export function SongEditor({ songId, versionId, readOnly, onSaved }: SongEditorP
         content={content}
         readOnly={readOnly}
         onTemporary={(key, nextContent) => {
-          if (isDirty && !window.confirm('Tienes cambios sin guardar. La transposicion se aplicara al contenido actualmente visible.')) return;
+          if (isDirty && !window.confirm('Tienes cambios sin guardar. La transposición se aplicará al contenido actualmente visible.')) return;
           setUndoTransposeSnapshot(content);
           setTemporaryKey(key);
           dispatch({ type: 'LOAD_CONTENT', payload: nextContent });

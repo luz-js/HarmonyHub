@@ -7,8 +7,8 @@ function AudioProgressBar({ currentTime, duration, onSeek }: { currentTime: numb
     <div className="flex items-center gap-3">
       <span className="w-12 text-right text-[11px] text-muted">{formatAudioTime(currentTime)}</span>
       <input
-        aria-label="Posicion de reproduccion"
-        className="h-1.5 flex-1 cursor-pointer accent-[#00E6A3]"
+        aria-label="Posición de reproducción"
+        className="h-1.5 flex-1 cursor-pointer accent-primary"
         type="range"
         min={0}
         max={duration || 0}
@@ -29,7 +29,7 @@ function VolumeControl({ volume, muted, onVolumeChange, onToggleMute }: { volume
       </button>
       <input
         aria-label="Volumen"
-        className="h-1.5 w-24 cursor-pointer accent-[#00E6A3]"
+        className="h-1.5 w-24 cursor-pointer accent-primary"
         type="range"
         min={0}
         max={1}
@@ -71,12 +71,12 @@ export function PersistentAudioPlayer() {
   if (!currentTrack) return null;
 
   return (
-    <section className="fixed inset-x-0 bottom-4 z-30 mx-4 rounded-2xl border border-[#184056] bg-[#08131d]/95 p-4 shadow-[0_24px_90px_rgba(0,0,0,0.45)] backdrop-blur lg:inset-x-auto lg:left-1/2 lg:w-[min(960px,calc(100vw-2rem))] lg:-translate-x-1/2">
+    <section className="fixed inset-x-0 bottom-4 z-30 mx-4 rounded-2xl border border-[#3D4048] bg-[#141518]/95 p-4 shadow-[0_24px_90px_rgba(0,0,0,0.45)] backdrop-blur lg:inset-x-auto lg:left-1/2 lg:w-[min(960px,calc(100vw-2rem))] lg:-translate-x-1/2">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
         <div className="flex min-w-0 items-center gap-3 lg:w-[340px]">
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#184056] bg-[#0b1b24] text-[#8cdff0] disabled:opacity-40"
+            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#3D4048] bg-[#23252A] text-[#8FB4FF] disabled:opacity-40"
             onClick={playPrevious}
             disabled={!hasPrevious}
             aria-label="Pista anterior"
@@ -85,7 +85,7 @@ export function PersistentAudioPlayer() {
           </button>
           <button
             type="button"
-            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#184056] bg-[#0b1b24] text-[#00E6A3]"
+            className="flex h-12 w-12 items-center justify-center rounded-2xl border border-[#3D4048] bg-[#23252A] text-primary"
             onClick={() => {
               if (!currentTrack) return;
               if (isPlaying) {
@@ -100,7 +100,7 @@ export function PersistentAudioPlayer() {
           </button>
           <button
             type="button"
-            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#184056] bg-[#0b1b24] text-[#8cdff0] disabled:opacity-40"
+            className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#3D4048] bg-[#23252A] text-[#8FB4FF] disabled:opacity-40"
             onClick={playNext}
             disabled={!hasNext}
             aria-label="Pista siguiente"
@@ -130,7 +130,7 @@ export function PersistentAudioPlayer() {
             </div>
             <VolumeControl volume={volume} muted={muted} onVolumeChange={setVolume} onToggleMute={toggleMute} />
           </div>
-          {error && <p className="text-xs text-red-200">{error}</p>}
+          {error && <p className="text-xs text-[#F7A39A]">{error}</p>}
         </div>
       </div>
     </section>

@@ -53,7 +53,7 @@ export function SetlistCueCard({
   const Icon = getCueTypeIcon(cue.type);
 
   return (
-    <div className="rounded-lg border border-[#1b2c40] bg-[#0a1420] p-2.5">
+    <div className="rounded-lg border border-[#30333A] bg-[#1A1B1F] p-2.5">
       <div className="flex items-start justify-between gap-2">
         <div className="flex min-w-0 items-center gap-2">
           <Icon className="h-4 w-4 shrink-0 text-[var(--primary)]" />
@@ -84,7 +84,7 @@ export function SetlistCueCard({
               <button type="button" className="btn-ghost h-7 w-7 p-0" aria-label="Duplicar cue" onClick={onDuplicate}>
                 <Copy className="h-3.5 w-3.5" />
               </button>
-              <button type="button" className="btn-ghost h-7 w-7 p-0 text-red-300" aria-label="Eliminar cue" onClick={onDelete}>
+              <button type="button" className="btn-ghost h-7 w-7 p-0 text-[#F7A39A]" aria-label="Eliminar cue" onClick={onDelete}>
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
             </>
@@ -141,7 +141,7 @@ export function SetlistCueCard({
           {responsibleOpen && (
             <>
               <button type="button" aria-label="Cerrar" className="fixed inset-0 z-10 cursor-default" onClick={() => setResponsibleOpen(false)} />
-              <div className="absolute right-0 top-full z-20 mt-1 w-64 rounded-lg border border-[#1b2c40] bg-[#0d1c2b] p-2 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+              <div className="absolute right-0 top-full z-20 mt-1 w-64 rounded-lg border border-[#30333A] bg-[#23252A] p-2 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
                 <CueResponsiblePicker
                   organizationId={organizationId}
                   setlistId={setlistId}
@@ -163,7 +163,7 @@ export function SetlistCueCard({
       {warnings.length > 0 && (
         <div className="mt-2 space-y-1">
           {warnings.map((warning) => (
-            <p key={warning.code} className="flex items-center gap-1 text-[11px] text-[#ffd37b]">
+            <p key={warning.code} className="flex items-center gap-1 text-[11px] text-warning-soft">
               <AlertTriangle className="h-3 w-3 shrink-0" /> {warning.message}
             </p>
           ))}

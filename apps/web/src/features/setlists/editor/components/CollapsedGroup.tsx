@@ -15,7 +15,7 @@ export function CollapsedGroup({ type, items, onExpand }: { type: SetlistItemTyp
     <button
       type="button"
       onClick={onExpand}
-      className="flex w-full items-center gap-3 rounded-xl border border-dashed border-[#1b2c40] bg-[#08131d] px-3 py-2.5 text-left hover:bg-white/[0.03]"
+      className="flex w-full items-center gap-3 rounded-xl border border-dashed border-[#30333A] bg-[#141518] px-3 py-2.5 text-left hover:bg-white/[0.03]"
     >
       <span className="icon-tile h-8 w-8 shrink-0">
         <Icon className="h-4 w-4" />

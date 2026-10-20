@@ -49,7 +49,7 @@ export function SectionCommentTrigger({ songId, versionId, sectionId, sectionNam
       <button type="button" className="icon-button relative" aria-label="Comentar sección" title="Comentar sección" onClick={() => setShowList(true)}>
         <MessageSquarePlus className="h-4 w-4" />
         {threads.length > 0 && (
-          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-[#00E6A3] px-1 text-[10px] font-bold text-[#04140f]">
+          <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-primary px-1 text-[10px] font-bold text-on-primary">
             {threads.length}
           </span>
         )}

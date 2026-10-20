@@ -12,7 +12,7 @@ export function SetlistStatistics({ items, selectedStartSec }: { items: SetlistI
   const blocks = items.filter((item) => item.type !== 'SONG' && !item.isHidden).length;
 
   const stats = [
-    { label: 'Duracion total', value: formatDuration(totalSec) },
+    { label: 'Duración total', value: formatDuration(totalSec) },
     { label: 'Canciones', value: String(songs) },
     { label: 'Bloques', value: String(blocks) },
     { label: 'Tiempo musical', value: formatDuration(musicSec) },
@@ -23,9 +23,9 @@ export function SetlistStatistics({ items, selectedStartSec }: { items: SetlistI
   return (
     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
       {stats.map((stat) => (
-        <div key={stat.label} className="rounded-lg border border-[#1b2c40] bg-[#0a1420] px-3 py-2 text-center">
-          <p className="text-base font-bold text-white">{stat.value}</p>
-          <p className="text-[11px] text-muted">{stat.label}</p>
+        <div key={stat.label} className="rounded-xl border border-[#30333A] bg-[#1A1B1F] px-3.5 py-3">
+          <p className="font-display text-xl font-bold leading-none text-white">{stat.value}</p>
+          <p className="mt-1.5 text-xs text-muted">{stat.label}</p>
         </div>
       ))}
     </div>

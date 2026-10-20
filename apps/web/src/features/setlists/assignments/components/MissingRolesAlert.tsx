@@ -7,7 +7,7 @@ export function MissingRolesAlert({ coverage }: { coverage: SetlistItemCoverage 
   if (coverage.missingRoles.length === 0) return null;
 
   return (
-    <div className="flex items-start gap-2 rounded-lg border border-[#f3b33e]/30 bg-[#f3b33e]/10 px-3 py-2 text-xs text-[#ffd37b]">
+    <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 px-3 py-2 text-xs text-warning-soft">
       <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
       <div>
         <p className="font-semibold">Roles sin cubrir</p>

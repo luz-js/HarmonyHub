@@ -16,7 +16,7 @@ export function CollaborationSummaryPanel({ organizationId, songId, version }: {
   return (
     <div className="space-y-4 p-4">
       {threadsQuery.isLoading && <p className="text-sm text-muted">Cargando conversaciones...</p>}
-      {threadsQuery.error && <p className="text-sm text-red-200">No se pudieron cargar las conversaciones.</p>}
+      {threadsQuery.error && <p className="text-sm text-[#F7A39A]">No se pudieron cargar las conversaciones.</p>}
       {!threadsQuery.isLoading && !threadsQuery.error && threads.length === 0 && <p className="text-sm text-muted">Todavía no hay conversaciones sobre esta canción.</p>}
 
       {threads.length > 0 && (
@@ -26,7 +26,7 @@ export function CollaborationSummaryPanel({ organizationId, songId, version }: {
         </div>
       )}
       {mostRecent?.lastComment && !mostRecent.lastComment.isDeleted && (
-        <div className="rounded-xl border border-[#1b2c40] bg-[#091522] p-3">
+        <div className="rounded-xl border border-[#30333A] bg-[#141518] p-3">
           <p className="text-xs font-semibold text-white">{mostRecent.lastComment.author?.name || 'Alguien'}</p>
           <p className="mt-1 truncate text-sm text-muted">{mostRecent.lastComment.content}</p>
         </div>

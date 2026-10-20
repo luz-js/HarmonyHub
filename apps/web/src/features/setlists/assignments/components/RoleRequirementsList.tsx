@@ -58,7 +58,7 @@ export function RoleRequirementsList({
 
       <ul className="mt-1 space-y-1">
         {requirements.map((requirement) => (
-          <li key={requirement.id} className="flex items-center justify-between gap-2 rounded-md border border-[#1b2c40] px-2 py-1 text-xs text-white">
+          <li key={requirement.id} className="flex items-center justify-between gap-2 rounded-md border border-[#30333A] px-2 py-1 text-xs text-white">
             <span>
               {requirement.label || getRoleLabel(requirement.role)} · minimo {requirement.minimumCount}
             </span>
@@ -72,7 +72,7 @@ export function RoleRequirementsList({
       </ul>
 
       {adding && (
-        <div className="mt-2 space-y-2 rounded-md border border-[#1b2c40] p-2">
+        <div className="mt-2 space-y-2 rounded-md border border-[#30333A] p-2">
           <MusicalRolePicker itemType={itemType} value={role} onChange={setRole} />
           <div className="flex items-center gap-2">
             <label className="flex-1">

@@ -32,16 +32,16 @@ export function SongFileCard({
   const extension = getFileExtension(file.file.originalName || file.file.name);
 
   return (
-    <article className={`rounded-2xl border p-4 transition ${file.isPrimary ? 'border-[#00E6A3]/35 bg-[#0c1e22]' : 'border-[#1b2c40] bg-[#091522]'}`}>
+    <article className={`rounded-2xl border p-4 transition ${file.isPrimary ? 'border-primary/35 bg-primary-tint' : 'border-[#30333A] bg-[#141518]'}`}>
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center">
         <div className="flex items-center gap-3">
-          <button type="button" className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#184056] bg-[#071118] text-[#00E6A3]" onClick={onPreview} aria-label="Previsualizar">
+          <button type="button" className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#3D4048] bg-[#141518] text-primary" onClick={onPreview} aria-label="Previsualizar">
             <Eye className="h-4 w-4" />
           </button>
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <p className="truncate text-sm font-semibold text-white">{file.title}</p>
-              {file.isPrimary && <span className="rounded-full border border-[#00E6A3]/25 bg-[#00E6A3]/12 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#7ef7cc]">Principal</span>}
+              {file.isPrimary && <span className="rounded-full border border-primary/25 bg-primary/12 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-primary-soft">Principal</span>}
               {!file.active && <span className="badge">Inactivo</span>}
             </div>
             <p className="mt-1 text-xs text-muted">

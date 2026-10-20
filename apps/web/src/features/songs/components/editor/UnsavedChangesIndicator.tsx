@@ -9,5 +9,5 @@ export function UnsavedChangesIndicator({ state }: { state: SaveState }) {
     error: 'Error al guardar',
   }[state];
 
-  return <span className={state === 'error' ? 'text-sm font-semibold text-red-300' : state === 'dirty' ? 'text-sm font-semibold text-amber-200' : 'text-sm text-muted'}>{text}</span>;
+  return <span className={state === 'error' ? 'text-sm font-semibold text-[#F7A39A]' : state === 'dirty' ? 'text-sm font-semibold text-warning-soft' : 'text-sm text-muted'}>{text}</span>;
 }

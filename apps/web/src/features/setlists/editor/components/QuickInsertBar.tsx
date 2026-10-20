@@ -26,7 +26,7 @@ export function QuickInsertBar({ index, organizationId, setlistId }: { index: nu
       <button
         type="button"
         className="btn-ghost flex h-6 w-6 items-center justify-center rounded-full p-0 opacity-0 transition-opacity group-hover/insert:opacity-100 focus-visible:opacity-100"
-        aria-label="Agregar item aqui"
+        aria-label="Agregar item aquí"
         onClick={() => setMenuOpen((value) => !value)}
       >
         <Plus className="h-3.5 w-3.5" />

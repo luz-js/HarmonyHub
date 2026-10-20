@@ -63,14 +63,14 @@ export function getCueCategory(type: SetlistCueType): CueCategory {
 export const CUE_CATEGORIES: CueCategory[] = ['MUSICAL', 'TRACKS', 'SPEAKING', 'VIDEO', 'LIGHTING', 'AUDIO', 'INSTRUMENT', 'LOGISTICS', 'CUSTOM'];
 
 export const CUE_CATEGORY_LABELS: Record<CueCategory, string> = {
-  MUSICAL: 'Musica',
+  MUSICAL: 'Música',
   TRACKS: 'Pistas',
   SPEAKING: 'Habla',
   VIDEO: 'Video',
   LIGHTING: 'Luces',
   AUDIO: 'Audio',
   INSTRUMENT: 'Instrumento',
-  LOGISTICS: 'Logistica',
+  LOGISTICS: 'Logística',
   CUSTOM: 'Personalizado',
 };
 

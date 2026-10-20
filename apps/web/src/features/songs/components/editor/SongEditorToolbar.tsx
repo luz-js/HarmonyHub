@@ -34,10 +34,10 @@ export function SongEditorToolbar({
   readOnly?: boolean;
 }) {
   return (
-    <div className="sticky top-0 z-10 rounded-lg border border-[#1b2c40] bg-[#0b1620]/95 p-4 backdrop-blur">
+    <div className="sticky top-0 z-10 rounded-lg border border-[#30333A] bg-[#1A1B1F]/95 p-4 backdrop-blur">
       <div className="flex flex-wrap items-center gap-3">
         <div className="mr-auto">
-          <p className="text-xs font-semibold uppercase text-muted">Version activa</p>
+          <p className="text-xs font-semibold uppercase text-muted">Versión activa</p>
           <h2 className="text-lg font-bold text-white">{versionName}</h2>
         </div>
         <UnsavedChangesIndicator state={saveState} />

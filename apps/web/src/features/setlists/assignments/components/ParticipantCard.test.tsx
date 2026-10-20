@@ -22,16 +22,16 @@ function makeParticipant(overrides: Partial<SetlistParticipant> = {}): SetlistPa
 describe('ParticipantCard', () => {
   it('no muestra advertencia si esta confirmado', () => {
     render(<ParticipantCard participant={makeParticipant()} canManage={false} onChangeStatus={vi.fn()} onRemove={vi.fn()} />);
-    expect(screen.queryByText(/rechazo la invitacion/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/rechazó la invitación/i)).not.toBeInTheDocument();
   });
 
   it('no muestra advertencia si rechazo pero no tiene asignaciones', () => {
     render(<ParticipantCard participant={makeParticipant({ status: 'DECLINED', assignmentsCount: 0 })} canManage={false} onChangeStatus={vi.fn()} onRemove={vi.fn()} />);
-    expect(screen.queryByText(/rechazo la invitacion/i)).not.toBeInTheDocument();
+    expect(screen.queryByText(/rechazó la invitación/i)).not.toBeInTheDocument();
   });
 
   it('muestra advertencia si rechazo la invitacion pero aun tiene asignaciones', () => {
     render(<ParticipantCard participant={makeParticipant({ status: 'DECLINED', assignmentsCount: 2 })} canManage={false} onChangeStatus={vi.fn()} onRemove={vi.fn()} />);
-    expect(screen.getByText(/rechazo la invitacion/i)).toBeInTheDocument();
+    expect(screen.getByText(/rechazó la invitación/i)).toBeInTheDocument();
   });
 });

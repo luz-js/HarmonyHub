@@ -11,7 +11,7 @@ export const trackTypeLabels: Record<SongTrackType, string> = {
   KEYS: 'Keys',
   VOCALS: 'Voz',
   CHOIR: 'Coros',
-  GUIDE: 'Guia',
+  GUIDE: 'Guía',
   REFERENCE: 'Referencia',
   OTHER: 'Otro',
 };

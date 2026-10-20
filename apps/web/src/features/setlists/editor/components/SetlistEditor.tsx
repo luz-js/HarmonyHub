@@ -46,7 +46,7 @@ export function SetlistEditor({
     setSelectedItemId: layout.setSelectedItemId,
     onDeleteSelected: (item) => {
       if (!canManage) return;
-      if (window.confirm(`Eliminar "${item.title}"?`)) {
+      if (window.confirm(`¿Eliminar "${item.title}"?`)) {
         deleteMutation.mutate(item.id);
         layout.setSelectedItemId(null);
       }

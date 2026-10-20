@@ -6,7 +6,7 @@ export function SongPreview({ content, showChords, fontSize = 16 }: { content: S
   const normalized = normalizeSongContent(content);
 
   if (!normalized.sections.length) {
-    return <div className="rounded-md border border-dashed border-white/10 p-5 text-sm text-muted">Esta version todavia no tiene una estructura.</div>;
+    return <div className="rounded-md border border-dashed border-white/10 p-5 text-sm text-muted">Esta versión todavía no tiene una estructura.</div>;
   }
 
   return (

@@ -47,7 +47,7 @@ export function ItemAssignmentsSection({
       <MissingRolesAlert coverage={coverage} />
 
       <div className="flex items-center justify-between">
-        <span className="label">Musicos asignados</span>
+        <span className="label">Músicos asignados</span>
         <div className="flex items-center gap-2">
           {canManage && otherItems.length > 0 && (
             <button type="button" className="btn-ghost h-8 px-3 text-xs" onClick={() => setCopyOpen(true)}>
@@ -73,11 +73,11 @@ export function ItemAssignmentsSection({
             onDelete={() => deleteMutation.mutate(assignment.id)}
           />
         ))}
-        {assignments.length === 0 && <p className="text-xs text-muted">Nadie asignado a este item todavia.</p>}
+        {assignments.length === 0 && <p className="text-xs text-muted">Nadie asignado a este item todavía.</p>}
       </div>
 
       {canManage && (
-        <div className="border-t border-[#1b2c40] pt-3">
+        <div className="border-t border-[#30333A] pt-3">
           <RoleRequirementsList organizationId={organizationId} setlistId={setlistId} itemId={item.id} itemType={item.type} canManage={canManage} />
         </div>
       )}

@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
-import { notifications } from '../../../data';
+import { getDashboardActivity } from '../api/dashboard.client';
 
-export function useRecentActivity() {
+export function useRecentActivity(organizationId: string, limit = 30) {
   return useQuery({
-    queryKey: ['dashboard', 'recent-activity'],
-    queryFn: () => notifications,
+    queryKey: ['dashboard', organizationId, 'activity', limit],
+    queryFn: () => getDashboardActivity(limit),
+    enabled: Boolean(organizationId),
   });
 }

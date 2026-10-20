@@ -3,7 +3,7 @@ import { SETLIST_ITEM_TYPE_OPTIONS } from '../../utils';
 
 export function QuickInsertMenu({ onPick }: { onPick: (type: SetlistItemType) => void }) {
   return (
-    <div className="absolute left-1/2 top-full z-20 mt-1 w-48 -translate-x-1/2 rounded-lg border border-[#1b2c40] bg-[#0d1c2b] p-1 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+    <div className="absolute left-1/2 top-full z-20 mt-1 w-48 -translate-x-1/2 rounded-lg border border-[#30333A] bg-[#23252A] p-1 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
       {SETLIST_ITEM_TYPE_OPTIONS.map(([type, label]) => (
         <button
           key={type}

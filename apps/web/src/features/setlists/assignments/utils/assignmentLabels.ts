@@ -30,7 +30,7 @@ export const ROLE_LABELS: Record<SetlistMusicalRole, string> = {
   ACOUSTIC_GUITAR: 'Guitarra acustica',
   ELECTRIC_GUITAR: 'Guitarra electrica',
   BASS: 'Bajo',
-  DRUMS: 'Bateria',
+  DRUMS: 'Batería',
   PERCUSSION: 'Percusion',
   PIANO: 'Piano',
   KEYS: 'Teclado',
@@ -46,10 +46,10 @@ export const ROLE_LABELS: Record<SetlistMusicalRole, string> = {
   PAD: 'Pad',
   AUDIO_ENGINEER: 'Ingeniero de audio',
   MONITOR_ENGINEER: 'Ingeniero de monitores',
-  LIGHTING: 'Iluminacion',
+  LIGHTING: 'Iluminación',
   VIDEO: 'Video',
   SPEAKER: 'Orador',
-  PRAYER_LEADER: 'Guia de oracion',
+  PRAYER_LEADER: 'Guía de oración',
   ANNOUNCER: 'Anunciante',
   OTHER: 'Otro',
 };
@@ -60,9 +60,9 @@ export function getRoleLabel(role: SetlistMusicalRole): string {
 
 export const PREPARATION_STATUS_LABELS: Record<AssignmentPreparationStatus, string> = {
   PENDING: 'Pendiente',
-  IN_PROGRESS: 'En preparacion',
+  IN_PROGRESS: 'En preparación',
   READY: 'Listo',
-  NEEDS_REVIEW: 'Necesita revision',
+  NEEDS_REVIEW: 'Necesita revisión',
   BLOCKED: 'Bloqueado',
   NOT_APPLICABLE: 'No aplica',
 };

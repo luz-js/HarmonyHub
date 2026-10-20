@@ -27,7 +27,7 @@ const ICON_BY_CATEGORY: Record<SongFileCategory, typeof File> = {
 export function FileCategoryBadge({ category }: { category: SongFileCategory }) {
   const Icon = ICON_BY_CATEGORY[category] || File;
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#173347] bg-[#081821] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#8cdff0]">
+    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#30333A] bg-[#1C2436] px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#8FB4FF]">
       <Icon className="h-3.5 w-3.5" />
       {fileCategoryLabels[category]}
     </span>

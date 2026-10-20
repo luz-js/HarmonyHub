@@ -32,13 +32,13 @@ export function LinkCard({
   }
 
   return (
-    <article className={`rounded-2xl border p-4 transition ${link.isPrimary ? 'border-[#00E6A3]/35 bg-[#0c1e22]' : 'border-[#1b2c40] bg-[#091522]'}`}>
+    <article className={`rounded-2xl border p-4 transition ${link.isPrimary ? 'border-primary/35 bg-primary-tint' : 'border-[#30333A] bg-[#141518]'}`}>
       <div className="grid gap-4 lg:grid-cols-[220px_1fr]">
         <LinkEmbed link={link} />
         <div className="flex min-w-0 flex-col gap-3">
           <div className="flex flex-wrap items-center gap-2">
             <LinkProviderBadge provider={link.provider} />
-            {link.isPrimary && <span className="rounded-full border border-[#00E6A3]/25 bg-[#00E6A3]/12 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#7ef7cc]">Principal</span>}
+            {link.isPrimary && <span className="rounded-full border border-primary/25 bg-primary/12 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-primary-soft">Principal</span>}
             {!link.active && <span className="badge">Inactivo</span>}
           </div>
           <div className="min-w-0">

@@ -11,7 +11,7 @@ export function CuesSummaryRow({ summary }: { summary: CuesSummary | null }) {
         {summary.ready}/{summary.total} cues listos
       </span>
       {summary.criticalWithoutResponsible > 0 && (
-        <span className="badge badge-warning shrink-0" title="Cues criticos sin responsable">
+        <span className="badge badge-warning shrink-0" title="Cues críticos sin responsable">
           <AlertTriangle className="h-3 w-3" /> {summary.criticalWithoutResponsible}
         </span>
       )}

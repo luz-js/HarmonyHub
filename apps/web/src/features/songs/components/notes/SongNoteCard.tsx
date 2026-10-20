@@ -22,13 +22,13 @@ export function SongNoteCard({
   onToggleArchive: () => void;
 }) {
   return (
-    <article className={`rounded-2xl border p-4 transition ${note.isPinned ? 'border-[#00E6A3]/35 bg-[#0c1e22]' : 'border-[#1b2c40] bg-[#091522]'}`}>
+    <article className={`rounded-2xl border p-4 transition ${note.isPinned ? 'border-primary/35 bg-primary-tint' : 'border-[#30333A] bg-[#141518]'}`}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             {note.title && <p className="truncate text-sm font-semibold text-white">{note.title}</p>}
             <NoteVisibilityBadge visibility={note.visibility} />
-            {note.isPinned && <span className="rounded-full border border-[#00E6A3]/25 bg-[#00E6A3]/12 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-[#7ef7cc]">Fijada</span>}
+            {note.isPinned && <span className="rounded-full border border-primary/25 bg-primary/12 px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.16em] text-primary-soft">Fijada</span>}
             {note.isArchived && <span className="badge">Archivada</span>}
           </div>
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-white/90">{note.content}</p>

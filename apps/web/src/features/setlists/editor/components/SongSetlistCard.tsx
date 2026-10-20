@@ -17,7 +17,7 @@ export function SongSetlistCard({
 }) {
   return (
     <div className="flex min-w-0 flex-1 items-center gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#1b2c40] bg-[#0a1420]">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#30333A] bg-[#1A1B1F]">
         {item.song?.coverUrl ? (
           <img src={item.song.coverUrl} alt="" className="h-full w-full object-cover" />
         ) : (

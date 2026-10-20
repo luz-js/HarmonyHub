@@ -12,9 +12,9 @@ type TeamPanelTab = 'team' | 'byItem' | 'byMusician' | 'myPreparation';
 
 const TABS: Array<{ id: TeamPanelTab; label: string }> = [
   { id: 'team', label: 'Equipo' },
-  { id: 'byItem', label: 'Por cancion' },
-  { id: 'byMusician', label: 'Por musico' },
-  { id: 'myPreparation', label: 'Mi preparacion' },
+  { id: 'byItem', label: 'Por canción' },
+  { id: 'byMusician', label: 'Por músico' },
+  { id: 'myPreparation', label: 'Mi preparación' },
 ];
 
 export function SetlistTeamPanel({
@@ -39,7 +39,7 @@ export function SetlistTeamPanel({
 
   return (
     <OverlayDialog title="Equipo del setlist" subtitle={team ? `${team.participants.length} participante(s)` : undefined} onClose={onClose}>
-      <div className="flex flex-wrap gap-1 border-b border-[#1b2c40] pb-2">
+      <div className="flex flex-wrap gap-1 border-b border-[#30333A] pb-2">
         {TABS.map((option) => (
           <button
             key={option.id}
@@ -64,7 +64,7 @@ export function SetlistTeamPanel({
             {team.items
               .filter((entry) => entry.assignments.length > 0 || entry.requirements.length > 0)
               .map((entry) => (
-                <div key={entry.itemId} className="rounded-lg border border-[#1b2c40] p-2">
+                <div key={entry.itemId} className="rounded-lg border border-[#30333A] p-2">
                   <p className="text-sm font-semibold text-white">{itemTitleById.get(entry.itemId) || 'Item'}</p>
                   <p className="mt-0.5 text-xs text-muted">{entry.assignments.length} musico(s) asignado(s)</p>
                   <div className="mt-2">
@@ -73,7 +73,7 @@ export function SetlistTeamPanel({
                 </div>
               ))}
             {team.items.every((entry) => entry.assignments.length === 0 && entry.requirements.length === 0) && (
-              <p className="text-xs text-muted">Todavia no hay asignaciones ni requisitos en este setlist.</p>
+              <p className="text-xs text-muted">Todavía no hay asignaciones ni requisitos en este setlist.</p>
             )}
           </div>
         )}

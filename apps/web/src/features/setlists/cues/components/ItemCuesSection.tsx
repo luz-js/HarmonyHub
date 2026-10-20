@@ -49,7 +49,7 @@ export function ItemCuesSection({
       {canManage && otherItems.length > 0 && (
         <div className="flex justify-end">
           <button type="button" className="btn-ghost h-7 px-2 text-xs" onClick={() => setCopyOpen(true)}>
-            <Copy className="h-3.5 w-3.5" /> Copiar cues de otra cancion
+            <Copy className="h-3.5 w-3.5" /> Copiar cues de otra canción
           </button>
         </div>
       )}

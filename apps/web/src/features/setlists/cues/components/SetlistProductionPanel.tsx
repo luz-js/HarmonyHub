@@ -44,8 +44,8 @@ export function SetlistProductionPanel({
   }
 
   return (
-    <OverlayDialog title="Produccion del setlist" subtitle={production ? `${production.coverage.total} cue(s)` : undefined} onClose={onClose}>
-      <div className="flex flex-wrap gap-1 border-b border-[#1b2c40] pb-2">
+    <OverlayDialog title="Producción del setlist" subtitle={production ? `${production.coverage.total} cue(s)` : undefined} onClose={onClose}>
+      <div className="flex flex-wrap gap-1 border-b border-[#30333A] pb-2">
         {TABS.map((option) => (
           <button
             key={option.id}
@@ -59,7 +59,7 @@ export function SetlistProductionPanel({
       </div>
 
       <div className="mt-3 max-h-[60vh] overflow-y-auto">
-        {productionQuery.isLoading && <p className="text-sm text-muted">Cargando produccion...</p>}
+        {productionQuery.isLoading && <p className="text-sm text-muted">Cargando producción...</p>}
 
         {production && tab === 'general' && (
           <div className="space-y-3">
@@ -81,28 +81,28 @@ export function SetlistProductionPanel({
         {production && tab === 'department' && (
           <div className="space-y-2">
             {production.byCategory.map((entry) => (
-              <div key={entry.category} className="flex items-center justify-between rounded-lg border border-[#1b2c40] px-3 py-2 text-sm text-white">
+              <div key={entry.category} className="flex items-center justify-between rounded-lg border border-[#30333A] px-3 py-2 text-sm text-white">
                 <span>{CUE_CATEGORY_LABELS[entry.category]}</span>
                 <span className="text-xs text-muted">
-                  {entry.total} total · {entry.pending} pendientes{entry.critical > 0 ? ` · ${entry.critical} criticos` : ''}
+                  {entry.total} total · {entry.pending} pendientes{entry.critical > 0 ? ` · ${entry.critical} críticos` : ''}
                 </span>
               </div>
             ))}
-            {production.byCategory.length === 0 && <p className="text-xs text-muted">Todavia no hay cues en este setlist.</p>}
+            {production.byCategory.length === 0 && <p className="text-xs text-muted">Todavía no hay cues en este setlist.</p>}
           </div>
         )}
 
         {production && tab === 'responsible' && (
           <div className="space-y-2">
             {production.byResponsible.map((entry) => (
-              <div key={entry.participantId ?? 'unassigned'} className="flex items-center justify-between rounded-lg border border-[#1b2c40] px-3 py-2 text-sm text-white">
+              <div key={entry.participantId ?? 'unassigned'} className="flex items-center justify-between rounded-lg border border-[#30333A] px-3 py-2 text-sm text-white">
                 <span>{entry.participantName}</span>
                 <span className="text-xs text-muted">
-                  {entry.total} total · {entry.ready} listos · {entry.pending} pendientes{entry.critical > 0 ? ` · ${entry.critical} criticos` : ''}
+                  {entry.total} total · {entry.ready} listos · {entry.pending} pendientes{entry.critical > 0 ? ` · ${entry.critical} críticos` : ''}
                 </span>
               </div>
             ))}
-            {production.byResponsible.length === 0 && <p className="text-xs text-muted">Todavia no hay cues en este setlist.</p>}
+            {production.byResponsible.length === 0 && <p className="text-xs text-muted">Todavía no hay cues en este setlist.</p>}
           </div>
         )}
 

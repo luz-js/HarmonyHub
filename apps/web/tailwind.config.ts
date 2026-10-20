@@ -5,15 +5,29 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        background: '#050b12',
-        surface: '#0a1420',
-        primary: '#18e0ae',
-        secondary: '#17a7f2',
-        accent: '#8157ff',
-        muted: '#8da2b4',
+        background: '#111214',
+        surface: '#1A1B1F',
+        'surface-2': '#23252A',
+        line: '#30333A',
+        // El color principal sale de las variables de src/index.css (--primary-rgb...).
+        primary: 'rgb(var(--primary-rgb) / <alpha-value>)',
+        'primary-soft': 'rgb(var(--primary-soft-rgb) / <alpha-value>)',
+        'primary-tint': 'var(--primary-tint)',
+        'on-primary': 'var(--on-primary)',
+        warning: '#F2A93B',
+        'warning-soft': '#F7C371',
+        'warning-tint': '#2B2417',
+        secondary: '#8FB4FF',
+        accent: '#B79CFF',
+        muted: '#A6A39D',
+      },
+      fontFamily: {
+        sans: ['Figtree', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+        display: ['"Bricolage Grotesque"', 'Figtree', 'ui-sans-serif', 'sans-serif'],
+        mono: ['"JetBrains Mono"', 'ui-monospace', 'SFMono-Regular', 'monospace'],
       },
       boxShadow: {
-        soft: '0 18px 50px rgba(0,0,0,0.28)',
+        soft: '0 12px 32px rgba(0,0,0,0.32)',
       },
     },
   },

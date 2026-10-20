@@ -49,7 +49,7 @@ export function SongWorkspaceTabs({
             tabIndex={isActive ? 0 : -1}
             type="button"
             className={`flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--secondary)] ${
-              isActive ? 'bg-[var(--primary)] text-[#04120f]' : 'bg-white/5 text-muted hover:bg-white/10 hover:text-white'
+              isActive ? 'bg-primary text-on-primary' : 'bg-white/5 text-muted hover:bg-white/10 hover:text-white'
             }`}
             onClick={() => onChange(tab.id)}
             onKeyDown={(event) => handleKeyDown(event, index)}

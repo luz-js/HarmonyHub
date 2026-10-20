@@ -14,7 +14,7 @@ export function ParticipantCard({
   onRemove: () => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3 rounded-lg border border-[#1b2c40] px-3 py-2">
+    <div className="flex items-center justify-between gap-3 rounded-lg border border-[#30333A] px-3 py-2">
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold text-white">{participant.membership.user.name}</p>
         <p className="truncate text-xs text-muted">
@@ -22,8 +22,8 @@ export function ParticipantCard({
           {participant.assignmentsCount > 0 ? ` · ${participant.readyCount}/${participant.assignmentsCount} listos` : ''}
         </p>
         {participant.status === 'DECLINED' && participant.assignmentsCount > 0 && (
-          <p className="mt-0.5 flex items-center gap-1 text-[11px] text-[#ffd37b]">
-            <AlertTriangle className="h-3 w-3 shrink-0" /> Rechazo la invitacion pero tiene asignaciones sin quitar
+          <p className="mt-0.5 flex items-center gap-1 text-[11px] text-warning-soft">
+            <AlertTriangle className="h-3 w-3 shrink-0" /> Rechazó la invitación pero tiene asignaciones sin quitar
           </p>
         )}
       </div>
@@ -40,7 +40,7 @@ export function ParticipantCard({
           <span className="badge">{PARTICIPANT_STATUS_LABELS[participant.status]}</span>
         )}
         {canManage && (
-          <button type="button" className="btn-ghost h-8 w-8 p-0 text-red-300" aria-label="Quitar participante" onClick={onRemove}>
+          <button type="button" className="btn-ghost h-8 w-8 p-0 text-[#F7A39A]" aria-label="Quitar participante" onClick={onRemove}>
             <Trash2 className="h-3.5 w-3.5" />
           </button>
         )}

@@ -23,14 +23,25 @@ import type {
   SongVersion,
   SongVersionRevision,
   TrackProvider,
+  AddEventMusicianInput,
   AddSetlistParticipantInput,
+  CreateEventInput,
+  DashboardActivityItem,
+  DashboardSummary,
+  EventDetail,
+  EventListFilters,
+  EventListResponse,
+  UpdateEventInput,
+  UpdateEventMusicianInput,
   CopySetlistAssignmentsInput,
   CopySetlistCuesInput,
   CreateSetlistAssignmentInput,
   CreateSetlistCueInput,
+  CreateSetlistInput,
   CreateSetlistItemInput,
   CreateSetlistRoleRequirementInput,
   ReorderSetlistCuesInput,
+  SaveSetlistAsTemplateInput,
   SetlistAssignment,
   SetlistCue,
   SetlistDetail,
@@ -519,11 +530,12 @@ export function restoreSongRevision(songId: string, versionId: string, revisionN
   return http<SongVersionRevision>(`/api/songs/${songId}/versions/${versionId}/revisions/${revisionNumber}/restore`, { method: 'POST', body: JSON.stringify(input || {}) });
 }
 
-export function getSetlists(filters?: { status?: SetlistStatus; search?: string; includeArchived?: boolean; page?: number; pageSize?: number }) {
+export function getSetlists(filters?: { status?: SetlistStatus; search?: string; includeArchived?: boolean; isTemplate?: boolean; page?: number; pageSize?: number }) {
   const params = new URLSearchParams();
   if (filters?.status) params.set('status', filters.status);
   if (filters?.search) params.set('search', filters.search);
   if (filters?.includeArchived) params.set('includeArchived', 'true');
+  if (filters?.isTemplate !== undefined) params.set('isTemplate', String(filters.isTemplate));
   if (filters?.page) params.set('page', String(filters.page));
   if (filters?.pageSize) params.set('pageSize', String(filters.pageSize));
   const query = params.toString();
@@ -534,8 +546,12 @@ export function getSetlist(id: string) {
   return http<SetlistDetail>(`/api/setlists/${id}`);
 }
 
-export function createSetlist(input: { name: string; description?: string; status?: 'DRAFT' | 'READY' | 'PUBLISHED' }) {
+export function createSetlist(input: CreateSetlistInput) {
   return http<SetlistDetail>('/api/setlists', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function saveSetlistAsTemplate(id: string, input: SaveSetlistAsTemplateInput) {
+  return http<SetlistDetail>(`/api/setlists/${id}/save-as-template`, { method: 'POST', body: JSON.stringify(input) });
 }
 
 export function updateSetlist(id: string, input: { name?: string; description?: string | null; status?: SetlistStatus }) {
@@ -683,4 +699,54 @@ export function duplicateSetlistCue(setlistId: string, cueId: string) {
 
 export function copySetlistCues(setlistId: string, itemId: string, input: CopySetlistCuesInput) {
   return http<SetlistCue[]>(`/api/setlists/${setlistId}/items/${itemId}/cues/copy`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function getEvents(filters: EventListFilters = {}) {
+  const params = new URLSearchParams();
+  if (filters.from) params.set('from', filters.from);
+  if (filters.to) params.set('to', filters.to);
+  if (filters.status) params.set('status', filters.status);
+  if (filters.search) params.set('search', filters.search);
+  if (filters.includeCancelled) params.set('includeCancelled', 'true');
+  if (filters.order) params.set('order', filters.order);
+  if (filters.page) params.set('page', String(filters.page));
+  if (filters.pageSize) params.set('pageSize', String(filters.pageSize));
+  const query = params.toString();
+  return http<EventListResponse>(`/api/events${query ? `?${query}` : ''}`);
+}
+
+export function getEvent(id: string) {
+  return http<EventDetail>(`/api/events/${id}`);
+}
+
+export function createEvent(input: CreateEventInput) {
+  return http<EventDetail>('/api/events', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function updateEvent(id: string, input: UpdateEventInput) {
+  return http<EventDetail>(`/api/events/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function deleteEvent(id: string) {
+  return http<{ ok: boolean }>(`/api/events/${id}`, { method: 'DELETE' });
+}
+
+export function addEventMusician(eventId: string, input: AddEventMusicianInput) {
+  return http<EventDetail>(`/api/events/${eventId}/musicians`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function updateEventMusician(eventId: string, musicianId: string, input: UpdateEventMusicianInput) {
+  return http<EventDetail>(`/api/events/${eventId}/musicians/${musicianId}`, { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function removeEventMusician(eventId: string, musicianId: string) {
+  return http<EventDetail>(`/api/events/${eventId}/musicians/${musicianId}`, { method: 'DELETE' });
+}
+
+export function getDashboardSummary() {
+  return http<DashboardSummary>('/api/dashboard/summary');
+}
+
+export function getDashboardActivity(limit?: number) {
+  return http<{ items: DashboardActivityItem[] }>(`/api/dashboard/activity${limit ? `?limit=${limit}` : ''}`);
 }

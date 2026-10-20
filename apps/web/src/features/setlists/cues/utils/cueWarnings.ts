@@ -23,7 +23,7 @@ export function buildCueWarnings(cues: SetlistCue[], items: WarningItem[], parti
 
   for (const cue of cues) {
     if (isCriticalPriority(cue.priority) && !cue.responsibleParticipant) {
-      warnings.push({ cueId: cue.id, code: 'CRITICAL_WITHOUT_RESPONSIBLE' as CueWarningCode, message: 'Cue critico sin responsable' });
+      warnings.push({ cueId: cue.id, code: 'CRITICAL_WITHOUT_RESPONSIBLE' as CueWarningCode, message: 'Cue crítico sin responsable' });
     }
     if (cue.status === 'BLOCKED') {
       warnings.push({ cueId: cue.id, code: 'BLOCKED', message: 'Cue bloqueado' });
@@ -33,7 +33,7 @@ export function buildCueWarnings(cues: SetlistCue[], items: WarningItem[], parti
     if (item) {
       if (item.isHidden) warnings.push({ cueId: cue.id, code: 'HIDDEN_ITEM', message: 'Cue asociado a un item oculto' });
       if (cue.phase === 'DURING' && cue.offsetSec != null && item.effective.durationSec != null && cue.offsetSec > item.effective.durationSec) {
-        warnings.push({ cueId: cue.id, code: 'OFFSET_BEYOND_DURATION', message: 'Este cue esta programado despues de la duracion estimada del item' });
+        warnings.push({ cueId: cue.id, code: 'OFFSET_BEYOND_DURATION', message: 'Este cue está programado después de la duración estimada del item' });
       }
     }
 

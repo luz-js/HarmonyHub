@@ -3,7 +3,7 @@ import type { SetlistItem, SongVersion } from '../../../../shared/types';
 import { formatBpm, formatDuration, formatKey } from '../../../../shared/utils/format';
 
 function OverrideValue({ label, original, effective }: { label: string; original: string; effective: string }) {
-  const overridden = original !== '-' && effective !== original;
+  const overridden = original !== '—' && effective !== original;
   return (
     <span className="badge">
       {label}: {overridden ? (
@@ -20,8 +20,8 @@ function OverrideValue({ label, original, effective }: { label: string; original
 /** Cabecera del workspace: portada/titulo/artista + comparacion Original -> Override, con el valor de la version en vivo (nunca snapshoteado). */
 export function SongWorkspaceHeader({ item, liveVersion }: { item: SetlistItem; liveVersion: SongVersion | undefined }) {
   return (
-    <div className="flex flex-wrap items-center gap-3 border-b border-[#1b2c40] px-4 py-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#1b2c40] bg-[#0a1420]">
+    <div className="flex flex-wrap items-center gap-3 border-b border-[#30333A] px-4 py-3">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-[#30333A] bg-[#1A1B1F]">
         {item.song?.coverUrl ? (
           <img src={item.song.coverUrl} alt="" className="h-full w-full object-cover" />
         ) : (

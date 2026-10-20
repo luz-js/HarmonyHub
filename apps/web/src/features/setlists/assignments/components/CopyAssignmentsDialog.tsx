@@ -5,9 +5,9 @@ import { useCopySetlistAssignments } from '../hooks/useSetlistAssignmentMutation
 
 const COPY_MODE_OPTIONS: Array<{ value: CopyAssignmentsMode; label: string }> = [
   { value: 'ALL', label: 'Todo el equipo' },
-  { value: 'MUSICIANS_ONLY', label: 'Solo musicos (instrumentos y direccion)' },
+  { value: 'MUSICIANS_ONLY', label: 'Solo músicos (instrumentos y dirección)' },
   { value: 'VOCALS_ONLY', label: 'Solo voces' },
-  { value: 'TECH_ONLY', label: 'Solo tecnica (pistas, click, audio)' },
+  { value: 'TECH_ONLY', label: 'Solo técnica (pistas, click, audio)' },
 ];
 
 export function CopyAssignmentsDialog({
@@ -34,7 +34,7 @@ export function CopyAssignmentsDialog({
   }
 
   return (
-    <OverlayDialog title="Copiar equipo de otra cancion" subtitle={`Destino: ${targetItem.title}`} onClose={onClose}>
+    <OverlayDialog title="Copiar equipo de otra canción" subtitle={`Destino: ${targetItem.title}`} onClose={onClose}>
       <label className="block">
         <span className="label">Copiar desde</span>
         <select className="select" value={sourceItemId} onChange={(event) => setSourceItemId(event.target.value)}>
@@ -65,7 +65,7 @@ export function CopyAssignmentsDialog({
         Reemplazar asignaciones existentes en {targetItem.title}
       </label>
 
-      <p className="mt-2 text-xs text-muted">El estado de preparacion siempre se copia como "Pendiente", nunca como "Listo".</p>
+      <p className="mt-2 text-xs text-muted">El estado de preparación siempre se copia como "Pendiente", nunca como "Listo".</p>
 
       <div className="mt-4 flex justify-end gap-2">
         <button type="button" className="btn-ghost" onClick={onClose}>

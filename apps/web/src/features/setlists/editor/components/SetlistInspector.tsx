@@ -60,7 +60,7 @@ export function SetlistInspector({
   if (!item) {
     if (mode !== 'side') return null;
     return (
-      <aside className="hidden w-[360px] shrink-0 rounded-xl border border-[#1b2c40] bg-[#0a1420] p-4 lg:block">
+      <aside className="hidden w-[360px] shrink-0 rounded-xl border border-[#30333A] bg-[#1A1B1F] p-4 lg:block">
         <p className="text-sm text-muted">Selecciona un item para editarlo.</p>
       </aside>
     );
@@ -75,7 +75,7 @@ export function SetlistInspector({
 
   function handleDelete() {
     if (!item) return;
-    if (!window.confirm(`Eliminar "${item.title}"?`)) return;
+    if (!window.confirm(`¿Eliminar "${item.title}"?`)) return;
     deleteMutation.mutate(item.id);
     onClose();
   }
@@ -87,10 +87,10 @@ export function SetlistInspector({
 
   const containerClass =
     mode === 'side'
-      ? 'w-[360px] shrink-0 rounded-xl border border-[#1b2c40] bg-[#0a1420] p-4'
+      ? 'w-[360px] shrink-0 rounded-xl border border-[#30333A] bg-[#1A1B1F] p-4'
       : mode === 'drawer'
-        ? 'fixed inset-y-0 right-0 z-40 w-[360px] max-w-full overflow-y-auto border-l border-[#1b2c40] bg-[#0a1420] p-4 shadow-[0_0_60px_rgba(0,0,0,0.5)]'
-        : 'fixed inset-x-0 bottom-0 z-40 max-h-[80vh] overflow-y-auto rounded-t-2xl border-t border-[#1b2c40] bg-[#0a1420] p-4 shadow-[0_-20px_60px_rgba(0,0,0,0.5)]';
+        ? 'fixed inset-y-0 right-0 z-40 w-[360px] max-w-full overflow-y-auto border-l border-[#30333A] bg-[#1A1B1F] p-4 shadow-[0_0_60px_rgba(0,0,0,0.5)]'
+        : 'fixed inset-x-0 bottom-0 z-40 max-h-[80vh] overflow-y-auto rounded-t-2xl border-t border-[#30333A] bg-[#1A1B1F] p-4 shadow-[0_-20px_60px_rgba(0,0,0,0.5)]';
 
   return (
     <>
@@ -109,7 +109,7 @@ export function SetlistInspector({
           <section>
             <p className="section-title">General</p>
             <label className="mt-2 block">
-              <span className="label">Titulo</span>
+              <span className="label">Título</span>
               <input
                 className="input"
                 value={title}
@@ -119,12 +119,12 @@ export function SetlistInspector({
               />
             </label>
             <label className="mt-2 block">
-              <span className="label">Descripcion</span>
+              <span className="label">Descripción</span>
               <input className="input" value={description} onChange={(event) => setDescription(event.target.value)} onBlur={() => saveField({ description: description || null })} />
             </label>
             {item.type !== 'SONG' && (
               <label className="mt-2 block">
-                <span className="label">Duracion estimada (segundos)</span>
+                <span className="label">Duración estimada (segundos)</span>
                 <input
                   className="input"
                   type="number"
@@ -151,7 +151,7 @@ export function SetlistInspector({
 
               {versions.length > 0 && (
                 <label className="mt-2 block">
-                  <span className="label">Version</span>
+                  <span className="label">Versión</span>
                   <select className="select" value={item.songVersionId || ''} onChange={(event) => saveField({ songVersionId: event.target.value })}>
                     {versions.map((version) => (
                       <option key={version.id} value={version.id}>
@@ -191,7 +191,7 @@ export function SetlistInspector({
                   />
                 </label>
                 <label>
-                  <span className="label">Duracion (s)</span>
+                  <span className="label">Duración (s)</span>
                   <input
                     className="input"
                     type="number"
@@ -230,7 +230,7 @@ export function SetlistInspector({
           <section>
             <p className="section-title">Notas</p>
             <label className="mt-2 block">
-              <span className="label">Nota de transicion</span>
+              <span className="label">Nota de transición</span>
               <input className="input" value={transitionNote} onChange={(event) => setTransitionNote(event.target.value)} onBlur={() => saveField({ transitionNote: transitionNote || null })} />
             </label>
             <label className="mt-2 block">
@@ -258,14 +258,14 @@ export function SetlistInspector({
           </section>
 
           <section>
-            <p className="section-title">Cues y produccion</p>
+            <p className="section-title">Cues y producción</p>
             <div className="mt-2">
               <ItemCuesSection organizationId={organizationId} setlistId={setlistId} item={item} canManage={canManageTeam} currentUserId={currentUser.id} />
             </div>
           </section>
 
           {canManageTeam && (
-            <div className="space-y-2 border-t border-[#1b2c40] pt-3">
+            <div className="space-y-2 border-t border-[#30333A] pt-3">
               <label className="flex items-center gap-2 text-sm text-muted">
                 <input type="checkbox" checked={duplicateIncludeCues} onChange={(event) => setDuplicateIncludeCues(event.target.checked)} />
                 Incluir cues al duplicar
@@ -276,7 +276,7 @@ export function SetlistInspector({
             </div>
           )}
 
-          <button type="button" className="btn-ghost w-full text-red-300" onClick={handleDelete}>
+          <button type="button" className="btn-ghost w-full text-[#F7A39A]" onClick={handleDelete}>
             Eliminar item
           </button>
         </div>

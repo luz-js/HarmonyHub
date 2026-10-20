@@ -39,9 +39,9 @@ function SetlistCardImpl({
     <div
       ref={setNodeRef}
       style={style}
-      className={`group flex items-center gap-2 rounded-xl border border-l-4 bg-[#0a1420] px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--secondary)] ${TYPE_ACCENT_CLASS[item.type]} ${
+      className={`group flex items-center gap-2 rounded-xl border border-l-4 bg-[#1A1B1F] px-3 py-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--secondary)] ${TYPE_ACCENT_CLASS[item.type]} ${
         isDragging ? 'opacity-40' : ''
-      } ${item.isHidden ? 'opacity-50' : ''} ${isSelected ? 'border-[#1b2c40] ring-2 ring-[var(--primary)]' : 'border-[#1b2c40]'}`}
+      } ${item.isHidden ? 'opacity-50' : ''} ${isSelected ? 'border-[#30333A] ring-2 ring-[var(--primary)]' : 'border-[#30333A]'}`}
       role="button"
       tabIndex={0}
       aria-pressed={isSelected}

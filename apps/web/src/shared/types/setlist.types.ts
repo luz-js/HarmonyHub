@@ -44,6 +44,7 @@ export type SetlistSummary = {
   name: string;
   description: string | null;
   status: SetlistStatus;
+  isTemplate: boolean;
   estimatedSec: number;
   itemCount: number;
   songsCount: number;
@@ -57,6 +58,7 @@ export type SetlistDetail = {
   name: string;
   description: string | null;
   status: SetlistStatus;
+  isTemplate: boolean;
   estimatedSec: number;
   itemCount: number;
   createdAt: string;
@@ -70,6 +72,18 @@ export type SetlistListResponse = {
   pageSize: number;
   total: number;
   totalPages: number;
+};
+
+export type CreateSetlistInput = {
+  name: string;
+  description?: string;
+  status?: 'DRAFT' | 'READY' | 'PUBLISHED';
+  sourceTemplateId?: string | null;
+};
+
+export type SaveSetlistAsTemplateInput = {
+  name: string;
+  description?: string | null;
 };
 
 export type CreateSetlistItemInput = {

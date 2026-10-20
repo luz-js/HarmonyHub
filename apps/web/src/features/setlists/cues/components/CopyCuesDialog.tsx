@@ -50,7 +50,7 @@ export function CopyCuesDialog({
   }
 
   return (
-    <OverlayDialog title="Copiar cues de otra cancion" subtitle={`Destino: ${targetItem.title}`} onClose={onClose}>
+    <OverlayDialog title="Copiar cues de otra canción" subtitle={`Destino: ${targetItem.title}`} onClose={onClose}>
       <label className="block">
         <span className="label">Copiar desde</span>
         <select className="select" value={sourceItemId} onChange={(event) => setSourceItemId(event.target.value)}>
@@ -66,7 +66,7 @@ export function CopyCuesDialog({
       </label>
 
       <div className="mt-3">
-        <span className="label">Fases (vacio = todas)</span>
+        <span className="label">Fases (vacío = todas)</span>
         <div className="mt-1 flex flex-wrap gap-2">
           {PHASE_OPTIONS.map((phase) => (
             <button
@@ -82,7 +82,7 @@ export function CopyCuesDialog({
       </div>
 
       <div className="mt-3">
-        <span className="label">Categorias (vacio = todas)</span>
+        <span className="label">Categorías (vacío = todas)</span>
         <div className="mt-1 flex flex-wrap gap-2">
           {CUE_CATEGORIES.map((category) => (
             <button

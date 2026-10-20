@@ -70,7 +70,7 @@ function DashboardHeroEventCard({ event, navigate }: { event: typeof events[numb
   return (
     <section className="panel relative min-h-[300px] overflow-hidden p-6">
       <img src={stageImages[0]} alt="" className="absolute inset-0 h-full w-full object-cover opacity-55" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#071118] via-[#071118]/78 to-[#071118]/20" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#141518] via-[#141518]/78 to-[#141518]/20" />
       <div className="relative max-w-[520px]">
         <p className="text-xs font-bold uppercase tracking-[0.14em] text-primary">Próximo evento</p>
         <h2 className="mt-4 text-3xl font-bold text-white">{event.name}</h2>
@@ -91,10 +91,10 @@ function DashboardHeroEventCard({ event, navigate }: { event: typeof events[numb
 
 function QuickActions({ navigate }: { navigate: Navigate }) {
   const actions = [
-    { title: 'Nueva canción', description: 'Agrega una canción a tu repertorio', icon: Music2, href: '/songs', accent: 'text-[#b77cff]' },
+    { title: 'Nueva canción', description: 'Agrega una canción a tu repertorio', icon: Music2, href: '/songs', accent: 'text-[#B79CFF]' },
     { title: 'Crear setlist', description: 'Prepara la música del próximo evento', icon: ListMusic, href: '/setlists', accent: 'text-primary' },
-    { title: 'Programar evento', description: 'Organiza fecha, hora y lugar', icon: CalendarDays, href: '/events', accent: 'text-[#00d4c8]' },
-    { title: 'Invitar músico', description: 'Agrega miembros a tu equipo', icon: UserPlus, href: '/musicians', accent: 'text-[#9cff57]' },
+    { title: 'Programar evento', description: 'Organiza fecha, hora y lugar', icon: CalendarDays, href: '/events', accent: 'text-primary' },
+    { title: 'Invitar músico', description: 'Agrega miembros a tu equipo', icon: UserPlus, href: '/musicians', accent: 'text-[#57C98F]' },
   ];
 
   return (
@@ -132,10 +132,10 @@ function UpcomingEventsSection({ navigate }: { navigate: Navigate }) {
 function UpcomingEventCard({ event, highlighted }: { event: typeof events[number] & { image: string; confirmed: number }; highlighted: boolean }) {
   const date = new Date(event.date);
   return (
-    <article className={`overflow-hidden rounded-lg border bg-[#071118] ${highlighted ? 'border-primary/80' : 'border-white/10'}`}>
+    <article className={`overflow-hidden rounded-lg border bg-[#141518] ${highlighted ? 'border-primary/80' : 'border-white/10'}`}>
       <div className="relative h-28">
         <img src={event.image} alt="" className="h-full w-full object-cover opacity-65" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#071118] to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-[#141518] to-transparent" />
         <div className="absolute left-4 top-4">
           <p className="text-3xl font-bold text-primary">{date.getDate()}</p>
           <p className="text-xs font-bold uppercase text-white">{date.toLocaleDateString('es-ES', { month: 'short' })}</p>
@@ -204,7 +204,7 @@ function PendingTasksPanel() {
 
 function BottomMusicPlayer({ song }: { song: typeof songs[number] }) {
   return (
-    <section className="fixed bottom-3 left-3 right-3 z-40 rounded-lg border border-white/10 bg-[#071118]/95 p-3 shadow-soft backdrop-blur-xl lg:left-[232px]">
+    <section className="fixed bottom-3 left-3 right-3 z-40 rounded-lg border border-white/10 bg-[#141518]/95 p-3 shadow-soft backdrop-blur-xl lg:left-[232px]">
       <div className="flex flex-wrap items-center gap-4">
         <img src={stageImages[1]} alt="" className="h-12 w-12 rounded-md object-cover" />
         <div className="min-w-[170px]"><p className="text-sm font-bold text-white">{song.title}</p><p className="text-xs text-muted">{song.artist}</p></div>
@@ -225,5 +225,5 @@ function BottomMusicPlayer({ song }: { song: typeof songs[number] }) {
 
 function MemberAvatarStack({ count, small = false }: { count: number; small?: boolean }) {
   const size = small ? 'h-6 w-6' : 'h-9 w-9';
-  return <div className="flex -space-x-2">{avatarImages.slice(0, count).map((src) => <img key={src} src={src} alt="" className={`${size} rounded-full border-2 border-[#071118] object-cover`} />)}</div>;
+  return <div className="flex -space-x-2">{avatarImages.slice(0, count).map((src) => <img key={src} src={src} alt="" className={`${size} rounded-full border-2 border-[#141518] object-cover`} />)}</div>;
 }

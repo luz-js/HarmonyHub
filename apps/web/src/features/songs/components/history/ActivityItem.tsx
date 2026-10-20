@@ -15,8 +15,8 @@ const ICON_BY_GROUP = {
 export function ActivityItem({ activity }: { activity: SongActivity }) {
   const Icon = ICON_BY_GROUP[activityIconGroup(activity.action)];
   return (
-    <div className="flex gap-3 rounded-xl border border-[#1b2c40] bg-[#091522] p-3">
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#184056] bg-[#071118] text-[#00E6A3]">
+    <div className="flex gap-3 rounded-xl border border-[#30333A] bg-[#141518] p-3">
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[#3D4048] bg-[#141518] text-primary">
         <Icon className="h-4 w-4" />
       </span>
       <div className="min-w-0 flex-1">

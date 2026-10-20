@@ -29,7 +29,7 @@ export function AssignmentRow({
   const [instrument, setInstrument] = useState(assignment.instrument || '');
 
   return (
-    <div className="rounded-lg border border-[#1b2c40] p-2">
+    <div className="rounded-lg border border-[#30333A] p-2">
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <p className="truncate text-sm font-semibold text-white">{assignment.participant.membership.user.name}</p>
@@ -52,7 +52,7 @@ export function AssignmentRow({
             </button>
           )}
           {canManage && (
-            <button type="button" className="btn-ghost h-7 w-7 p-0 text-red-300" aria-label="Quitar asignacion" onClick={onDelete}>
+            <button type="button" className="btn-ghost h-7 w-7 p-0 text-[#F7A39A]" aria-label="Quitar asignación" onClick={onDelete}>
               <Trash2 className="h-3.5 w-3.5" />
             </button>
           )}
@@ -75,7 +75,7 @@ export function AssignmentRow({
         )}
 
         <div>
-          <span className="label">Preparacion</span>
+          <span className="label">Preparación</span>
           <PreparationStatusSelect value={assignment.preparationStatus} onChange={onChangePreparation} disabled={!canEditPreparation} />
         </div>
       </div>

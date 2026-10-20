@@ -42,10 +42,10 @@ export function SongEditorCanvas({
 
   if (!content.sections.length) {
     return (
-      <div className="rounded-lg border border-dashed border-white/10 bg-[#091522] p-8 text-center">
-        <h3 className="text-lg font-bold text-white">Esta version todavia no tiene una estructura.</h3>
-        <p className="mt-2 text-sm text-muted">Agrega la primera seccion para construir letra y acordes visualmente.</p>
-        {!readOnly && <button type="button" className="btn-primary mt-4" onClick={() => onAddSection('VERSE')}>Agregar seccion</button>}
+      <div className="rounded-lg border border-dashed border-white/10 bg-[#141518] p-8 text-center">
+        <h3 className="text-lg font-bold text-white">Esta versión todavía no tiene una estructura.</h3>
+        <p className="mt-2 text-sm text-muted">Agrega la primera sección para construir letra y acordes visualmente.</p>
+        {!readOnly && <button type="button" className="btn-primary mt-4" onClick={() => onAddSection('VERSE')}>Agregar sección</button>}
       </div>
     );
   }

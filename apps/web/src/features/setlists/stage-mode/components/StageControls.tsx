@@ -2,10 +2,10 @@ import { ChevronLeft, ChevronRight, Maximize, Minimize, Pause, Play } from 'luci
 import type { StageLayout } from '../hooks/useStagePersistence';
 
 const LAYOUT_OPTIONS: Array<{ value: StageLayout; label: string }> = [
-  { value: 'SONG_ONLY', label: 'Solo cancion' },
-  { value: 'SONG_LYRICS', label: 'Cancion + letra' },
-  { value: 'SONG_LYRICS_NEXT', label: 'Cancion + letra + siguiente' },
-  { value: 'PRODUCTION', label: 'Produccion' },
+  { value: 'SONG_ONLY', label: 'Solo canción' },
+  { value: 'SONG_LYRICS', label: 'Canción + letra' },
+  { value: 'SONG_LYRICS_NEXT', label: 'Canción + letra + siguiente' },
+  { value: 'PRODUCTION', label: 'Producción' },
   { value: 'CLEAN', label: 'Pantalla limpia' },
 ];
 

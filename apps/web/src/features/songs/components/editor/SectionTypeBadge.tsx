@@ -8,7 +8,7 @@ const accents: Record<SongSectionType, string> = {
   CHORUS: 'border-emerald-400/40 text-primary',
   BRIDGE: 'border-violet-300/30 text-violet-100',
   INTERLUDE: 'border-blue-300/30 text-blue-100',
-  INSTRUMENTAL: 'border-amber-300/30 text-amber-100',
+  INSTRUMENTAL: 'border-warning/30 text-warning-soft',
   SOLO: 'border-orange-300/30 text-orange-100',
   ENDING: 'border-rose-300/30 text-rose-100',
   CUSTOM: 'border-slate-300/30 text-slate-100',

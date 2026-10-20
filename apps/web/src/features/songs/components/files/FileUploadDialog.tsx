@@ -49,7 +49,7 @@ export function FileUploadDialog({
       onClose={onClose}
     >
       <form className="space-y-4" onSubmit={submit}>
-        <label className="block rounded-2xl border border-dashed border-[#1b2c40] bg-[#06101a] p-4 text-sm text-muted">
+        <label className="block rounded-2xl border border-dashed border-[#30333A] bg-[#0C0D0F] p-4 text-sm text-muted">
           <span className="mb-2 block text-white">Archivo</span>
           <input
             type="file"
@@ -60,17 +60,17 @@ export function FileUploadDialog({
         </label>
         <FileMetadataFields draft={draft} versions={versions} onChange={(patch) => setDraft((current) => ({ ...current, ...patch }))} />
         {progress !== null && (
-          <div className="rounded-xl border border-[#173347] bg-[#081821] p-3 text-sm text-muted">
+          <div className="rounded-xl border border-[#30333A] bg-[#1C2436] p-3 text-sm text-muted">
             <div className="flex items-center justify-between gap-3">
               <span>Subiendo...</span>
               <span>{progress}%</span>
             </div>
-            <div className="mt-2 h-2 rounded-full bg-[#102635]">
-              <div className="h-2 rounded-full bg-[#00E6A3]" style={{ width: `${progress}%` }} />
+            <div className="mt-2 h-2 rounded-full bg-[#23252A]">
+              <div className="h-2 rounded-full bg-primary" style={{ width: `${progress}%` }} />
             </div>
           </div>
         )}
-        {error && <p className="text-sm text-red-200">{error}</p>}
+        {error && <p className="text-sm text-[#F7A39A]">{error}</p>}
         <div className="flex justify-end gap-3">
           <button type="button" className="btn-ghost" onClick={onClose}>Cancelar</button>
           <button className="btn-primary" disabled={submitting || !file}>

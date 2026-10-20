@@ -41,7 +41,7 @@ export function SetlistItemRow({
   const meta = resolveSetlistItemDisplayMetadata(item);
 
   return (
-    <div className={`flex flex-wrap items-center gap-4 rounded-xl border border-[#1b2c40] bg-[#0a1420] px-4 py-3 ${item.isHidden ? 'opacity-50' : ''}`}>
+    <div className={`flex flex-wrap items-center gap-4 rounded-xl border border-[#30333A] bg-[#1A1B1F] px-4 py-3 ${item.isHidden ? 'opacity-50' : ''}`}>
       <span className="icon-tile h-9 w-9 shrink-0"><Icon className="h-4 w-4" /></span>
 
       <div className="min-w-[180px] flex-1">
@@ -58,7 +58,7 @@ export function SetlistItemRow({
           {item.capo != null && <span>Capo {item.capo}</span>}
         </div>
       )}
-      {item.type !== 'SONG' && meta.durationLabel !== '-' && <span className="shrink-0 text-xs text-muted">{meta.durationLabel}</span>}
+      {item.type !== 'SONG' && meta.durationLabel !== '—' && <span className="shrink-0 text-xs text-muted">{meta.durationLabel}</span>}
 
       {canManage && (
         <div className="flex shrink-0 items-center gap-1">
@@ -69,7 +69,7 @@ export function SetlistItemRow({
           </button>
           <button className="btn-ghost h-8 w-8 p-0" onClick={onEdit} aria-label="Editar"><Pencil className="h-3.5 w-3.5" /></button>
           <button className="btn-ghost h-8 w-8 p-0" onClick={onDuplicate} aria-label="Duplicar"><Copy className="h-3.5 w-3.5" /></button>
-          <button className="btn-ghost h-8 w-8 p-0 text-red-300" onClick={onDelete} aria-label="Eliminar"><Trash2 className="h-3.5 w-3.5" /></button>
+          <button className="btn-ghost h-8 w-8 p-0 text-[#F7A39A]" onClick={onDelete} aria-label="Eliminar"><Trash2 className="h-3.5 w-3.5" /></button>
         </div>
       )}
     </div>

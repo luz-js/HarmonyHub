@@ -58,7 +58,7 @@ export function SongLinkDialog({
             required
           />
           {previewProvider && (
-            <p className="mt-1.5 text-xs text-muted">Proveedor detectado: <span className="text-[#8cdff0]">{linkProviderLabels[previewProvider]}</span></p>
+            <p className="mt-1.5 text-xs text-muted">Proveedor detectado: <span className="text-[#8FB4FF]">{linkProviderLabels[previewProvider]}</span></p>
           )}
         </label>
         <label>
@@ -83,7 +83,7 @@ export function SongLinkDialog({
           <input type="checkbox" checked={draft.isPrimary} onChange={(event) => setDraft((current) => ({ ...current, isPrimary: event.target.checked }))} />
           Marcar como referencia principal dentro de este contexto
         </label>
-        {error && <p className="text-sm text-red-200">{error}</p>}
+        {error && <p className="text-sm text-[#F7A39A]">{error}</p>}
         <div className="flex justify-end gap-3">
           <button type="button" className="btn-ghost" onClick={onClose}>Cancelar</button>
           <button className="btn-primary" disabled={submitting}>

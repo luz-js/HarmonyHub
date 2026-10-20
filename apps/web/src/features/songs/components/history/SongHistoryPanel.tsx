@@ -55,9 +55,9 @@ export function SongHistoryPanel({
 
   return (
     <div className="space-y-5">
-      <section className="rounded-2xl border border-[#1b2c40] bg-[#07131d] p-4">
+      <section className="rounded-2xl border border-[#30333A] bg-[#141518] p-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#00D4C8]">Historial</p>
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-primary">Historial</p>
           <h2 className="mt-2 text-xl font-bold text-white">Actividad y revisiones</h2>
           <p className="mt-1 text-sm text-muted">Consulta qué cambió, quién lo hizo y recupera un estado anterior de una versión.</p>
         </div>
@@ -70,7 +70,7 @@ export function SongHistoryPanel({
       {tab === 'actividad' && (
         <section className="panel p-5">
           {activityQuery.isLoading && <p className="text-muted">Cargando actividad...</p>}
-          {activityQuery.error && <p className="text-sm text-red-200">No se pudo cargar la actividad.</p>}
+          {activityQuery.error && <p className="text-sm text-[#F7A39A]">No se pudo cargar la actividad.</p>}
           {activityQuery.data && activityQuery.data.items.length === 0 && <p className="text-sm text-muted">Todavía no hay actividad registrada.</p>}
           {activityQuery.data && activityQuery.data.items.length > 0 && (
             <div className="space-y-3">
@@ -108,7 +108,7 @@ export function SongHistoryPanel({
           </section>
 
           {revisionsQuery.isLoading && <section className="panel p-5 text-muted">Cargando revisiones...</section>}
-          {revisionsQuery.error && <section className="panel p-5 text-sm text-red-200">No se pudo cargar el historial de revisiones.</section>}
+          {revisionsQuery.error && <section className="panel p-5 text-sm text-[#F7A39A]">No se pudo cargar el historial de revisiones.</section>}
 
           {effectiveCompareNumber && diffQuery.data && (
             <section className="panel p-5">
@@ -124,7 +124,7 @@ export function SongHistoryPanel({
               <h3 className="mb-4 text-base font-bold text-white">Revisiones</h3>
               <div className="space-y-3">
                 {revisions.map((revision) => (
-                  <article key={revision.id} className="rounded-2xl border border-[#1b2c40] bg-[#091522] p-4">
+                  <article key={revision.id} className="rounded-2xl border border-[#30333A] bg-[#141518] p-4">
                     <div className="flex flex-wrap items-start justify-between gap-3">
                       <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">

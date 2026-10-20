@@ -2,10 +2,10 @@ import type { SetlistStatus } from '../../../shared/types';
 import { getSetlistStatusLabel } from '../utils';
 
 const STATUS_BADGE_CLASS: Record<SetlistStatus, string> = {
-  DRAFT: 'badge',
-  READY: 'badge badge-blue',
-  PUBLISHED: 'badge badge-primary',
-  ARCHIVED: 'badge',
+  DRAFT: 'badge badge-dot badge-draft',
+  READY: 'badge badge-dot badge-blue',
+  PUBLISHED: 'badge badge-dot badge-success',
+  ARCHIVED: 'badge badge-neutral',
 };
 
 export function SetlistStatusBadge({ status }: { status: SetlistStatus }) {

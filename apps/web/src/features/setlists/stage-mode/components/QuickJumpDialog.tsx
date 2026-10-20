@@ -32,7 +32,7 @@ export function QuickJumpDialog({
   }, [cues, search]);
 
   return (
-    <OverlayDialog title="Ir a..." subtitle="Buscar cancion, bloque o cue" onClose={onClose}>
+    <OverlayDialog title="Ir a..." subtitle="Buscar canción, bloque o cue" onClose={onClose}>
       <div className="relative">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted" />
         <input autoFocus className="input pl-8" placeholder="Buscar..." value={search} onChange={(event) => setSearch(event.target.value)} />

@@ -81,7 +81,7 @@ export function SongNoteDialog({
           <input type="checkbox" checked={draft.isPinned} onChange={(event) => setDraft((current) => ({ ...current, isPinned: event.target.checked }))} />
           Fijar esta nota
         </label>
-        {error && <p className="text-sm text-red-200">{error}</p>}
+        {error && <p className="text-sm text-[#F7A39A]">{error}</p>}
         <div className="flex justify-end gap-3">
           <button type="button" className="btn-ghost" onClick={onClose}>Cancelar</button>
           <button className="btn-primary" disabled={submitting}>

@@ -7,7 +7,7 @@ export function SetlistDragOverlay({ item }: { item: SetlistItem }) {
   const Icon = preview.icon;
 
   return (
-    <div className="flex w-80 cursor-grabbing items-center gap-3 rounded-xl border border-[#1b2c40] bg-[#0d1c2b] px-4 py-3 shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+    <div className="flex w-80 cursor-grabbing items-center gap-3 rounded-xl border border-[#30333A] bg-[#23252A] px-4 py-3 shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
       <span className="icon-tile h-9 w-9 shrink-0">
         <Icon className="h-4 w-4" />
       </span>

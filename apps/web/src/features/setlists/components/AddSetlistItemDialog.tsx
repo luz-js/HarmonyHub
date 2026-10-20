@@ -109,7 +109,7 @@ export function AddSetlistItemDialog({
             {songsQuery.isLoading && <p className="text-xs text-muted">Buscando...</p>}
 
             {!selectedSongId && (songsQuery.data || []).length > 0 && (
-              <div className="max-h-56 space-y-1 overflow-y-auto rounded-md border border-[#1b2c40] p-1">
+              <div className="max-h-56 space-y-1 overflow-y-auto rounded-md border border-[#30333A] p-1">
                 {(songsQuery.data || []).map((song) => (
                   <button
                     key={song.id}
@@ -125,7 +125,7 @@ export function AddSetlistItemDialog({
             )}
 
             {selectedSongId && (
-              <div className="rounded-md border border-[#1b2c40] bg-[#0a1420] p-3">
+              <div className="rounded-md border border-[#30333A] bg-[#1A1B1F] p-3">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-bold text-white">Canción seleccionada</p>
                   <button type="button" className="text-xs text-primary" onClick={() => selectSong('', '')}>Cambiar</button>
@@ -200,7 +200,7 @@ export function AddSetlistItemDialog({
           <textarea className="input min-h-[70px]" value={internalNote} onChange={(event) => setInternalNote(event.target.value)} maxLength={5000} />
         </label>
 
-        {error && <p className="text-sm text-red-200">{error}</p>}
+        {error && <p className="text-sm text-[#F7A39A]">{error}</p>}
         <div className="flex justify-end gap-3">
           <button type="button" className="btn-ghost" onClick={onClose}>Cancelar</button>
           <button className="btn-primary" disabled={createMutation.isPending}>

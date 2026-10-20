@@ -29,8 +29,8 @@ export function AddParticipantDialog({
   }
 
   return (
-    <OverlayDialog title="Agregar participante" subtitle="Selecciona un musico de la organizacion" onClose={onClose}>
-      {error && <p className="mb-2 text-sm text-red-300">{error}</p>}
+    <OverlayDialog title="Agregar participante" subtitle="Selecciona un músico de la organización" onClose={onClose}>
+      {error && <p className="mb-2 text-sm text-[#F7A39A]">{error}</p>}
       <MemberPicker organizationId={organizationId} excludeMembershipIds={excludeMembershipIds} onSelect={handleSelect} />
     </OverlayDialog>
   );

@@ -56,11 +56,11 @@ export function ExpandedSongWorkspace({
   }
 
   return (
-    <div id={id} className="mt-1 overflow-hidden rounded-xl border border-[#1b2c40] bg-[#060f18]">
+    <div id={id} className="mt-1 overflow-hidden rounded-xl border border-[#30333A] bg-[#0C0D0F]">
       <SongWorkspaceHeader item={item} liveVersion={version} />
 
       {versionQuery.isLoading && <p className="p-4 text-sm text-muted">Cargando canción...</p>}
-      {versionQuery.error && <p className="p-4 text-sm text-red-200">No se pudo cargar la canción.</p>}
+      {versionQuery.error && <p className="p-4 text-sm text-[#F7A39A]">No se pudo cargar la canción.</p>}
 
       {version && !isMobile && (
         <div>
@@ -72,7 +72,7 @@ export function ExpandedSongWorkspace({
       )}
 
       {version && isMobile && (
-        <div className="divide-y divide-[#1b2c40]">
+        <div className="divide-y divide-[#30333A]">
           {WORKSPACE_TABS.map((tab) => {
             const isOpen = activeTab === tab.id;
             return (

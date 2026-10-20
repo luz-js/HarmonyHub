@@ -4,7 +4,7 @@ import type { SetlistStatus } from '../../../shared/types';
 
 export function useSetlists(
   organizationId: string,
-  filters: { status?: SetlistStatus; search?: string; includeArchived?: boolean; page?: number; pageSize?: number } = {},
+  filters: { status?: SetlistStatus; search?: string; includeArchived?: boolean; isTemplate?: boolean; page?: number; pageSize?: number } = {},
 ) {
   return useQuery({
     queryKey: ['setlists', organizationId, filters],

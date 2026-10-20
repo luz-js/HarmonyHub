@@ -20,7 +20,7 @@ export function LiveCueBar({ previousCue, currentCue, nextCue }: { previousCue: 
   if (!previousCue && !currentCue && !nextCue) return null;
 
   return (
-    <div className="flex flex-col gap-2 rounded-lg border border-[#1b2c40] bg-[#0a1420] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-2 rounded-lg border border-[#30333A] bg-[#1A1B1F] px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
       {previousCue && (
         <div className="shrink-0 opacity-40 sm:w-32">
           <p className="text-[10px] uppercase tracking-wide text-muted">Anterior</p>
@@ -29,7 +29,7 @@ export function LiveCueBar({ previousCue, currentCue, nextCue }: { previousCue: 
       )}
 
       {currentCue ? (
-        <div className={`flex-1 rounded-md px-3 py-1.5 ${isCriticalPriority(currentCue.priority) ? 'bg-red-500/10' : ''}`}>
+        <div className={`flex-1 rounded-md px-3 py-1.5 ${isCriticalPriority(currentCue.priority) ? 'bg-[#2A1817]' : ''}`}>
           <p className="text-[10px] uppercase tracking-wide text-muted">Cue</p>
           <p className="text-xl font-bold text-white">{getCueTypeLabel(currentCue.type)}</p>
           {currentCue.responsibleParticipant && (
@@ -43,7 +43,7 @@ export function LiveCueBar({ previousCue, currentCue, nextCue }: { previousCue: 
 
       {nextCue && (
         <div className="shrink-0 text-right opacity-70 sm:w-40">
-          <p className="text-[10px] uppercase tracking-wide text-muted">Proximo cue</p>
+          <p className="text-[10px] uppercase tracking-wide text-muted">Próximo cue</p>
           <p className="truncate text-sm font-semibold text-white">{getCueTypeLabel(nextCue.type)}</p>
         </div>
       )}

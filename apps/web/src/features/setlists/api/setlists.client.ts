@@ -10,6 +10,7 @@ export {
   getSetlists,
   publishSetlist,
   reorderSetlistItems,
+  saveSetlistAsTemplate,
   updateSetlist,
   updateSetlistItem,
 } from '../../../shared/api/api-client';

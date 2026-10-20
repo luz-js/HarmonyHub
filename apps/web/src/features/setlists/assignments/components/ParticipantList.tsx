@@ -23,7 +23,7 @@ export function ParticipantList({
   function handleRemove(participant: SetlistParticipant) {
     const message =
       participant.assignmentsCount > 0
-        ? `${participant.membership.user.name} tiene ${participant.assignmentsCount} asignacion(es). Quitarlo del equipo tambien eliminara esas asignaciones. Continuar?`
+        ? `${participant.membership.user.name} tiene ${participant.assignmentsCount} asignación(es). Quitarlo del equipo también eliminará esas asignaciones. Continuar?`
         : `Quitar a ${participant.membership.user.name} del equipo?`;
     if (!window.confirm(message)) return;
     removeMutation.mutate({ participantId: participant.id, removeAssignments: participant.assignmentsCount > 0 });
@@ -50,7 +50,7 @@ export function ParticipantList({
             onRemove={() => handleRemove(participant)}
           />
         ))}
-        {participants.length === 0 && <p className="text-xs text-muted">Todavia no hay participantes en este setlist.</p>}
+        {participants.length === 0 && <p className="text-xs text-muted">Todavía no hay participantes en este setlist.</p>}
       </div>
 
       {addOpen && (

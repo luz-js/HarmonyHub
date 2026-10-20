@@ -19,7 +19,7 @@ export function StageLyrics({
   const version = versionQuery.data;
 
   if (versionQuery.isLoading) return <p className="text-center text-muted">Cargando letra...</p>;
-  if (!version) return <p className="text-center text-muted">Sin letra disponible para esta cancion.</p>;
+  if (!version) return <p className="text-center text-muted">Sin letra disponible para esta canción.</p>;
 
   const parsed = SongContentSchema.safeParse(version.contentJson);
   const content = parsed.success ? normalizeSongContent(parsed.data) : legacyFieldsToSongContent(version.lyrics, version.chords);

@@ -42,9 +42,9 @@ export function CreateCueForm({
   }
 
   return (
-    <div className="space-y-2 rounded-lg border border-[#1b2c40] p-2">
+    <div className="space-y-2 rounded-lg border border-[#30333A] p-2">
       <CueTypePicker value={type} onChange={handleTypeChange} />
-      <input className="input" placeholder="Titulo del cue" value={title} onChange={(event) => setTitle(event.target.value)} />
+      <input className="input" placeholder="Título del cue" value={title} onChange={(event) => setTitle(event.target.value)} />
       <label className="block">
         <span className="label">Offset (segundos)</span>
         <input className="input" type="number" value={offsetSec} onChange={(event) => setOffsetSec(event.target.value)} />

@@ -4,7 +4,7 @@ import { formatThreadDate, threadContextLabel } from './collaboration.utils';
 
 export function ThreadCard({ thread, sectionName, onOpen }: { thread: SongCommentThread; sectionName?: string; onOpen: () => void }) {
   return (
-    <article className="rounded-2xl border border-[#1b2c40] bg-[#091522] p-4">
+    <article className="rounded-2xl border border-[#30333A] bg-[#141518] p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">

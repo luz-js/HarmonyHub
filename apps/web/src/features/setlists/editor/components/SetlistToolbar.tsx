@@ -1,13 +1,10 @@
 import { useState } from 'react';
 import { Eye, ListOrdered, LoaderCircle, Plus, Send, Users } from 'lucide-react';
 import type { SetlistItem, SetlistStatus } from '../../../../shared/types';
-import { SetlistStatusBadge } from '../../components/SetlistStatusBadge';
-import { formatDuration } from '../../../../shared/utils/format';
 import { SetlistTeamPanel } from '../../assignments/components/SetlistTeamPanel';
 import { useSetlistTeam } from '../../assignments/hooks/useSetlistTeam';
 import { SetlistProductionPanel } from '../../cues/components/SetlistProductionPanel';
 import { useSetlistProduction } from '../../cues/hooks/useSetlistProduction';
-import { calculateTotalDuration } from '../utils/calculateDurations';
 import { SetlistPreviewDialog } from './SetlistPreviewDialog';
 
 export function SetlistToolbar({
@@ -39,9 +36,6 @@ export function SetlistToolbar({
   const teamQuery = useSetlistTeam(organizationId, setlistId);
   const productionQuery = useSetlistProduction(organizationId, setlistId);
 
-  const songs = items.filter((item) => item.type === 'SONG' && !item.isHidden).length;
-  const blocks = items.filter((item) => item.type !== 'SONG' && !item.isHidden).length;
-  const totalSec = calculateTotalDuration(items);
   const canPublishNow = canPublish && status !== 'PUBLISHED' && status !== 'ARCHIVED';
 
   const cueRiskCount =
@@ -50,27 +44,18 @@ export function SetlistToolbar({
   function handlePublishClick() {
     const missingRolesCount = teamQuery.data?.missingRolesCount ?? 0;
     const warnings: string[] = [];
-    if (missingRolesCount > 0) warnings.push(`${missingRolesCount} rol(es) sin cubrir`);
-    if (cueRiskCount > 0) warnings.push(`${cueRiskCount} cue(s) criticos, bloqueados o que necesitan revision`);
+    if (missingRolesCount > 0) warnings.push(missingRolesCount === 1 ? '1 rol sin cubrir' : `${missingRolesCount} roles sin cubrir`);
+    if (cueRiskCount > 0) warnings.push(cueRiskCount === 1 ? '1 cue crítico, bloqueado o por revisar' : `${cueRiskCount} cues críticos, bloqueados o por revisar`);
 
     if (warnings.length > 0) {
-      const confirmed = window.confirm(`Este setlist tiene ${warnings.join(' y ')}. Puedes publicarlo igual. Publicar de todas formas?`);
+      const confirmed = window.confirm(`Este setlist tiene ${warnings.join(' y ')}. ¿Publicarlo de todas formas?`);
       if (!confirmed) return;
     }
     onPublish();
   }
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-[#1b2c40] bg-[#0a1420] px-4 py-3">
-      <div className="flex flex-wrap items-center gap-3">
-        <h2 className="text-base font-bold text-white">{name}</h2>
-        <SetlistStatusBadge status={status} />
-        <span className="badge">{formatDuration(totalSec)}</span>
-        <span className="badge">{songs} canciones</span>
-        <span className="badge">{blocks} bloques</span>
-      </div>
-
-      <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2 border-y border-[#23252A] py-3">
         {canManage && (
           <button type="button" className="btn-ghost" onClick={onAdd}>
             <Plus className="h-4 w-4" /> Agregar
@@ -83,20 +68,19 @@ export function SetlistToolbar({
         </button>
 
         <button type="button" className="btn-ghost" onClick={() => setProductionOpen(true)}>
-          <ListOrdered className="h-4 w-4" /> Produccion
+          <ListOrdered className="h-4 w-4" /> Producción
           {cueRiskCount > 0 && <span className="badge badge-warning">{cueRiskCount}</span>}
         </button>
 
         <button type="button" className="btn-ghost" onClick={() => setPreviewOpen(true)}>
-          <Eye className="h-4 w-4" /> Preview
+          <Eye className="h-4 w-4" /> Vista previa
         </button>
 
         {canPublishNow && (
-          <button type="button" className="btn-primary" onClick={handlePublishClick} disabled={publishing}>
+          <button type="button" className="btn-primary sm:ml-auto" onClick={handlePublishClick} disabled={publishing}>
             {publishing ? <LoaderCircle className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Publicar
           </button>
         )}
-      </div>
 
       {previewOpen && <SetlistPreviewDialog name={name} items={items} onClose={() => setPreviewOpen(false)} />}
       {teamOpen && <SetlistTeamPanel organizationId={organizationId} setlistId={setlistId} items={items} onClose={() => setTeamOpen(false)} />}

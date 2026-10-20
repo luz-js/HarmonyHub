@@ -30,14 +30,14 @@ export function CommentItem({
 
   if (comment.isDeleted) {
     return (
-      <div className="rounded-xl border border-dashed border-[#1b2c40] bg-[#08131d] p-3 text-sm italic text-muted">
+      <div className="rounded-xl border border-dashed border-[#30333A] bg-[#141518] p-3 text-sm italic text-muted">
         Comentario eliminado
       </div>
     );
   }
 
   return (
-    <div className="rounded-xl border border-[#1b2c40] bg-[#091522] p-3">
+    <div className="rounded-xl border border-[#30333A] bg-[#141518] p-3">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-semibold text-white">{comment.author?.name || 'Usuario'}</p>
         <div className="flex items-center gap-2">

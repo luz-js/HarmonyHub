@@ -58,7 +58,7 @@ export function CueResponsiblePicker({
             <span className="shrink-0 text-xs text-muted">{participant.membership.instrument || ''}</span>
           </button>
         ))}
-        {filtered.length === 0 && <p className="px-2 py-3 text-xs text-muted">Nadie en el equipo todavia.</p>}
+        {filtered.length === 0 && <p className="px-2 py-3 text-xs text-muted">Nadie en el equipo todavía.</p>}
       </div>
     </div>
   );

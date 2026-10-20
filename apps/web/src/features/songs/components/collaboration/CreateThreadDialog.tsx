@@ -81,7 +81,7 @@ export function CreateThreadDialog({
           <textarea className="textarea min-h-[100px]" value={content} onChange={(event) => setContent(event.target.value.slice(0, MAX_COMMENT_LENGTH))} required />
         </label>
         <MentionPicker selectedUserIds={mentionedUserIds} onChange={setMentionedUserIds} />
-        {error && <p className="text-sm text-red-200">{error}</p>}
+        {error && <p className="text-sm text-[#F7A39A]">{error}</p>}
         <div className="flex justify-end gap-3">
           <button type="button" className="btn-ghost" onClick={onClose}>Cancelar</button>
           <button className="btn-primary" disabled={submitting}>

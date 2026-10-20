@@ -3,8 +3,8 @@ import { ListMusic } from 'lucide-react';
 
 export function SetlistEmptyState({ title, subtitle, action }: { title: string; subtitle: string; action?: ReactNode }) {
   return (
-    <div className="rounded-2xl border border-dashed border-[#1b2c40] bg-[#08131d] px-6 py-10 text-center">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#173347] bg-[#0b1b24] text-[#00E6A3]">
+    <div className="rounded-2xl border border-dashed border-[#30333A] bg-[#141518] px-6 py-10 text-center">
+      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-[#30333A] bg-[#23252A] text-primary">
         <ListMusic className="h-6 w-6" />
       </div>
       <h3 className="mt-5 text-lg font-bold text-white">{title}</h3>

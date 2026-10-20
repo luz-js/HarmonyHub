@@ -1,7 +1,7 @@
 import { useMutation } from '@tanstack/react-query';
 import { queryClient } from '../../../shared/api/query-client';
-import type { SetlistStatus } from '../../../shared/types';
-import { archiveSetlist, createSetlist, deleteSetlist, publishSetlist, updateSetlist } from '../api/setlists.client';
+import type { CreateSetlistInput, SaveSetlistAsTemplateInput, SetlistStatus } from '../../../shared/types';
+import { archiveSetlist, createSetlist, deleteSetlist, publishSetlist, saveSetlistAsTemplate, updateSetlist } from '../api/setlists.client';
 
 function invalidateSetlistQueries(organizationId: string, setlistId?: string) {
   queryClient.invalidateQueries({ queryKey: ['setlists', organizationId] });
@@ -10,7 +10,7 @@ function invalidateSetlistQueries(organizationId: string, setlistId?: string) {
 
 export function useCreateSetlist(organizationId: string) {
   return useMutation({
-    mutationFn: (input: { name: string; description?: string; status?: 'DRAFT' | 'READY' | 'PUBLISHED' }) => createSetlist(input),
+    mutationFn: (input: CreateSetlistInput) => createSetlist(input),
     onSuccess: () => invalidateSetlistQueries(organizationId),
   });
 }
@@ -39,6 +39,13 @@ export function usePublishSetlist(organizationId: string) {
 export function useDeleteSetlist(organizationId: string) {
   return useMutation({
     mutationFn: (id: string) => deleteSetlist(id),
+    onSuccess: () => invalidateSetlistQueries(organizationId),
+  });
+}
+
+export function useSaveSetlistAsTemplate(organizationId: string) {
+  return useMutation({
+    mutationFn: ({ id, input }: { id: string; input: SaveSetlistAsTemplateInput }) => saveSetlistAsTemplate(id, input),
     onSuccess: () => invalidateSetlistQueries(organizationId),
   });
 }

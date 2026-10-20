@@ -24,7 +24,7 @@ export function HistorySummaryPanel({
   return (
     <div className="space-y-4 p-4">
       {activityQuery.isLoading && <p className="text-sm text-muted">Cargando historial...</p>}
-      {activityQuery.error && <p className="text-sm text-red-200">No se pudo cargar el historial.</p>}
+      {activityQuery.error && <p className="text-sm text-[#F7A39A]">No se pudo cargar el historial.</p>}
       {!activityQuery.isLoading && !activityQuery.error && items.length === 0 && <p className="text-sm text-muted">Todavía no hay actividad registrada.</p>}
       {items.length > 0 && (
         <div className="space-y-2">

@@ -7,7 +7,7 @@ function buildPlaceholderItem(tempId: string, input: CreateSetlistItemInput): Se
   return {
     id: tempId,
     type: input.type,
-    title: input.title || (input.type === 'SONG' ? 'Cancion' : 'Item'),
+    title: input.title || (input.type === 'SONG' ? 'Canción' : 'Item'),
     description: input.description ?? null,
     order: 0,
     songId: input.songId ?? null,

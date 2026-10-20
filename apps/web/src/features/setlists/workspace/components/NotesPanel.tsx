@@ -16,7 +16,7 @@ export function NotesPanel({ organizationId, songId, versionId }: { organization
   const generalNotes = useMemo(() => notes.filter((note) => note.versionId === null), [notes]);
 
   if (notesQuery.isLoading) return <p className="p-4 text-sm text-muted">Cargando notas...</p>;
-  if (notesQuery.error) return <p className="p-4 text-sm text-red-200">No se pudieron cargar las notas.</p>;
+  if (notesQuery.error) return <p className="p-4 text-sm text-[#F7A39A]">No se pudieron cargar las notas.</p>;
   if (notes.length === 0) return <p className="p-4 text-sm text-muted">Esta canción no tiene notas todavía.</p>;
 
   return (

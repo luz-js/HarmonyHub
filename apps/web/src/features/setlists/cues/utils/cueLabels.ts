@@ -41,15 +41,15 @@ export const TYPE_LABELS: Record<SetlistCueType, string> = {
   MUSIC_STOP: 'Corte musical',
   DYNAMICS_UP: 'Subir intensidad',
   DYNAMICS_DOWN: 'Bajar intensidad',
-  REPEAT_SECTION: 'Repetir seccion',
-  SKIP_SECTION: 'Saltar seccion',
+  REPEAT_SECTION: 'Repetir sección',
+  SKIP_SECTION: 'Saltar sección',
   MODULATION: 'Modulacion',
   TEMPO_CHANGE: 'Cambio de tempo',
   FREE_TIME: 'Tiempo libre',
   HOLD: 'Sostener',
   ENDING: 'Final',
   SPEAKING: 'Habla',
-  PRAYER: 'Oracion',
+  PRAYER: 'Oración',
   ANNOUNCEMENT: 'Aviso',
   SILENCE: 'Silencio',
   VIDEO_START: 'Iniciar video',
@@ -67,10 +67,10 @@ export const TYPE_LABELS: Record<SetlistCueType, string> = {
   INSTRUMENT_CHANGE: 'Cambio de instrumento',
   CAPO_CHANGE: 'Cambio de capo',
   PATCH_CHANGE: 'Cambio de patch',
-  TUNING_CHANGE: 'Cambio de afinacion',
+  TUNING_CHANGE: 'Cambio de afinación',
   ENTER_STAGE: 'Entrar a escena',
   EXIT_STAGE: 'Salir de escena',
-  POSITION_CHANGE: 'Cambio de posicion',
+  POSITION_CHANGE: 'Cambio de posición',
   TIMER: 'Temporizador',
   MARKER: 'Marcador',
   CUSTOM: 'Personalizado',
@@ -83,14 +83,14 @@ export function getCueTypeLabel(type: SetlistCueType): string {
 export const PHASE_LABELS: Record<SetlistCuePhase, string> = {
   BEFORE: 'Antes',
   DURING: 'Durante',
-  AFTER: 'Despues',
+  AFTER: 'Después',
   GLOBAL: 'General',
 };
 
 export const STATUS_LABELS: Record<SetlistCueStatus, string> = {
   PENDING: 'Pendiente',
   READY: 'Listo',
-  NEEDS_REVIEW: 'Necesita revision',
+  NEEDS_REVIEW: 'Necesita revisión',
   BLOCKED: 'Bloqueado',
   COMPLETED: 'Completado',
   SKIPPED: 'Omitido',
@@ -109,7 +109,7 @@ export const PRIORITY_LABELS: Record<SetlistCuePriority, string> = {
   LOW: 'Baja',
   NORMAL: 'Normal',
   HIGH: 'Alta',
-  CRITICAL: 'Critica',
+  CRITICAL: 'Crítica',
 };
 
 export const PRIORITY_BADGE_CLASS: Record<SetlistCuePriority, string> = {
@@ -120,9 +120,9 @@ export const PRIORITY_BADGE_CLASS: Record<SetlistCuePriority, string> = {
 };
 
 export const WARNING_LABELS: Record<CueWarningCode, string> = {
-  CRITICAL_WITHOUT_RESPONSIBLE: 'Cue critico sin responsable',
+  CRITICAL_WITHOUT_RESPONSIBLE: 'Cue crítico sin responsable',
   BLOCKED: 'Cue bloqueado',
-  OFFSET_BEYOND_DURATION: 'Programado despues de la duracion estimada del item',
+  OFFSET_BEYOND_DURATION: 'Programado después de la duración estimada del item',
   HIDDEN_ITEM: 'Asociado a un item oculto',
   DECLINED_RESPONSIBLE: 'El responsable rechazo su participacion',
   PROBABLE_DUPLICATE: 'Posible cue duplicado',

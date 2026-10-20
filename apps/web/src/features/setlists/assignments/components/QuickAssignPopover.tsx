@@ -42,13 +42,13 @@ export function QuickAssignPopover({
   return (
     <div className="relative">
       <button type="button" className="btn-ghost h-8 px-3 text-xs" onClick={() => setOpen((value) => !value)}>
-        <Plus className="h-3.5 w-3.5" /> Asignar musico
+        <Plus className="h-3.5 w-3.5" /> Asignar músico
       </button>
 
       {open && (
         <>
           <button type="button" aria-label="Cerrar" className="fixed inset-0 z-10 cursor-default" onClick={reset} />
-          <div className="absolute left-0 top-full z-20 mt-1 w-72 rounded-lg border border-[#1b2c40] bg-[#0d1c2b] p-3 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
+          <div className="absolute left-0 top-full z-20 mt-1 w-72 rounded-lg border border-[#30333A] bg-[#23252A] p-3 shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
             {!participantId ? (
               <>
                 <div className="relative">

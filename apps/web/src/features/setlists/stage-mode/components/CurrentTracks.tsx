@@ -16,7 +16,7 @@ export function CurrentTracks({ organizationId, item }: { organizationId: string
   const playing = isCurrent && isPlaying;
 
   return (
-    <div className="mx-auto flex max-w-md items-center justify-between gap-3 rounded-lg border border-[#1b2c40] px-3 py-2">
+    <div className="mx-auto flex max-w-md items-center justify-between gap-3 rounded-lg border border-[#30333A] px-3 py-2">
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold text-white">{primaryTrack.name}</p>
         <p className="text-xs text-muted">Pista actual</p>

@@ -42,14 +42,14 @@ export function SongSectionCard({
   onDrop: () => void;
 }) {
   return (
-    <article className="rounded-lg border border-[#1b2c40] bg-[#091522] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.18)]" draggable={!readOnly} onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop}>
+    <article className="rounded-lg border border-[#30333A] bg-[#141518] p-4 shadow-[0_18px_40px_rgba(0,0,0,0.18)]" draggable={!readOnly} onDragStart={onDragStart} onDragOver={onDragOver} onDrop={onDrop}>
       <SongSectionHeader section={section} readOnly={readOnly} songId={songId} versionId={versionId} onChange={onChange} onDuplicate={onDuplicate} onDelete={onDelete} onMove={onMove} onToggle={onToggle} />
       {!section.collapsed && (
         <div className="mt-4 space-y-3">
           {!readOnly && (
-            <textarea className="input min-h-[48px] resize-y text-sm" value={section.notes || ''} onChange={(event) => onChange({ notes: event.target.value })} placeholder="Notas de seccion" aria-label="Notas de seccion" />
+            <textarea className="input min-h-[48px] resize-y text-sm" value={section.notes || ''} onChange={(event) => onChange({ notes: event.target.value })} placeholder="Notas de sección" aria-label="Notas de sección" />
           )}
-          {section.lines.length === 0 && <p className="rounded-md border border-dashed border-white/10 p-4 text-sm text-muted">Seccion instrumental sin lineas. Puedes agregar una linea si necesitas letra o acordes detallados.</p>}
+          {section.lines.length === 0 && <p className="rounded-md border border-dashed border-white/10 p-4 text-sm text-muted">Sección instrumental sin líneas. Puedes agregar una línea si necesitas letra o acordes detallados.</p>}
           {section.lines.map((line) => (
             <SongLineEditor
               key={line.id}

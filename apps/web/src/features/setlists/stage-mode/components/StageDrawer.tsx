@@ -6,7 +6,7 @@ export function StageDrawer({ title, onClose, children }: { title: string; onClo
     <>
       <button type="button" aria-label="Cerrar" className="fixed inset-0 z-40 bg-black/60" onClick={onClose} />
       <aside
-        className="fixed inset-y-0 right-0 z-50 w-[320px] max-w-full overflow-y-auto border-l border-[#1b2c40] bg-[#0a1420] p-4 shadow-[0_0_60px_rgba(0,0,0,0.5)]"
+        className="fixed inset-y-0 right-0 z-50 w-[320px] max-w-full overflow-y-auto border-l border-[#30333A] bg-[#1A1B1F] p-4 shadow-[0_0_60px_rgba(0,0,0,0.5)]"
         onKeyDown={(event) => event.key === 'Escape' && onClose()}
       >
         <div className="flex items-center justify-between">

@@ -15,11 +15,11 @@ export function TranspositionPreview({ content, semitones, preference, targetKey
   return (
     <div className="space-y-3">
       {rows.map((row, index) => (
-        <div key={`${row.section}-${index}`} className="rounded-md border border-white/10 bg-[#071118] p-3">
+        <div key={`${row.section}-${index}`} className="rounded-md border border-white/10 bg-[#141518] p-3">
           <p className="mb-2 text-xs font-bold uppercase text-muted">{row.section}</p>
           <div className="grid gap-2 md:grid-cols-2">
             <div><span className="text-xs text-muted">Antes</span><pre className="font-mono text-sm text-white">{row.before}</pre></div>
-            <div><span className="text-xs text-muted">Despues</span><pre className="font-mono text-sm text-primary">{row.after}</pre></div>
+            <div><span className="text-xs text-muted">Después</span><pre className="font-mono text-sm text-primary">{row.after}</pre></div>
           </div>
         </div>
       ))}

@@ -25,9 +25,22 @@ export function setCurrentOrganizationId(organizationId: string) {
   localStorage.setItem(CURRENT_ORG_KEY, organizationId);
 }
 
+export function clearCurrentOrganizationId() {
+  localStorage.removeItem(CURRENT_ORG_KEY);
+}
+
 export function clearAuthSession() {
   localStorage.removeItem(AUTH_TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
+  clearCurrentOrganizationId();
+}
+
+/** Evento global que App escucha para volver al login cuando el token vencio o fue rechazado. */
+export const SESSION_EXPIRED_EVENT = 'hh:session-expired';
+
+function expireAuthSession() {
+  clearAuthSession();
+  if (typeof window !== 'undefined') window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
 }
 
 export function getCurrentOrganizationId() {
@@ -55,8 +68,8 @@ export async function http<T>(url: string, init?: RequestInit): Promise<T> {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    if (response.status === 401) clearAuthSession();
-    const error = new Error(data?.message || (response.status === 403 ? 'No tienes permisos para esta accion' : 'No se pudo completar la solicitud'));
+    if (response.status === 401) expireAuthSession();
+    const error = new Error(data?.message || (response.status === 403 ? 'No tienes permisos para esta acción' : 'No se pudo completar la solicitud'));
     Object.assign(error, { status: response.status });
     throw error;
   }
@@ -68,7 +81,7 @@ export async function requestBlob(url: string, init?: RequestInit) {
   const response = await fetch(url, { ...init, headers: applyAuthHeaders(init?.headers) });
   if (!response.ok) {
     const data = await response.json().catch(() => null);
-    if (response.status === 401) clearAuthSession();
+    if (response.status === 401) expireAuthSession();
     const error = new Error(data?.message || 'No se pudo completar la solicitud');
     Object.assign(error, { status: response.status });
     throw error;

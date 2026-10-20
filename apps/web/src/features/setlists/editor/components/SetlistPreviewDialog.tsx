@@ -18,7 +18,7 @@ export function SetlistPreviewDialog({ name, items, onClose }: { name: string; i
     <OverlayDialog title={name} subtitle="Vista previa de la corrida del evento" onClose={onClose}>
       <div className="max-h-[60vh] space-y-3 overflow-y-auto">
         {visibleItems.map((item) => (
-          <div key={item.id} className="flex items-center gap-4 border-b border-[#1b2c40] pb-3 last:border-0">
+          <div key={item.id} className="flex items-center gap-4 border-b border-[#30333A] pb-3 last:border-0">
             <span className="w-14 shrink-0 font-mono text-sm text-[var(--primary)]">{formatClock(timelineByItemId.get(item.id) ?? 0)}</span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-bold text-white">{item.title}</p>
@@ -31,7 +31,7 @@ export function SetlistPreviewDialog({ name, items, onClose }: { name: string; i
             <span className="shrink-0 text-xs text-muted">{formatDuration(item.effective.durationSec)}</span>
           </div>
         ))}
-        {visibleItems.length === 0 && <p className="text-sm text-muted">No hay items visibles para previsualizar.</p>}
+        {visibleItems.length === 0 && <p className="text-sm text-muted">No hay elementos visibles para mostrar.</p>}
       </div>
     </OverlayDialog>
   );

@@ -47,7 +47,7 @@ describe('SetlistEditor', () => {
       />,
     );
 
-    expect(await screen.findByText('Este setlist esta vacio')).toBeInTheDocument();
+    expect(await screen.findByText('Este setlist está vacío')).toBeInTheDocument();
   });
 
   it('renderiza las cards y el DndContext sin errores cuando hay items', async () => {

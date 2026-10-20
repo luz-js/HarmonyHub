@@ -38,7 +38,7 @@ export function RevisionDiffView({ result }: { result: SongRevisionDiffResult })
         <div className="space-y-2">
           <p className="text-sm font-semibold text-white/90">Secciones modificadas</p>
           {diff.sectionsChanged.map((section) => (
-            <div key={section.sectionId} className="rounded-xl border border-[#1b2c40] bg-[#081821] p-3 text-sm text-muted">
+            <div key={section.sectionId} className="rounded-xl border border-[#30333A] bg-[#1C2436] p-3 text-sm text-muted">
               <span className="font-semibold text-white">{section.sectionName}</span>
               {section.linesAdded > 0 && <span> · {section.linesAdded} línea(s) agregada(s)</span>}
               {section.linesRemoved > 0 && <span> · {section.linesRemoved} línea(s) eliminada(s)</span>}
