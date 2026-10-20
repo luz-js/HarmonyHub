@@ -14,9 +14,14 @@ newprompt*
 image*
 *prompt*
 
-*.md*
+# README.md y docs/*.md se versionan; los prompts siguen fuera por la regla *prompt*.
 
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
+
+# Locales de Claude Code y logs temporales de desarrollo
+.claude/settings.local.json
+.tmp-*
+*.log
