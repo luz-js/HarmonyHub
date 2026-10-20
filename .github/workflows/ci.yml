@@ -1,0 +1,50 @@
+# Integracion continua: revisa tipos, corre pruebas y compila en cada push a main y en cada pull request.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Si llega un push nuevo a la misma rama, cancela la ejecucion anterior.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: Typecheck, pruebas y build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      # URL ficticia: prisma.config.ts la lee, pero ningun paso se conecta a la base.
+      DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+
+    steps:
+      - name: Descargar el codigo
+        uses: actions/checkout@v4
+
+      - name: Instalar Node 24 (con cache de npm)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Generar cliente de Prisma
+        run: npx prisma generate
+
+      - name: Typecheck (web y API)
+        run: npm run typecheck
+
+      - name: Pruebas API
+        run: npm test -w @harmonyhub/api
+
+      - name: Pruebas web
+        run: npm test -w @harmonyhub/web
+
+      - name: Build (web y API)
+        run: npm run build
