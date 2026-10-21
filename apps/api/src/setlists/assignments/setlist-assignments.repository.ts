@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Prisma, SetlistMusicalRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { userInstrumentsSelect } from '../../shared/user-instruments';
 import { matchesCopyMode, type CopyAssignmentsMode } from './setlist-assignment.utils';
 
 const assignmentInclude = {
@@ -9,7 +10,7 @@ const assignmentInclude = {
       id: true,
       status: true,
       membership: {
-        select: { id: true, instrument: true, user: { select: { id: true, name: true, avatarUrl: true } } },
+        select: { id: true, user: { select: { id: true, name: true, avatarUrl: true, instruments: userInstrumentsSelect } } },
       },
     },
   },

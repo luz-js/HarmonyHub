@@ -1,6 +1,9 @@
-type MapperUserRef = { id: string; name: string; email?: string; avatarUrl: string | null };
+import type { UserInstrumentRef } from '../../shared/user-instruments';
 
-type MapperMembership = { id: string; role: string; status?: string; instrument: string | null; user: MapperUserRef };
+/** `instruments` = lo que la persona sabe tocar segun su perfil (principal primero). */
+type MapperUserRef = { id: string; name: string; email?: string; avatarUrl: string | null; instruments: UserInstrumentRef[] };
+
+type MapperMembership = { id: string; role: string; status?: string; user: MapperUserRef };
 
 type MapperParticipant = {
   id: string;
@@ -28,7 +31,6 @@ export function mapSetlistParticipant(participant: MapperParticipant, counts: Pa
     membership: {
       id: participant.membership.id,
       role: participant.membership.role,
-      instrument: participant.membership.instrument,
       user: participant.membership.user,
     },
     assignmentsCount,
@@ -56,7 +58,7 @@ type MapperAssignment = {
   participant: {
     id: string;
     status: string;
-    membership: { id: string; instrument: string | null; user: { id: string; name: string; avatarUrl: string | null } };
+    membership: { id: string; user: Omit<MapperUserRef, 'email'> };
   };
 };
 
@@ -78,7 +80,6 @@ export function mapSetlistAssignment(assignment: MapperAssignment) {
       status: assignment.participant.status,
       membership: {
         id: assignment.participant.membership.id,
-        instrument: assignment.participant.membership.instrument,
         user: assignment.participant.membership.user,
       },
     },

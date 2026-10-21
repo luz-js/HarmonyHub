@@ -1,6 +1,7 @@
 import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, SetlistCuePhase, SetlistCueStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { userInstrumentsSelect } from '../../shared/user-instruments';
 import { getCueCategory, type CueCategory } from './setlist-cue.utils';
 
 const cueInclude = {
@@ -8,7 +9,7 @@ const cueInclude = {
     select: {
       id: true,
       status: true,
-      membership: { select: { id: true, instrument: true, user: { select: { id: true, name: true, avatarUrl: true } } } },
+      membership: { select: { id: true, user: { select: { id: true, name: true, avatarUrl: true, instruments: userInstrumentsSelect } } } },
     },
   },
   responsibleAssignment: { select: { id: true, role: true, instrument: true } },

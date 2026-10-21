@@ -1,3 +1,4 @@
+import type { UserInstrumentRef } from '../shared/user-instruments';
 import { AttendanceStatus, EventStatus, getAllowedEventStatusTransitions, summarizeAttendance } from './event.utils';
 
 type MapperEventSetlist = { id: string; name: string; status: string; estimatedSec: number; itemCount: number } | null;
@@ -11,8 +12,7 @@ type MapperEventMusician = {
   membership: {
     id: string;
     role: string;
-    instrument: string | null;
-    user: { id: string; name: string; email: string; avatarUrl: string | null };
+    user: { id: string; name: string; email: string; avatarUrl: string | null; instruments: UserInstrumentRef[] };
   };
 };
 
@@ -39,7 +39,9 @@ function mapEventMusician(musician: MapperEventMusician) {
     email: musician.membership.user.email,
     avatarUrl: musician.membership.user.avatarUrl,
     role: musician.membership.role,
-    instrument: musician.instrument ?? musician.membership.instrument,
+    /** Lo asignado para este evento; si no hay, la web muestra el principal de su perfil (instruments). */
+    instrument: musician.instrument,
+    instruments: musician.membership.user.instruments,
     status: musician.status as AttendanceStatus,
     note: musician.note,
   };

@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { AttendanceStatus, EventStatus, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { userInstrumentsSelect } from '../shared/user-instruments';
 
 const eventInclude = {
   setlist: { select: { id: true, name: true, status: true, estimatedSec: true, itemCount: true } },
@@ -11,8 +12,7 @@ const eventInclude = {
         select: {
           id: true,
           role: true,
-          instrument: true,
-          user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+          user: { select: { id: true, name: true, email: true, avatarUrl: true, instruments: userInstrumentsSelect } },
         },
       },
     },

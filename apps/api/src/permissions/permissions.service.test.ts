@@ -139,3 +139,10 @@ test('canUpdateAnyCueStatus solo roles de liderazgo', () => {
   assert.equal(permissions.canUpdateAnyCueStatus('LEADER'), true);
   assert.equal(permissions.canUpdateAnyCueStatus('MUSICIAN'), false);
 });
+
+test('canAssignMembershipRole: solo un OWNER puede asignar el rol OWNER', () => {
+  assert.equal(permissions.canAssignMembershipRole('OWNER', 'OWNER'), true);
+  assert.equal(permissions.canAssignMembershipRole('ADMIN', 'OWNER'), false);
+  assert.equal(permissions.canAssignMembershipRole('ADMIN', 'ADMIN'), true);
+  assert.equal(permissions.canAssignMembershipRole('ADMIN', 'GUEST'), true);
+});

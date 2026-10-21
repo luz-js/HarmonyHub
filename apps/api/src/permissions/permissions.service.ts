@@ -217,6 +217,17 @@ export class PermissionsService {
     return { actor, target };
   }
 
+  /** Solo un OWNER puede nombrar a otro OWNER (un ADMIN no puede ascender a nadie, ni a si mismo, a propietario). */
+  canAssignMembershipRole(actorRole: MembershipRole, nextRole: MembershipRole) {
+    return nextRole !== 'OWNER' || actorRole === 'OWNER';
+  }
+
+  assertCanAssignMembershipRole(actorRole: MembershipRole, nextRole: MembershipRole) {
+    if (!this.canAssignMembershipRole(actorRole, nextRole)) {
+      throw new ForbiddenException('Solo un propietario puede nombrar a otro propietario');
+    }
+  }
+
   async assertNotLastOwner(organizationId: string, targetMembershipId: string) {
     const target = await this.getMembershipById(targetMembershipId);
     if (target.role !== 'OWNER' || target.status !== 'ACTIVE') return;

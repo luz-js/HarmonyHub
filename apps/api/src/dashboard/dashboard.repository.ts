@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { userInstrumentsSelect } from '../shared/user-instruments';
 
 const upcomingEventInclude = {
   setlist: { select: { id: true, name: true, status: true, estimatedSec: true, itemCount: true } },
@@ -10,8 +11,7 @@ const upcomingEventInclude = {
         select: {
           id: true,
           role: true,
-          instrument: true,
-          user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+          user: { select: { id: true, name: true, email: true, avatarUrl: true, instruments: userInstrumentsSelect } },
         },
       },
     },

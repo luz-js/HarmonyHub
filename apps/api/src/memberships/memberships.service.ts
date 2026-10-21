@@ -3,11 +3,12 @@ import { MembershipRole, MembershipStatus } from '@prisma/client';
 import { z } from 'zod';
 import { PermissionsService } from '../permissions/permissions.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { userInstrumentsSelect } from '../shared/user-instruments';
 
+// El instrumento ya no vive en la membresia: lo elige cada persona en "Mi perfil" (UserInstrument).
 const membershipUpdateSchema = z.object({
   role: z.nativeEnum(MembershipRole).optional(),
   status: z.nativeEnum(MembershipStatus).optional(),
-  instrument: z.string().optional().nullable(),
 });
 
 @Injectable()
@@ -21,7 +22,11 @@ export class MembershipsService {
     await this.permissions.assertOrganizationMember(userId, organizationId);
     return this.prisma.membership.findMany({
       where: { organizationId },
-      include: { user: { select: { id: true, name: true, email: true, phone: true, avatarUrl: true, active: true, createdAt: true } } },
+      include: {
+        user: {
+          select: { id: true, name: true, email: true, phone: true, avatarUrl: true, active: true, createdAt: true, instruments: userInstrumentsSelect },
+        },
+      },
       orderBy: [{ role: 'asc' }, { joinedAt: 'asc' }],
     });
   }
@@ -30,8 +35,9 @@ export class MembershipsService {
     const parsed = membershipUpdateSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
-    const { target } = await this.permissions.assertCanMutateMembership(userId, id);
+    const { actor, target } = await this.permissions.assertCanMutateMembership(userId, id);
     if (parsed.data.role && parsed.data.role !== target.role) {
+      this.permissions.assertCanAssignMembershipRole(actor.role, parsed.data.role);
       await this.permissions.assertNotLastOwner(target.organizationId, id);
     }
     if (parsed.data.status && parsed.data.status !== 'ACTIVE') {
@@ -43,7 +49,6 @@ export class MembershipsService {
       data: {
         role: parsed.data.role,
         status: parsed.data.status,
-        instrument: parsed.data.instrument,
       },
     });
   }

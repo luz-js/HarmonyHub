@@ -1,6 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { userInstrumentsSelect } from '../../shared/user-instruments';
 
 const participantInclude = {
   membership: {
@@ -8,8 +9,7 @@ const participantInclude = {
       id: true,
       role: true,
       status: true,
-      instrument: true,
-      user: { select: { id: true, name: true, email: true, avatarUrl: true } },
+      user: { select: { id: true, name: true, email: true, avatarUrl: true, instruments: userInstrumentsSelect } },
     },
   },
 } satisfies Prisma.SetlistParticipantInclude;
