@@ -130,7 +130,6 @@ export const createTrackSchema = baseTrackSchema.superRefine((value, context) =>
 
   if (value.url) {
     try {
-      // eslint-disable-next-line no-new
       new URL(value.url);
     } catch {
       context.addIssue({ code: 'custom', path: ['url'], message: 'URL invalida' });
@@ -141,7 +140,6 @@ export const createTrackSchema = baseTrackSchema.superRefine((value, context) =>
 export const updateTrackSchema = baseTrackSchema.partial().superRefine((value, context) => {
   if (value.url) {
     try {
-      // eslint-disable-next-line no-new
       new URL(value.url);
     } catch {
       context.addIssue({ code: 'custom', path: ['url'], message: 'URL invalida' });

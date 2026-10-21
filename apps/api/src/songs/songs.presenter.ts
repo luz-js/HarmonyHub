@@ -82,6 +82,7 @@ export function buildInternalTrackUrl(songId: string, trackId: string) {
 }
 
 export function sanitizeDownloadFileName(value: string) {
+  // eslint-disable-next-line no-control-regex -- se quitan a proposito los caracteres de control del nombre de archivo
   return value.replace(/[<>:"/\\|?*\x00-\x1F]+/g, '-').trim() || 'track';
 }
 

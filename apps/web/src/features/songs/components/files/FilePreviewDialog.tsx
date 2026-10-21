@@ -57,6 +57,7 @@ export function FilePreviewDialog({ songFile, songTitle, onClose }: { songFile: 
   async function handleDownload() {
     const blob = await downloadSongFile(songFile.songId, songFile.id);
     const extension = songFile.file.originalName?.split('.').pop() || songFile.file.name.split('.').pop() || 'archivo';
+    // eslint-disable-next-line no-control-regex -- se quitan a proposito los caracteres de control del nombre de archivo
     await saveBlob(blob, `${songTitle} - ${songFile.title}.${extension}`.replace(/[<>:"/\\|?*\x00-\x1F]+/g, '-'));
   }
 

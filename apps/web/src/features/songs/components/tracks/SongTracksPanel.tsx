@@ -11,7 +11,6 @@ import {
   LoaderCircle,
   Pause,
   Play,
-  Plus,
   Star,
   Trash2,
   Upload,
@@ -103,6 +102,7 @@ async function saveBlob(blob: Blob, filename: string) {
 
 function songTrackFileName(songTitle: string, track: SongTrack) {
   const ext = track.originalFileName?.split('.').pop() || track.url.split('.').pop() || 'mp3';
+  // eslint-disable-next-line no-control-regex -- se quitan a proposito los caracteres de control del nombre de archivo
   return `${songTitle} - ${track.name}.${ext}`.replace(/[<>:"/\\|?*\x00-\x1F]+/g, '-');
 }
 

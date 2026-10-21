@@ -3,8 +3,6 @@ import {
   ArrowLeft,
   Copy,
   Edit3,
-  Eye,
-  EyeOff,
   Music2,
   Plus,
   Save,
@@ -403,9 +401,9 @@ export function SongDetailPage({ id, navigate }: { id: string; navigate: Navigat
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [tab, setTab] = useState<DetailTab>('vista');
-  const [showChords, setShowChords] = useState(true);
-  const [fontSize, setFontSize] = useState(16);
-  const [transpose, setTranspose] = useState(0);
+  const [showChords] = useState(true);
+  const [fontSize] = useState(16);
+  const [transpose] = useState(0);
   const [transposeOpen, setTransposeOpen] = useState(false);
   const [temporaryContent, setTemporaryContent] = useState<StructuredSongContent | null>(null);
   const [temporaryKey, setTemporaryKey] = useState('');
@@ -442,10 +440,6 @@ export function SongDetailPage({ id, navigate }: { id: string; navigate: Navigat
       return false;
     }
   }, []);
-  const chords = useMemo(() => Array.from(new Set(content.sections.flatMap((section) => [
-    ...(section.chords || []),
-    ...(section.lines || []).flatMap((line) => splitChordMarkup(line.chords, line.lyrics).chords.split(/\s+/).filter(Boolean)),
-  ]))).slice(0, 12), [content]);
 
   if (loading) return <section className="panel p-5 text-muted">Cargando canción...</section>;
   if (error || !song) return <section className="rounded-xl border border-[#F27A6E]/30 bg-[#2A1817] p-4 text-sm text-[#F7A39A]">{error || 'Canción no encontrada'}</section>;
@@ -621,116 +615,6 @@ function SongContentView({ content, showChords, fontSize, transpose, songId, ver
         </article>
       ))}
     </div>
-  );
-}
-
-function SongEditor({ songId, version, showChords, setShowChords, fontSize, setFontSize, transpose, setTranspose, onSaved }: { songId: string; version: SongVersion; showChords: boolean; setShowChords: (value: boolean) => void; fontSize: number; setFontSize: (value: number) => void; transpose: number; setTranspose: (value: number | ((current: number) => number)) => void; onSaved: () => void }) {
-  const [content, setContent] = useState<SongContent>(toContent(version));
-  const [saving, setSaving] = useState(false);
-
-  function updateLine(sectionIndex: number, lineIndex: number, field: 'chords' | 'lyrics', value: string) {
-    setContent((current) => ({
-      sections: current.sections.map((section, index) => index === sectionIndex
-        ? { ...section, lines: (section.lines || [{ chords: '', lyrics: '' }]).map((line, nextIndex) => nextIndex === lineIndex ? { ...line, [field]: value } : line) }
-        : section),
-    }));
-  }
-
-  function addSection() {
-    setContent((current) => ({ sections: [...current.sections, { name: 'Nueva sección', lines: [{ chords: '', lyrics: '' }] }] }));
-  }
-
-  function updateSection(sectionIndex: number, field: 'name' | 'notes', value: string) {
-    setContent((current) => ({
-      sections: current.sections.map((section, index) => index === sectionIndex ? { ...section, [field]: value } : section),
-    }));
-  }
-
-  function addLine(sectionIndex: number) {
-    setContent((current) => ({
-      sections: current.sections.map((section, index) => index === sectionIndex ? { ...section, lines: [...(section.lines || []), { chords: '', lyrics: '' }] } : section),
-    }));
-  }
-
-  function deleteLine(sectionIndex: number, lineIndex: number) {
-    setContent((current) => ({
-      sections: current.sections.map((section, index) => index === sectionIndex ? { ...section, lines: (section.lines || []).filter((_, nextIndex) => nextIndex !== lineIndex) } : section),
-    }));
-  }
-
-  function duplicateSection(sectionIndex: number) {
-    setContent((current) => {
-      const section = current.sections[sectionIndex];
-      const clone = { ...section, name: `${section.name} copia`, lines: [...(section.lines || [])] };
-      return { sections: [...current.sections.slice(0, sectionIndex + 1), clone, ...current.sections.slice(sectionIndex + 1)] };
-    });
-  }
-
-  function moveSection(sectionIndex: number, direction: -1 | 1) {
-    setContent((current) => {
-      const nextIndex = sectionIndex + direction;
-      if (nextIndex < 0 || nextIndex >= current.sections.length) return current;
-      const sections = [...current.sections];
-      const [section] = sections.splice(sectionIndex, 1);
-      sections.splice(nextIndex, 0, section);
-      return { sections };
-    });
-  }
-
-  function deleteSection(sectionIndex: number) {
-    setContent((current) => ({ sections: current.sections.filter((_, index) => index !== sectionIndex) }));
-  }
-
-  async function save(asNew = false) {
-    setSaving(true);
-    const lyrics = content.sections.flatMap((section) => (section.lines || []).map((line) => line.lyrics || '')).join('\n');
-    const chords = content.sections.flatMap((section) => (section.lines || []).map((line) => line.chords || '')).join('\n');
-    if (asNew) {
-      await createSongVersion(songId, { ...version, id: undefined, name: `${version.name} copia`, contentJson: content, lyrics, chords, isDefault: false });
-    } else {
-      await updateSongVersion(songId, version.id, { contentJson: content, lyrics, chords });
-    }
-    setSaving(false);
-    onSaved();
-  }
-
-  return (
-    <section className="grid gap-5 xl:grid-cols-[1fr_320px]">
-      <Panel title="Editor visual">
-        <div className="mb-4 flex flex-wrap gap-2">
-          <button className="btn-ghost" onClick={() => setShowChords(!showChords)}>{showChords ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />} Acordes</button>
-          <button className="btn-ghost" onClick={() => setFontSize(Math.max(13, fontSize - 1))}>A-</button>
-          <button className="btn-ghost" onClick={() => setFontSize(Math.min(24, fontSize + 1))}>A+</button>
-          <button className="btn-ghost" onClick={() => setTranspose((value) => value - 1)}>-1/2</button>
-          <button className="btn-ghost" onClick={() => setTranspose((value) => value + 1)}>+1/2</button>
-          <button className="btn-ghost" onClick={addSection}><Plus className="h-4 w-4" /> Sección</button>
-          <button className="btn-primary" onClick={() => save(false)} disabled={saving}><Save className="h-4 w-4" /> Guardar</button>
-          <button className="btn-ghost" onClick={() => save(true)} disabled={saving}>Guardar como versión</button>
-        </div>
-        <div className="space-y-4">
-          {content.sections.map((section, sectionIndex) => (
-            <article key={sectionIndex} className="rounded-md border border-[#30333A] bg-[#141518] p-4">
-              <div className="mb-3 flex flex-wrap gap-2">
-                <input className="input min-w-[220px] flex-1 font-bold text-primary" value={section.name} onChange={(event) => updateSection(sectionIndex, 'name', event.target.value)} />
-                <button type="button" className="btn-ghost" onClick={() => moveSection(sectionIndex, -1)}>Subir</button>
-                <button type="button" className="btn-ghost" onClick={() => moveSection(sectionIndex, 1)}>Bajar</button>
-                <button type="button" className="btn-ghost" onClick={() => duplicateSection(sectionIndex)}><Copy className="h-4 w-4" /> Duplicar</button>
-                <button type="button" className="btn-danger" onClick={() => deleteSection(sectionIndex)}><Trash2 className="h-4 w-4" /> Borrar</button>
-              </div>
-              {(section.lines || [{ chords: '', lyrics: '' }]).map((line, lineIndex) => (
-                <div key={lineIndex} className="mb-3 grid gap-2 md:grid-cols-[180px_1fr_auto]">
-                  <input className="input font-mono text-primary-soft" value={line.chords || ''} onChange={(event) => updateLine(sectionIndex, lineIndex, 'chords', event.target.value)} placeholder="D   A   Bm   G" />
-                  <input className="input" value={line.lyrics || ''} onChange={(event) => updateLine(sectionIndex, lineIndex, 'lyrics', event.target.value)} placeholder="Letra de la línea" />
-                </div>
-              ))}
-            </article>
-          ))}
-        </div>
-      </Panel>
-      <Panel title="Vista previa">
-        <SongContentView content={content} showChords={showChords} fontSize={fontSize} transpose={transpose} />
-      </Panel>
-    </section>
   );
 }
 
