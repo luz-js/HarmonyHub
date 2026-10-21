@@ -5,10 +5,11 @@ import { EventsModule } from './events/events.module';
 import { OrganizationsModule } from './organizations/organizations.module';
 import { PermissionsModule } from './permissions/permissions.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { ProfileModule } from './profile/profile.module';
 import { SetlistsModule } from './setlists/setlists.module';
 import { SongsModule } from './songs/songs.module';
 
 @Module({
-  imports: [PrismaModule, PermissionsModule, AuthModule, SongsModule, SetlistsModule, EventsModule, DashboardModule, OrganizationsModule],
+  imports: [PrismaModule, PermissionsModule, AuthModule, SongsModule, SetlistsModule, EventsModule, DashboardModule, OrganizationsModule, ProfileModule],
 })
 export class AppModule {}

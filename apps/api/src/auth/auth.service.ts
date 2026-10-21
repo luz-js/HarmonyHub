@@ -40,6 +40,7 @@ export class AuthService {
       avatarUrl: user.avatarUrl,
       active: user.active,
       createdAt: user.createdAt,
+      instruments: user.instruments.map(({ id, instrument, isPrimary }) => ({ id, instrument, isPrimary })),
       role: currentMembership?.role,
       currentOrganizationId: currentMembership?.organizationId,
       currentOrganizationSlug: currentMembership?.organization.slug,

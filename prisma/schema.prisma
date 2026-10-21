@@ -234,10 +234,24 @@ model User {
   createdSetlistAssignments SetlistAssignment[]  @relation("SetlistAssignmentCreatedBy")
   createdSetlistCues        SetlistCue[]         @relation("SetlistCueCreatedBy")
   completedSetlistCues      SetlistCue[]         @relation("SetlistCueCompletedBy")
+  instruments               UserInstrument[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
   @@index([email])
+}
+
+/// Lo que la persona sabe tocar (lo edita ella misma en "Mi perfil"). Lo que toca en cada setlist/evento va en sus asignaciones.
+model UserInstrument {
+  id         String             @id @default(cuid())
+  userId     String
+  instrument SetlistMusicalRole
+  isPrimary  Boolean            @default(false)
+  createdAt  DateTime           @default(now())
+  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, instrument])
+  @@index([userId])
 }
 
 model Organization {
