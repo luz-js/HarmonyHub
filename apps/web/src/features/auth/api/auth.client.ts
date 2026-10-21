@@ -1,1 +1,1 @@
-export { getCurrentUser, loginRequest, registerRequest } from '../../../shared/api/api-client';
+export { getCurrentUser, loginRequest, registerRequest, replaceMyInstruments, updateMe } from '../../../shared/api/api-client';

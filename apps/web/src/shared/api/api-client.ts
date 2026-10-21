@@ -2,6 +2,9 @@ import type {
   CurrentUser,
   InvitationSummary,
   OrganizationSummary,
+  ReplaceMyInstrumentsInput,
+  UpdateMeInput,
+  UserInstrument,
   SongActivityPage,
   SongActivityType,
   SongComment,
@@ -79,6 +82,15 @@ export function registerRequest(input: { name: string; email: string; password: 
 
 export function getCurrentUser() {
   return http<{ ok: boolean; user: CurrentUser }>('/api/auth/me');
+}
+
+/** "Mi perfil": siempre sobre el usuario de la sesion. */
+export function updateMe(input: UpdateMeInput) {
+  return http<{ ok: boolean; user: Pick<CurrentUser, 'id' | 'name' | 'email' | 'phone' | 'avatarUrl'> }>('/api/me', { method: 'PATCH', body: JSON.stringify(input) });
+}
+
+export function replaceMyInstruments(input: ReplaceMyInstrumentsInput) {
+  return http<{ ok: boolean; instruments: UserInstrument[] }>('/api/me/instruments', { method: 'PUT', body: JSON.stringify(input) });
 }
 
 export function getOrganizations() {

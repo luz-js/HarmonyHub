@@ -1,4 +1,12 @@
 import type { OrganizationSummary } from './organization.types';
+import type { SetlistMusicalRole } from './setlist.types';
+
+/** Lo que la persona sabe tocar (lo edita en "Mi perfil"); el principal viene primero. */
+export type UserInstrument = {
+  id: string;
+  instrument: SetlistMusicalRole;
+  isPrimary: boolean;
+};
 
 export type CurrentUser = {
   id: string;
@@ -8,8 +16,18 @@ export type CurrentUser = {
   avatarUrl?: string | null;
   active?: boolean;
   createdAt?: string;
+  instruments?: UserInstrument[];
   role?: string;
   currentOrganizationId?: string;
   currentOrganizationSlug?: string;
   organizations: OrganizationSummary[];
+};
+
+export type UpdateMeInput = {
+  name?: string;
+  phone?: string | null;
+};
+
+export type ReplaceMyInstrumentsInput = {
+  instruments: { instrument: SetlistMusicalRole; isPrimary?: boolean }[];
 };

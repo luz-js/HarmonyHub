@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { CalendarPage } from './features/calendar';
 import { ActivityPage, DashboardPage as HomeDashboard } from './features/dashboard';
 import { EventDetailPage, EventsPage } from './features/events';
@@ -8,6 +8,7 @@ import { SetlistDetailPage, SetlistsPage as RealSetlistsPage } from './features/
 import { ArchivesPage, MusiciansPage, SettingsPage } from './app/LegacyPages';
 import { LoginPage } from './app/LoginPage';
 import { OnboardingPage } from './app/OnboardingPage';
+import { ProfilePage } from './features/profile';
 import { readStoredUser, storeUser, withOrganization } from './app/session';
 import { Shell } from './app/Shell';
 import type { AppOrganization, AppUser, Navigate } from './app/types';
@@ -15,7 +16,7 @@ import { useRoute } from './app/useRoute';
 import { clearAuthSession, SESSION_EXPIRED_EVENT, setCurrentOrganizationId } from './shared/api/http';
 import { queryClient } from './shared/api/query-client';
 
-function resolvePage(path: string, user: AppUser, navigate: Navigate): ReactNode {
+function resolvePage(path: string, user: AppUser, navigate: Navigate, onProfileUpdated: (changes: { name: string }) => void): ReactNode {
   if (path.startsWith('/songs/')) {
     return <SongDetailPage id={path.replace('/songs/', '')} navigate={navigate} />;
   }
@@ -38,6 +39,7 @@ function resolvePage(path: string, user: AppUser, navigate: Navigate): ReactNode
     '/calendar': <CalendarPage navigate={navigate} />,
     '/notifications': <ActivityPage navigate={navigate} />,
     '/settings': <SettingsPage />,
+    '/profile': <ProfilePage onUserUpdated={onProfileUpdated} />,
   };
 
   return pages[path] ?? <HomeDashboard user={user} navigate={navigate} />;
@@ -75,13 +77,23 @@ function App() {
     navigate('/');
   }
 
+  /** Mi perfil cambio el nombre: se actualiza la sesion guardada para que el menu lo muestre al instante. */
+  const updateProfile = useCallback((changes: { name: string }) => {
+    setUser((current) => {
+      if (!current) return current;
+      const nextUser = { ...current, ...changes };
+      storeUser(nextUser);
+      return nextUser;
+    });
+  }, []);
+
   const page = useMemo(() => {
     if (!user || path === '/login') {
       return <LoginPage onLogin={setUser} />;
     }
 
-    return resolvePage(path, user, navigate);
-  }, [navigate, path, user]);
+    return resolvePage(path, user, navigate, updateProfile);
+  }, [navigate, path, updateProfile, user]);
 
   if (!user || path === '/login') {
     return <>{page}</>;
