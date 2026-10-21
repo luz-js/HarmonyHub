@@ -35,8 +35,8 @@ function makeEvent(overrides: Partial<EventDetail> = {}): EventDetail {
     createdAt: '2026-10-01T00:00:00.000Z',
     allowedStatusTransitions: ['DRAFT', 'CONFIRMED', 'CANCELLED'],
     musicians: [
-      { id: 'm1', membershipId: 'ms1', userId: 'u1', name: 'Ana Martínez', email: 'ana@x.com', avatarUrl: null, role: 'LEADER', instrument: 'Voz', status: 'CONFIRMED', note: null },
-      { id: 'm2', membershipId: 'ms2', userId: 'u2', name: 'Carlos Rodríguez', email: 'carlos@x.com', avatarUrl: null, role: 'MUSICIAN', instrument: 'Guitarra', status: 'PENDING', note: null },
+      { id: 'm1', membershipId: 'ms1', userId: 'u1', name: 'Ana Martínez', email: 'ana@x.com', avatarUrl: null, role: 'LEADER', instrument: 'Voz', instruments: [], status: 'CONFIRMED', note: null },
+      { id: 'm2', membershipId: 'ms2', userId: 'u2', name: 'Carlos Rodríguez', email: 'carlos@x.com', avatarUrl: null, role: 'MUSICIAN', instrument: 'Guitarra', instruments: [], status: 'PENDING', note: null },
     ],
     ...overrides,
   };
@@ -66,6 +66,15 @@ describe('EventTeamPanel', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Voy/ }));
     await waitFor(() => expect(updateEventMusician).toHaveBeenCalledWith('e1', 'm2', { status: 'CONFIRMED' }));
+  });
+
+  it('sin instrumento asignado al evento muestra el principal del perfil del músico', () => {
+    const base = makeEvent();
+    const event = makeEvent({
+      musicians: [{ ...base.musicians[1], instrument: null, instruments: [{ instrument: 'BASS', isPrimary: true }] }],
+    });
+    renderPanel({ event, currentUserId: 'u1' });
+    expect(screen.getByText('Bajo')).toBeInTheDocument();
   });
 
   it('un lider puede agregar, quitar y cambiar la asistencia de otros', () => {

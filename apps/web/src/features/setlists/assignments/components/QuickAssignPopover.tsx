@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Plus, Search } from 'lucide-react';
 import type { SetlistItemType, SetlistMusicalRole } from '../../../../shared/types';
+import { primaryInstrumentLabel } from '../../../profile/utils/instrumentGroups';
 import { useCreateSetlistAssignment } from '../hooks/useSetlistAssignmentMutations';
 import { useSetlistParticipants } from '../hooks/useSetlistParticipants';
 import { MusicalRolePicker } from './MusicalRolePicker';
@@ -64,7 +65,7 @@ export function QuickAssignPopover({
                       onClick={() => setParticipantId(participant.id)}
                     >
                       <span className="truncate">{participant.membership.user.name}</span>
-                      <span className="shrink-0 text-xs text-muted">{participant.membership.instrument || ''}</span>
+                      <span className="shrink-0 text-xs text-muted">{primaryInstrumentLabel(participant.membership.user.instruments)}</span>
                     </button>
                   ))}
                   {filtered.length === 0 && (

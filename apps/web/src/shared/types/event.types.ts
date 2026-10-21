@@ -1,3 +1,4 @@
+import type { UserInstrumentRef } from './auth.types';
 import type { SetlistStatus } from './setlist.types';
 
 export type EventStatus = 'DRAFT' | 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'FINISHED';
@@ -40,7 +41,9 @@ export type EventMusician = {
   email: string;
   avatarUrl: string | null;
   role: string;
+  /** Lo asignado para este evento; si es null se muestra el principal de su perfil (instruments). */
   instrument: string | null;
+  instruments: UserInstrumentRef[];
   status: AttendanceStatus;
   note: string | null;
 };

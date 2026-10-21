@@ -1,4 +1,11 @@
-import type { SetlistMusicalRole } from '../../../shared/types';
+import type { SetlistMusicalRole, UserInstrumentRef } from '../../../shared/types';
+import { getRoleLabel } from '../../setlists/assignments/utils/assignmentLabels';
+
+/** Nombre del instrumento principal del perfil (o '' si no eligio ninguno). */
+export function primaryInstrumentLabel(instruments: UserInstrumentRef[] | undefined) {
+  const primary = instruments?.find((item) => item.isPrimary) ?? instruments?.[0];
+  return primary ? getRoleLabel(primary.instrument) : '';
+}
 
 /** Los 30 roles musicales agrupados como se muestran en "Mi perfil". */
 export const INSTRUMENT_GROUPS: { title: string; roles: SetlistMusicalRole[] }[] = [

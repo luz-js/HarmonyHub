@@ -1,8 +1,10 @@
 import type {
   CurrentUser,
   InvitationSummary,
+  OrganizationMember,
   OrganizationSummary,
   ReplaceMyInstrumentsInput,
+  UpdateMembershipInput,
   UpdateMeInput,
   UserInstrument,
   SongActivityPage,
@@ -102,11 +104,11 @@ export function createOrganization(input: { name: string; type: string; descript
 }
 
 export function getMemberships(organizationId: string) {
-  return http(`/api/memberships?organizationId=${encodeURIComponent(organizationId)}`);
+  return http<OrganizationMember[]>(`/api/memberships?organizationId=${encodeURIComponent(organizationId)}`);
 }
 
-export function updateMembership(id: string, input: { role?: string; status?: string; instrument?: string }) {
-  return http(`/api/memberships/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
+export function updateMembership(id: string, input: UpdateMembershipInput) {
+  return http<Pick<OrganizationMember, 'id' | 'role' | 'status'>>(`/api/memberships/${id}`, { method: 'PATCH', body: JSON.stringify(input) });
 }
 
 export function getInvitations(organizationId: string) {

@@ -19,7 +19,7 @@ export function makeSetlistAssignment(overrides: Partial<SetlistAssignment> = {}
     participant: {
       id: `participant-${counter}`,
       status: 'CONFIRMED',
-      membership: { id: `membership-${counter}`, instrument: null, user: { id: `user-${counter}`, name: `Musico ${counter}`, avatarUrl: null } },
+      membership: { id: `membership-${counter}`, user: { id: `user-${counter}`, name: `Musico ${counter}`, avatarUrl: null, instruments: [] } },
     },
     createdAt: new Date().toISOString(),
     updatedAt: new Date().toISOString(),

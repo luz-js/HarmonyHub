@@ -54,7 +54,7 @@ describe('ItemAssignmentsSection: limite de permisos MUSICIAN', () => {
       participant: {
         id: 'p-own',
         status: 'CONFIRMED',
-        membership: { id: 'm-own', instrument: null, user: { id: 'current-user', name: 'Yo Mismo', avatarUrl: null } },
+        membership: { id: 'm-own', user: { id: 'current-user', name: 'Yo Mismo', avatarUrl: null, instruments: [] } },
       },
     });
     const otherAssignment = makeSetlistAssignment({
@@ -64,7 +64,7 @@ describe('ItemAssignmentsSection: limite de permisos MUSICIAN', () => {
       participant: {
         id: 'p-other',
         status: 'CONFIRMED',
-        membership: { id: 'm-other', instrument: null, user: { id: 'other-user', name: 'Otro Musico', avatarUrl: null } },
+        membership: { id: 'm-other', user: { id: 'other-user', name: 'Otro Musico', avatarUrl: null, instruments: [] } },
       },
     });
 

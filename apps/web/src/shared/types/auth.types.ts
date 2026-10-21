@@ -2,11 +2,12 @@ import type { OrganizationSummary } from './organization.types';
 import type { SetlistMusicalRole } from './setlist.types';
 
 /** Lo que la persona sabe tocar (lo edita en "Mi perfil"); el principal viene primero. */
-export type UserInstrument = {
-  id: string;
+export type UserInstrumentRef = {
   instrument: SetlistMusicalRole;
   isPrimary: boolean;
 };
+
+export type UserInstrument = UserInstrumentRef & { id: string };
 
 export type CurrentUser = {
   id: string;

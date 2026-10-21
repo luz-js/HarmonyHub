@@ -1,14 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
 import { useMemberships } from '../../../musicians/hooks';
-
-type MembershipRow = {
-  id: string;
-  role: string;
-  status: string;
-  instrument: string | null;
-  user: { id: string; name: string; avatarUrl: string | null; active: boolean };
-};
+import { primaryInstrumentLabel } from '../../../profile/utils/instrumentGroups';
 
 /** Selector de miembros para agregar como participante del setlist: reusa GET /api/memberships filtrando client-side. */
 export function MemberPicker({
@@ -24,7 +17,7 @@ export function MemberPicker({
   const [search, setSearch] = useState('');
 
   const members = useMemo(() => {
-    const rows = (membershipsQuery.data as MembershipRow[] | undefined) || [];
+    const rows = membershipsQuery.data || [];
     return rows.filter((row) => row.status === 'ACTIVE' && row.user?.active && !excludeMembershipIds.includes(row.id));
   }, [membershipsQuery.data, excludeMembershipIds]);
 
@@ -49,7 +42,7 @@ export function MemberPicker({
             onClick={() => onSelect(member.id)}
           >
             <span className="truncate">{member.user.name}</span>
-            <span className="shrink-0 text-xs text-muted">{member.instrument || member.role}</span>
+            <span className="shrink-0 text-xs text-muted">{primaryInstrumentLabel(member.user.instruments) || member.role}</span>
           </button>
         ))}
         {filtered.length === 0 && <p className="px-2 py-3 text-xs text-muted">No hay músicos disponibles.</p>}

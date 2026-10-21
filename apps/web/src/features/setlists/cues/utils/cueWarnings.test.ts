@@ -30,7 +30,7 @@ describe('buildCueWarnings', () => {
       responsibleParticipant: {
         id: 'p1',
         status: 'DECLINED',
-        membership: { id: 'm1', instrument: null, user: { id: 'u1', name: 'Ana', avatarUrl: null } },
+        membership: { id: 'm1', user: { id: 'u1', name: 'Ana', avatarUrl: null, instruments: [] } },
       },
     });
     const warnings = buildCueWarnings([cue], [], [{ id: 'p1', status: 'DECLINED' }]);

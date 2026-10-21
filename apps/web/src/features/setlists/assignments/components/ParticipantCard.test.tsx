@@ -9,7 +9,7 @@ function makeParticipant(overrides: Partial<SetlistParticipant> = {}): SetlistPa
     status: 'CONFIRMED',
     generalRole: null,
     generalNote: null,
-    membership: { id: 'm1', role: 'MUSICIAN', instrument: 'Guitarra', user: { id: 'u1', name: 'Ana Perez', avatarUrl: null } },
+    membership: { id: 'm1', role: 'MUSICIAN', user: { id: 'u1', name: 'Ana Perez', avatarUrl: null, instruments: [{ instrument: 'ACOUSTIC_GUITAR', isPrimary: true }] } },
     assignmentsCount: 0,
     readyCount: 0,
     pendingCount: 0,

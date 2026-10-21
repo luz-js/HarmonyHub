@@ -3,6 +3,7 @@ import { Trash2, UserPlus } from 'lucide-react';
 import { OverlayDialog } from '../../../shared/components/OverlayDialog';
 import type { AttendanceStatus, EventDetail } from '../../../shared/types';
 import { formatRole, plural } from '../../../shared/utils/format';
+import { primaryInstrumentLabel } from '../../profile/utils/instrumentGroups';
 import { MemberPicker } from '../../setlists/assignments/components/MemberPicker';
 import { useAddEventMusician, useRemoveEventMusician, useUpdateEventMusician } from '../hooks';
 import { attendanceStatusLabels, isEventLocked } from '../utils';
@@ -99,7 +100,7 @@ export function EventTeamPanel({
               </span>
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[15px] font-semibold text-white">{musician.name}{isSelf && <span className="font-medium text-muted"> (tú)</span>}</p>
-                <p className="truncate text-[13px] text-muted">{musician.instrument || formatRole(musician.role)}{musician.note ? ` · ${musician.note}` : ''}</p>
+                <p className="truncate text-[13px] text-muted">{musician.instrument || primaryInstrumentLabel(musician.instruments) || formatRole(musician.role)}{musician.note ? ` · ${musician.note}` : ''}</p>
               </div>
               <div className={`flex items-center gap-2 ${hasControls ? 'basis-full pl-12 sm:basis-auto sm:pl-0' : ''}`}>
                 {isSelf && !locked ? (

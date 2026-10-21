@@ -1,6 +1,5 @@
 import { FileText, Info, Monitor, Moon, Sun } from 'lucide-react';
-import { files, musicians } from '../data';
-import { getInitials } from '../features/dashboard/utils';
+import { files } from '../data';
 
 /** Estas secciones todavia muestran datos de ejemplo (src/data.ts); se diseñan en la próxima etapa. */
 function SampleDataNotice() {
@@ -18,27 +17,6 @@ function PageHeader({ title, subtitle }: { title: string; subtitle: string }) {
       <h1 className="page-title">{title}</h1>
       <p className="page-subtitle">{subtitle}</p>
     </section>
-  );
-}
-
-export function MusiciansPage() {
-  return (
-    <div className="space-y-5">
-      <PageHeader title="Músicos" subtitle="Las personas de tu equipo y lo que tocan." />
-      <SampleDataNotice />
-      <section className="panel divide-y divide-[#23252A]">
-        {musicians.map((musician) => (
-          <div key={musician.id} className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
-            <span className="avatar h-10 w-10 shrink-0 text-sm">{getInitials(musician.name)}</span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] font-semibold text-white">{musician.name}</p>
-              <p className="truncate text-sm text-muted">{musician.instrument} · {musician.role}</p>
-            </div>
-            <span className="badge badge-success">{musician.status}</span>
-          </div>
-        ))}
-      </section>
-    </div>
   );
 }
 

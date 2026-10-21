@@ -17,12 +17,6 @@ export const setlists = [
   { id: 'setlist-ensayo', name: 'Ensayo Adoración', date: '2026-06-24', songs: songs.slice(0, 3), duration: '15:17' },
 ];
 
-export const musicians = [
-  { id: 'maria', name: 'María González', role: 'Líder', instrument: 'Voz', status: 'Activo' },
-  { id: 'carlos', name: 'Carlos Rodríguez', role: 'Músico', instrument: 'Guitarra', status: 'Activo' },
-  { id: 'ana', name: 'Ana Martínez', role: 'Músico', instrument: 'Teclado', status: 'Activo' },
-];
-
 export const files = [
   { id: 'file-1', name: 'Gratitud - Letra.pdf', type: 'PDF', size: '130 KB', author: 'María González' },
   { id: 'file-2', name: 'Como en el Cielo.mp3', type: 'Audio', size: '5.2 MB', author: 'Carlos Rodríguez' },

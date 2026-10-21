@@ -1,5 +1,6 @@
 import { AlertTriangle, Trash2 } from 'lucide-react';
 import type { SetlistParticipant, SetlistParticipantStatus } from '../../../../shared/types';
+import { primaryInstrumentLabel } from '../../../profile/utils/instrumentGroups';
 import { PARTICIPANT_STATUS_LABELS } from '../utils/assignmentLabels';
 
 export function ParticipantCard({
@@ -18,7 +19,7 @@ export function ParticipantCard({
       <div className="min-w-0">
         <p className="truncate text-sm font-semibold text-white">{participant.membership.user.name}</p>
         <p className="truncate text-xs text-muted">
-          {participant.membership.instrument || participant.membership.role} · {participant.assignmentsCount} asignacion(es)
+          {primaryInstrumentLabel(participant.membership.user.instruments) || participant.membership.role} · {participant.assignmentsCount} asignacion(es)
           {participant.assignmentsCount > 0 ? ` · ${participant.readyCount}/${participant.assignmentsCount} listos` : ''}
         </p>
         {participant.status === 'DECLINED' && participant.assignmentsCount > 0 && (

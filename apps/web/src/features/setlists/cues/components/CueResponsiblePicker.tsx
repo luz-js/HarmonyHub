@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
+import { primaryInstrumentLabel } from '../../../profile/utils/instrumentGroups';
 import { useSetlistParticipants } from '../../assignments/hooks/useSetlistParticipants';
 
 /**
@@ -55,7 +56,7 @@ export function CueResponsiblePicker({
             onClick={() => onChange(participant.id)}
           >
             <span className="truncate">{participant.membership.user.name}</span>
-            <span className="shrink-0 text-xs text-muted">{participant.membership.instrument || ''}</span>
+            <span className="shrink-0 text-xs text-muted">{primaryInstrumentLabel(participant.membership.user.instruments)}</span>
           </button>
         ))}
         {filtered.length === 0 && <p className="px-2 py-3 text-xs text-muted">Nadie en el equipo todavía.</p>}

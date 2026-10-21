@@ -1,3 +1,4 @@
+import type { UserInstrumentRef } from './auth.types';
 import type { MembershipRole } from './membership.types';
 
 export type SetlistStatus = 'DRAFT' | 'READY' | 'PUBLISHED' | 'ARCHIVED';
@@ -123,8 +124,8 @@ export type AssignmentPreparationStatus = 'PENDING' | 'IN_PROGRESS' | 'READY' | 
 export type SetlistParticipantMembership = {
   id: string;
   role: MembershipRole;
-  instrument: string | null;
-  user: { id: string; name: string; email?: string; avatarUrl: string | null };
+  /** `instruments`: lo que la persona sabe tocar segun su perfil (principal primero). */
+  user: { id: string; name: string; email?: string; avatarUrl: string | null; instruments: UserInstrumentRef[] };
 };
 
 export type SetlistParticipant = {
@@ -143,7 +144,7 @@ export type SetlistParticipant = {
 export type SetlistAssignmentParticipantRef = {
   id: string;
   status: SetlistParticipantStatus;
-  membership: { id: string; instrument: string | null; user: { id: string; name: string; avatarUrl: string | null } };
+  membership: { id: string; user: { id: string; name: string; avatarUrl: string | null; instruments: UserInstrumentRef[] } };
 };
 
 export type SetlistAssignment = {
@@ -260,7 +261,7 @@ export type CueCategory = 'MUSICAL' | 'AUDIO' | 'TRACKS' | 'VIDEO' | 'LIGHTING' 
 export type SetlistCueResponsibleParticipant = {
   id: string;
   status: SetlistParticipantStatus;
-  membership: { id: string; instrument: string | null; user: { id: string; name: string; avatarUrl: string | null } };
+  membership: { id: string; user: { id: string; name: string; avatarUrl: string | null; instruments: UserInstrumentRef[] } };
 };
 
 export type SetlistCueResponsibleAssignment = { id: string; role: string; instrument: string | null };
