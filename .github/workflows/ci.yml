@@ -40,6 +40,10 @@ jobs:
       - name: Typecheck (web y API)
         run: npm run typecheck
 
+      # ESLint: los avisos (warnings) se muestran pero no rompen la CI; los errores si.
+      - name: Lint (ESLint)
+        run: npm run lint
+
       - name: Pruebas API
         run: npm test -w @harmonyhub/api
 

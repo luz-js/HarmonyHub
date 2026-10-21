@@ -15,19 +15,23 @@
     "build:api": "npm run build -w @harmonyhub/api",
     "start:api": "npm run start -w @harmonyhub/api",
     "typecheck": "npm run typecheck -w @harmonyhub/web && npm run typecheck -w @harmonyhub/api",
-    "lint": "npm run typecheck",
+    "lint": "eslint .",
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
     "prisma:db:push": "prisma db push"
   },
-  "dependencies": {},
   "devDependencies": {
+    "@eslint/js": "^9.39.5",
     "concurrently": "^10.0.3",
     "dotenv": "^17.4.2",
-    "eslint": "^8.57.0",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.7",
+    "globals": "^17.13.0",
     "prisma": "^7.8.0",
-    "typescript": "^5.6.2"
+    "typescript": "^5.6.2",
+    "typescript-eslint": "^8.72.0"
   }
 }

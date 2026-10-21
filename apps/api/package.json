@@ -8,7 +8,7 @@
     "start": "node dist/main.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "tsx --test src/songs/storage/storage-path.test.ts src/songs/links/song-link.utils.test.ts src/songs/files/song-file.utils.test.ts src/songs/collaboration/song-collaboration.utils.test.ts src/permissions/permissions.service.test.ts src/songs/history/song-revision.utils.test.ts src/setlists/setlist.utils.test.ts src/setlists/assignments/setlist-assignment.utils.test.ts src/setlists/cues/setlist-cue.utils.test.ts src/events/event.utils.test.ts src/auth/login-rate-limiter.test.ts",
-    "lint": "npm run typecheck"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@nestjs/common": "^11.1.27",
