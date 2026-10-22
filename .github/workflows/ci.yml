@@ -17,9 +17,27 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
+    # Postgres desechable, solo para las pruebas e2e (vive lo que dura la ejecucion).
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: harmonyhub_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
     env:
-      # URL ficticia: prisma.config.ts la lee, pero ningun paso se conecta a la base.
+      # URL ficticia: prisma.config.ts la lee, pero ningun paso salvo las e2e se conecta a una base.
       DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      # Base de pruebas del servicio de arriba; las e2e la vacian y la llenan con datos de prueba.
+      TEST_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/harmonyhub_test
 
     steps:
       - name: Descargar el codigo
@@ -46,6 +64,10 @@ jobs:
 
       - name: Pruebas API
         run: npm test -w @harmonyhub/api
+
+      # API real (guards incluidos) contra Postgres: nadie puede leer ni tocar datos de otra organizacion.
+      - name: Pruebas e2e de permisos (API + Postgres)
+        run: npm run test:e2e -w @harmonyhub/api
 
       - name: Pruebas web
         run: npm test -w @harmonyhub/web
