@@ -68,6 +68,23 @@ export function getCurrentOrganizationId() {
   }
 }
 
+/** Sin conexion la app es de solo lectura: nada se encola para enviar despues. */
+export const OFFLINE_WRITE_MESSAGE = 'Sin conexión: este cambio no se guardó. Inténtalo cuando vuelvas a estar en línea.';
+export const OFFLINE_READ_MESSAGE = 'Sin conexión: esto todavía no está guardado en este dispositivo.';
+
+function isOffline() {
+  return typeof navigator !== 'undefined' && navigator.onLine === false;
+}
+
+function offlineError(message: string) {
+  return Object.assign(new Error(message), { status: 0, offline: true });
+}
+
+/** Lanza el error de "sin conexion" si no hay red (lo usan las subidas, que no pasan por http()). */
+export function assertOnlineForChanges() {
+  if (isOffline()) throw offlineError(OFFLINE_WRITE_MESSAGE);
+}
+
 /** Rutas de sesion: un 401 aqui es la respuesta en si (clave incorrecta, refresh vencido), no se intenta renovar. */
 const SESSION_ROUTES = ['/api/login', '/api/auth/register', '/api/auth/refresh', '/api/auth/logout'];
 
@@ -111,7 +128,14 @@ export async function ensureFreshAccessToken() {
 
 /** fetch con los headers de sesion; ante un 401 renueva la sesion una vez y reintenta, o vuelve al login. */
 async function authorizedFetch(url: string, init: RequestInit | undefined, buildHeaders: () => Headers) {
-  const send = () => fetch(url, { ...init, headers: buildHeaders(), credentials: 'include' });
+  const method = (init?.method || 'GET').toUpperCase();
+  if (method !== 'GET' && method !== 'HEAD') assertOnlineForChanges();
+  const send = () =>
+    fetch(url, { ...init, headers: buildHeaders(), credentials: 'include' }).catch((error: unknown) => {
+      // Sin conexion y sin copia guardada: un mensaje claro en vez de "Failed to fetch".
+      if (isOffline()) throw offlineError(OFFLINE_READ_MESSAGE);
+      throw error;
+    });
   let response = await send();
   if (response.status === 401 && !SESSION_ROUTES.includes(url)) {
     response = (await refreshSession()) ? await send() : response;

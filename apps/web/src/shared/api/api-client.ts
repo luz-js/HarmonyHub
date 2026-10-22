@@ -78,7 +78,7 @@ import type {
   UpdateSetlistParticipantInput,
   UpdateSetlistRoleRequirementInput,
 } from '../types';
-import { buildAuthHeaders, ensureFreshAccessToken, http, requestBlob, setAuthToken, setCurrentOrganizationId } from './http';
+import { assertOnlineForChanges, buildAuthHeaders, ensureFreshAccessToken, http, requestBlob, setAuthToken, setCurrentOrganizationId } from './http';
 import type {
   CopySongTracksInput,
   CreateSongCommentInput,
@@ -322,6 +322,7 @@ export function uploadSongFile(
   onProgress?: (progress: number) => void,
 ) {
   // La subida usa XMLHttpRequest (para el progreso), que no pasa por http(): se renueva el token antes si hace falta.
+  assertOnlineForChanges();
   return ensureFreshAccessToken().then(() => new Promise<SongFile>((resolve, reject) => {
     const formData = new FormData();
     formData.set('file', input.file);
@@ -529,6 +530,7 @@ export function uploadSongTrack(
   onProgress?: (progress: number) => void,
 ) {
   // La subida usa XMLHttpRequest (para el progreso), que no pasa por http(): se renueva el token antes si hace falta.
+  assertOnlineForChanges();
   return ensureFreshAccessToken().then(() => new Promise<SongTrack>((resolve, reject) => {
     const formData = new FormData();
     formData.set('file', input.file);

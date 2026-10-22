@@ -24,6 +24,7 @@ import { useRoute } from './app/useRoute';
 import { getCurrentUser, logoutRequest, saveActiveOrganization } from './shared/api/api-client';
 import { clearAuthSession, clearCurrentOrganizationId, ORGANIZATION_ACCESS_LOST_EVENT, SESSION_EXPIRED_EVENT, setCurrentOrganizationId } from './shared/api/http';
 import { queryClient } from './shared/api/query-client';
+import { clearOfflineData, syncOfflineDataOwner } from './pwa/offline-data';
 
 function resolvePage(path: string, user: AppUser, navigate: Navigate, onProfileUpdated: (changes: { name: string }) => void): ReactNode {
   if (path.startsWith('/songs/')) {
@@ -63,6 +64,7 @@ function App() {
   useEffect(() => {
     const onSessionExpired = () => {
       queryClient.clear();
+      void clearOfflineData();
       setUser(null);
     };
     window.addEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
@@ -93,6 +95,10 @@ function App() {
 
   const userId = user?.id;
   useEffect(() => {
+    void syncOfflineDataOwner(userId ?? null);
+  }, [userId]);
+
+  useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- carga asincrona: el estado cambia cuando responde el servidor, no durante el efecto
     if (userId) void syncSession();
   }, [userId, syncSession]);
@@ -107,6 +113,7 @@ function App() {
     void logoutRequest();
     clearAuthSession();
     queryClient.clear();
+    void clearOfflineData();
     setUser(null);
     navigate('/login');
   }

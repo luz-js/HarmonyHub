@@ -8,6 +8,7 @@ import { StageDrawer } from './StageDrawer';
 import { StageFooter } from './StageFooter';
 import { StageLayout } from './StageLayout';
 import { StageSettings } from './StageSettings';
+import { useMarkStageModeOpen } from '../../../../pwa/hooks';
 import { StageTopBar } from './StageTopBar';
 
 export function StageMode({ organizationId, setlistId, setlistName, onExit }: { organizationId: string; setlistId: string; setlistName: string; onExit: () => void }) {
@@ -17,6 +18,7 @@ export function StageMode({ organizationId, setlistId, setlistName, onExit }: { 
   const [quickJumpOpen, setQuickJumpOpen] = useState(false);
 
   const stage = useStageMode(organizationId, setlistId);
+  useMarkStageModeOpen();
   const { state, update, navigation, cue, timers, currentUserId } = { ...stage, currentUserId: stage.currentUser.id };
 
   function toggleFullscreen() {
