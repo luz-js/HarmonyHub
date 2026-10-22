@@ -1,19 +1,13 @@
 import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { Invitation, InvitationStatus, MembershipRole, Prisma } from '@prisma/client';
+import type { CreateInvitationData } from '@harmonyhub/contracts';
+import { Invitation, InvitationStatus, Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
-import { z } from 'zod';
 import type { OrgMember } from '../permissions/current-membership.decorator';
 import { PermissionsService } from '../permissions/permissions.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 const INVITATION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
-
-const invitationCreateSchema = z.object({
-  organizationId: z.string().min(1),
-  email: z.string().trim().toLowerCase().email('Escribe un correo valido'),
-  role: z.nativeEnum(MembershipRole).default('MUSICIAN'),
-});
 
 /** Lo que ve quien gestiona invitaciones. El token no se expone: aceptar depende del correo de quien entra. */
 const invitationSelect = {
@@ -60,10 +54,8 @@ export class InvitationsService {
   }
 
   /** La organizacion viene en el cuerpo; PermissionsGuard ya verifico 'invitations.manage' sobre ella. */
-  async create(member: OrgMember, body: unknown) {
-    const parsed = invitationCreateSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const { email, role } = parsed.data;
+  async create(member: OrgMember, data: CreateInvitationData) {
+    const { email, role } = data;
     const { organizationId } = member;
 
     // Misma regla que al cambiar un rol: solo un propietario nombra (o invita como) propietario.

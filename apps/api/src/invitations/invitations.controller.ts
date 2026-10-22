@@ -1,9 +1,11 @@
 import { Body, Controller, Get, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { createInvitationSchema, type CreateInvitationData } from '@harmonyhub/contracts';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser, CurrentUserPayload } from '../auth/current-user.decorator';
 import { CurrentMembership, OrgMember } from '../permissions/current-membership.decorator';
 import { PermissionsGuard } from '../permissions/permissions.guard';
 import { RequirePermission } from '../permissions/require-permission.decorator';
+import { ZodPipe } from '../shared/zod.pipe';
 import { InvitationsService } from './invitations.service';
 
 @Controller('api/invitations')
@@ -19,8 +21,8 @@ export class InvitationsController {
 
   @Post()
   @RequirePermission('invitations.manage', { organizationFrom: { body: 'organizationId' } })
-  create(@CurrentMembership() member: OrgMember, @Body() body: Record<string, unknown>) {
-    return this.invitationsService.create(member, body ?? {});
+  create(@CurrentMembership() member: OrgMember, @Body(new ZodPipe(createInvitationSchema)) body: CreateInvitationData) {
+    return this.invitationsService.create(member, body);
   }
 
   /** Excepcion: la organizacion sale de la invitacion; el servicio verifica 'invitations.manage'. */

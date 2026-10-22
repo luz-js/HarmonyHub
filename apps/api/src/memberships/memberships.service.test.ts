@@ -3,6 +3,8 @@ import { test } from 'node:test';
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { PermissionsService } from '../permissions/permissions.service';
 import type { PrismaService } from '../prisma/prisma.service';
+import { updateMembershipSchema } from '@harmonyhub/contracts';
+import { viaPipe } from '../shared/zod-pipe.test-utils';
 import { MembershipsService } from './memberships.service';
 
 type FakeMembership = { id: string; userId: string; organizationId: string; role: string; status: string };
@@ -48,7 +50,10 @@ function makeService(memberships: FakeMembership[]) {
   };
   const fakePrisma = prisma as unknown as PrismaService;
   const permissions = new PermissionsService(fakePrisma);
-  return { service: new MembershipsService(fakePrisma, permissions), updates };
+  const service = new MembershipsService(fakePrisma, permissions);
+  // Como en la API: el cuerpo pasa por ZodPipe con el esquema del contrato antes de llegar al servicio.
+  const api = { update: (userId: string, id: string, raw: unknown) => viaPipe(updateMembershipSchema, raw, (data) => service.update(userId, id, data)) };
+  return { service: api, updates };
 }
 
 const org = 'org-1';

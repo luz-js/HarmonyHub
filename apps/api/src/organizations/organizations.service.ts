@@ -1,30 +1,8 @@
 import { BadRequestException, ConflictException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { OrganizationType } from '@prisma/client';
-import { z } from 'zod';
+import type { ArchiveOrganizationData, CreateOrganizationData, TransferOrganizationData, UpdateOrganizationData } from '@harmonyhub/contracts';
 import type { OrgMember } from '../permissions/current-membership.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 import { repointActiveOrganization } from '../shared/active-organization';
-
-const organizationCreateSchema = z.object({
-  name: z.string().min(1).transform((value) => value.trim()),
-  type: z.nativeEnum(OrganizationType).default('BAND'),
-  description: z.string().optional(),
-  primaryColor: z.string().optional(),
-});
-
-const organizationUpdateSchema = z.object({
-  name: z.string().min(1).optional(),
-  description: z.string().optional().nullable(),
-  primaryColor: z.string().optional(),
-});
-
-const transferSchema = z.object({
-  membershipId: z.string().trim().min(1, 'Elige a quien le pasas la propiedad'),
-  /** Por defecto quien transfiere deja de ser propietario y queda como administrador. */
-  stepDown: z.boolean().default(true),
-});
-
-const archiveSchema = z.object({ confirmName: z.string() });
 
 const normalizeName = (value: string) => value.trim().replace(/\s+/g, ' ').toLowerCase();
 
@@ -44,10 +22,8 @@ export class OrganizationsService {
     });
   }
 
-  async create(userId: string, body: unknown) {
-    const parsed = organizationCreateSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const { name, type, description, primaryColor } = parsed.data;
+  async create(userId: string, data: CreateOrganizationData) {
+    const { name, type, description, primaryColor } = data;
 
     return this.prisma.organization.create({
       data: {
@@ -111,10 +87,8 @@ export class OrganizationsService {
   }
 
   /** Pasa la propiedad a otro miembro activo. La organizacion nunca queda sin propietario: el nuevo se nombra primero. */
-  async transfer(member: OrgMember, body: unknown) {
-    const parsed = transferSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const { membershipId, stepDown } = parsed.data;
+  async transfer(member: OrgMember, data: TransferOrganizationData) {
+    const { membershipId, stepDown } = data;
     if (membershipId === member.id) throw new BadRequestException('Elige a otra persona del equipo');
 
     const target = await this.prisma.membership.findFirst({ where: { id: membershipId, organizationId: member.organizationId, status: 'ACTIVE' } });
@@ -128,11 +102,9 @@ export class OrganizationsService {
   }
 
   /** Archivar pide escribir el nombre de la organizacion (sin importar mayusculas ni espacios extra). No borra nada. */
-  async archive(member: OrgMember, body: unknown) {
-    const parsed = archiveSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException('Escribe el nombre de la organizacion para confirmar');
+  async archive(member: OrgMember, data: ArchiveOrganizationData) {
     const organization = await this.prisma.organization.findUniqueOrThrow({ where: { id: member.organizationId } });
-    if (normalizeName(parsed.data.confirmName) !== normalizeName(organization.name)) {
+    if (normalizeName(data.confirmName) !== normalizeName(organization.name)) {
       throw new BadRequestException('El nombre no coincide con el de la organizacion');
     }
     if (organization.archivedAt) return organization;
@@ -143,16 +115,14 @@ export class OrganizationsService {
     return this.prisma.organization.update({ where: { id: member.organizationId }, data: { archivedAt: null, archivedById: null } });
   }
 
-  async update(id: string, body: unknown) {
-    const parsed = organizationUpdateSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
+  async update(id: string, data: UpdateOrganizationData) {
 
     return this.prisma.organization.update({
       where: { id },
       data: {
-        name: parsed.data.name,
-        description: parsed.data.description,
-        primaryColor: parsed.data.primaryColor,
+        name: data.name,
+        description: data.description,
+        primaryColor: data.primaryColor,
       },
     });
   }

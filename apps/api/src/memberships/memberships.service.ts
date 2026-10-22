@@ -1,17 +1,10 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { MembershipRole, MembershipStatus } from '@prisma/client';
-import { z } from 'zod';
+import { Inject, Injectable } from '@nestjs/common';
+import type { UpdateMembershipData } from '@harmonyhub/contracts';
 import type { OrgMember } from '../permissions/current-membership.decorator';
 import { PermissionsService } from '../permissions/permissions.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { repointActiveOrganization } from '../shared/active-organization';
 import { userInstrumentsSelect } from '../shared/user-instruments';
-
-// El instrumento ya no vive en la membresia: lo elige cada persona en "Mi perfil" (UserInstrument).
-const membershipUpdateSchema = z.object({
-  role: z.nativeEnum(MembershipRole).optional(),
-  status: z.nativeEnum(MembershipStatus).optional(),
-});
 
 @Injectable()
 export class MembershipsService {
@@ -32,16 +25,14 @@ export class MembershipsService {
     });
   }
 
-  async update(userId: string, id: string, body: unknown) {
-    const parsed = membershipUpdateSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
+  async update(userId: string, id: string, data: UpdateMembershipData) {
 
     const { actor, target } = await this.permissions.assertCanMutateMembership(userId, id);
-    if (parsed.data.role && parsed.data.role !== target.role) {
-      this.permissions.assertCanAssignMembershipRole(actor.role, parsed.data.role);
+    if (data.role && data.role !== target.role) {
+      this.permissions.assertCanAssignMembershipRole(actor.role, data.role);
       await this.permissions.assertNotLastOwner(target.organizationId, id);
     }
-    if (parsed.data.status && parsed.data.status !== 'ACTIVE') {
+    if (data.status && data.status !== 'ACTIVE') {
       await this.permissions.assertNotLastOwner(target.organizationId, id);
     }
 
@@ -49,8 +40,8 @@ export class MembershipsService {
       const updated = await tx.membership.update({
         where: { id },
         data: {
-          role: parsed.data.role,
-          status: parsed.data.status,
+          role: data.role,
+          status: data.status,
         },
       });
       // Si la desactivan y esa era su organizacion activa guardada, se le cambia por otra (o queda vacia).

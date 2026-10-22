@@ -1,9 +1,11 @@
 import { Body, Controller, Get, Inject, Param, Patch, UseGuards } from '@nestjs/common';
+import { updateMembershipSchema, type UpdateMembershipData } from '@harmonyhub/contracts';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser, CurrentUserPayload } from '../auth/current-user.decorator';
 import { CurrentMembership, OrgMember } from '../permissions/current-membership.decorator';
 import { PermissionsGuard } from '../permissions/permissions.guard';
 import { RequirePermission } from '../permissions/require-permission.decorator';
+import { ZodPipe } from '../shared/zod.pipe';
 import { MembershipsService } from './memberships.service';
 
 @Controller('api/memberships')
@@ -19,7 +21,7 @@ export class MembershipsController {
 
   /** Excepcion: la organizacion sale de la membresia a editar; el servicio verifica 'members.manage' y las reglas de propietario. */
   @Patch(':id')
-  update(@CurrentUser() user: CurrentUserPayload, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.membershipsService.update(user.id, id, body ?? {});
+  update(@CurrentUser() user: CurrentUserPayload, @Param('id') id: string, @Body(new ZodPipe(updateMembershipSchema)) body: UpdateMembershipData) {
+    return this.membershipsService.update(user.id, id, body);
   }
 }

@@ -1,9 +1,20 @@
 import { Body, Controller, Get, HttpCode, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  archiveOrganizationSchema,
+  createOrganizationSchema,
+  transferOrganizationSchema,
+  updateOrganizationSchema,
+  type ArchiveOrganizationData,
+  type CreateOrganizationData,
+  type TransferOrganizationData,
+  type UpdateOrganizationData,
+} from '@harmonyhub/contracts';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser, CurrentUserPayload } from '../auth/current-user.decorator';
 import { CurrentMembership, OrgMember } from '../permissions/current-membership.decorator';
 import { PermissionsGuard } from '../permissions/permissions.guard';
 import { RequirePermission } from '../permissions/require-permission.decorator';
+import { ZodPipe } from '../shared/zod.pipe';
 import { OrganizationsService } from './organizations.service';
 
 const fromParam = { organizationFrom: { param: 'id' } } as const;
@@ -20,8 +31,8 @@ export class OrganizationsController {
   }
 
   @Post()
-  create(@CurrentUser() user: CurrentUserPayload, @Body() body: Record<string, unknown>) {
-    return this.organizationsService.create(user.id, body ?? {});
+  create(@CurrentUser() user: CurrentUserPayload, @Body(new ZodPipe(createOrganizationSchema)) body: CreateOrganizationData) {
+    return this.organizationsService.create(user.id, body);
   }
 
   @Get(':id')
@@ -32,8 +43,8 @@ export class OrganizationsController {
 
   @Patch(':id')
   @RequirePermission('organization.manage', fromParam)
-  update(@Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.organizationsService.update(id, body ?? {});
+  update(@Param('id') id: string, @Body(new ZodPipe(updateOrganizationSchema)) body: UpdateOrganizationData) {
+    return this.organizationsService.update(id, body);
   }
 
   @Post(':id/leave')
@@ -46,15 +57,15 @@ export class OrganizationsController {
   @Post(':id/transfer')
   @HttpCode(200)
   @RequirePermission('organization.transfer', fromParam)
-  transfer(@CurrentMembership() member: OrgMember, @Body() body: Record<string, unknown>) {
-    return this.organizationsService.transfer(member, body ?? {});
+  transfer(@CurrentMembership() member: OrgMember, @Body(new ZodPipe(transferOrganizationSchema)) body: TransferOrganizationData) {
+    return this.organizationsService.transfer(member, body);
   }
 
   @Post(':id/archive')
   @HttpCode(200)
   @RequirePermission('organization.archive', fromParam)
-  archive(@CurrentMembership() member: OrgMember, @Body() body: Record<string, unknown>) {
-    return this.organizationsService.archive(member, body ?? {});
+  archive(@CurrentMembership() member: OrgMember, @Body(new ZodPipe(archiveOrganizationSchema)) body: ArchiveOrganizationData) {
+    return this.organizationsService.archive(member, body);
   }
 
   @Post(':id/restore')

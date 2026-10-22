@@ -1,6 +1,8 @@
 import type {
   AcceptedInvitation,
   AppNotification,
+  ArchiveOrganizationInput,
+  TransferOrganizationInput,
   LoginInput,
   RegisterInput,
   CreateUnavailabilityInput,
@@ -181,12 +183,13 @@ export function leaveOrganization(id: string) {
   return http<{ ok: boolean }>(`/api/organizations/${encodeURIComponent(id)}/leave`, { method: 'POST' });
 }
 
-export function transferOrganization(id: string, input: { membershipId: string; stepDown: boolean }) {
+export function transferOrganization(id: string, input: TransferOrganizationInput) {
   return http<{ ok: boolean }>(`/api/organizations/${encodeURIComponent(id)}/transfer`, { method: 'POST', body: JSON.stringify(input) });
 }
 
 export function archiveOrganization(id: string, confirmName: string) {
-  return http<OrganizationSummary>(`/api/organizations/${encodeURIComponent(id)}/archive`, { method: 'POST', body: JSON.stringify({ confirmName }) });
+  const input: ArchiveOrganizationInput = { confirmName };
+  return http<OrganizationSummary>(`/api/organizations/${encodeURIComponent(id)}/archive`, { method: 'POST', body: JSON.stringify(input) });
 }
 
 export function restoreOrganization(id: string) {

@@ -15,3 +15,12 @@ export const SETLIST_MUSICAL_ROLES = [
   'OTHER',
 ] as const;
 export type SetlistMusicalRole = (typeof SETLIST_MUSICAL_ROLES)[number];
+
+export const MEMBERSHIP_STATUSES = ['ACTIVE', 'INACTIVE', 'INVITED'] as const;
+export type MembershipStatus = (typeof MEMBERSHIP_STATUSES)[number];
+
+export const ORGANIZATION_TYPES = ['BAND', 'MINISTRY', 'ACOUSTIC_GROUP', 'ORCHESTRA', 'OTHER'] as const;
+export type OrganizationType = (typeof ORGANIZATION_TYPES)[number];
+
+export const INVITATION_STATUSES = ['PENDING', 'ACCEPTED', 'CANCELLED', 'EXPIRED', 'DECLINED'] as const;
+export type InvitationStatus = (typeof INVITATION_STATUSES)[number];
