@@ -1,9 +1,22 @@
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  addEventMusicianSchema,
+  createEventSchema,
+  eventListQuerySchema,
+  updateEventMusicianSchema,
+  updateEventSchema,
+  type AddEventMusicianData,
+  type CreateEventData,
+  type EventListQueryData,
+  type UpdateEventData,
+  type UpdateEventMusicianData,
+} from '@harmonyhub/contracts';
 import { AuthGuard } from '../auth/auth.guard';
 import { EventsService } from './events.service';
 import { CurrentMembership, OrgMember } from '../permissions/current-membership.decorator';
 import { PermissionsGuard } from '../permissions/permissions.guard';
 import { RequirePermission } from '../permissions/require-permission.decorator';
+import { ZodPipe } from '../shared/zod.pipe';
 
 @Controller('api/events')
 @UseGuards(AuthGuard, PermissionsGuard)
@@ -12,7 +25,7 @@ export class EventsController {
 
   @Get()
   @RequirePermission('read')
-  list(@CurrentMembership() member: OrgMember, @Query() query: Record<string, unknown>) {
+  list(@CurrentMembership() member: OrgMember, @Query(new ZodPipe(eventListQuerySchema, 'Filtros invalidos')) query: EventListQueryData) {
     return this.eventsService.list(member, query);
   }
 
@@ -24,14 +37,14 @@ export class EventsController {
 
   @Post()
   @RequirePermission('events.manage')
-  create(@CurrentMembership() member: OrgMember, @Body() body: Record<string, unknown>) {
-    return this.eventsService.create(member, body ?? {});
+  create(@CurrentMembership() member: OrgMember, @Body(new ZodPipe(createEventSchema)) body: CreateEventData) {
+    return this.eventsService.create(member, body);
   }
 
   @Patch(':id')
   @RequirePermission('events.manage')
-  update(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.eventsService.update(member, id, body ?? {});
+  update(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body(new ZodPipe(updateEventSchema)) body: UpdateEventData) {
+    return this.eventsService.update(member, id, body);
   }
 
   @Delete(':id')
@@ -45,9 +58,9 @@ export class EventsController {
   addMusician(
     @CurrentMembership() member: OrgMember,
     @Param('id') id: string,
-    @Body() body: Record<string, unknown>,
+    @Body(new ZodPipe(addEventMusicianSchema)) body: AddEventMusicianData,
   ) {
-    return this.eventsService.addMusician(member, id, body ?? {});
+    return this.eventsService.addMusician(member, id, body);
   }
 
   @Patch(':id/musicians/:musicianId')
@@ -56,9 +69,9 @@ export class EventsController {
     @CurrentMembership() member: OrgMember,
     @Param('id') id: string,
     @Param('musicianId') musicianId: string,
-    @Body() body: Record<string, unknown>,
+    @Body(new ZodPipe(updateEventMusicianSchema)) body: UpdateEventMusicianData,
   ) {
-    return this.eventsService.updateMusician(member, id, musicianId, body ?? {});
+    return this.eventsService.updateMusician(member, id, musicianId, body);
   }
 
   @Delete(':id/musicians/:musicianId')

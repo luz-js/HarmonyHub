@@ -1,7 +1,8 @@
 import type { UserInstrumentRef } from './auth.types';
 import type { MembershipRole } from './membership.types';
 
-export type SetlistStatus = 'DRAFT' | 'READY' | 'PUBLISHED' | 'ARCHIVED';
+export type { SetlistStatus } from '@harmonyhub/contracts';
+import type { SetlistStatus } from '@harmonyhub/contracts';
 
 export type SetlistItemType = 'SONG' | 'SPEAKING' | 'PRAYER' | 'VIDEO' | 'ANNOUNCEMENT' | 'SILENCE' | 'TRANSITION' | 'BREAK' | 'CUSTOM';
 

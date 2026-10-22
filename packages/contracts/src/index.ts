@@ -5,3 +5,5 @@ export * from './organizations';
 export * from './profile';
 export * from './memberships';
 export * from './invitations';
+export * from './query';
+export * from './events';

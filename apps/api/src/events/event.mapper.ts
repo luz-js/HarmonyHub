@@ -1,7 +1,8 @@
+import type { SetlistStatus } from '@prisma/client';
 import type { UserInstrumentRef } from '../shared/user-instruments';
 import { AttendanceStatus, EventStatus, getAllowedEventStatusTransitions, summarizeAttendance } from './event.utils';
 
-type MapperEventSetlist = { id: string; name: string; status: string; estimatedSec: number; itemCount: number } | null;
+type MapperEventSetlist = { id: string; name: string; status: SetlistStatus; estimatedSec: number; itemCount: number } | null;
 
 type MapperEventMusician = {
   id: string;

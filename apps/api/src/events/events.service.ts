@@ -1,8 +1,7 @@
 import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { z } from 'zod';
+import type { AddEventMusicianData, CreateEventData, EventListQueryData, UpdateEventData, UpdateEventMusicianData } from '@harmonyhub/contracts';
 import { PermissionsService } from '../permissions/permissions.service';
 import { clean } from '../shared/object.utils';
-import { parseBooleanQueryParam } from '../setlists/setlist.utils';
 import { mapEventDetail, mapEventSummary } from './event.mapper';
 import {
   assertEventStatusTransition,
@@ -16,53 +15,6 @@ import { NotificationsService } from '../notifications/notifications.service';
 import { EventsRepository } from './events.repository';
 import type { OrgMember } from '../permissions/current-membership.decorator';
 
-const eventStatusSchema = z.enum(['DRAFT', 'PENDING', 'CONFIRMED', 'CANCELLED', 'FINISHED']);
-const attendanceStatusSchema = z.enum(['PENDING', 'CONFIRMED', 'DECLINED']);
-const optionalText = (max: number) => z.string().trim().max(max).optional().nullable();
-
-const createEventSchema = z.object({
-  name: z.string().trim().min(1, 'El nombre es requerido').max(150),
-  startsAt: z.coerce.date(),
-  endsAt: z.coerce.date().optional().nullable(),
-  location: optionalText(200),
-  description: optionalText(2000),
-  setlistId: z.string().trim().min(1).optional().nullable(),
-  status: z.enum(['DRAFT', 'PENDING', 'CONFIRMED']).optional(),
-});
-
-const updateEventSchema = z.object({
-  name: z.string().trim().min(1, 'El nombre es requerido').max(150).optional(),
-  startsAt: z.coerce.date().optional(),
-  endsAt: z.coerce.date().optional().nullable(),
-  location: optionalText(200),
-  description: optionalText(2000),
-  setlistId: z.string().trim().min(1).optional().nullable(),
-  status: eventStatusSchema.optional(),
-});
-
-const listQuerySchema = z.object({
-  from: z.coerce.date().optional(),
-  to: z.coerce.date().optional(),
-  status: eventStatusSchema.optional(),
-  search: z.string().trim().min(1).optional(),
-  includeCancelled: z.preprocess(parseBooleanQueryParam, z.boolean().optional()),
-  order: z.enum(['asc', 'desc']).optional().default('asc'),
-  page: z.coerce.number().int().min(1).optional().default(1),
-  pageSize: z.coerce.number().int().min(1).max(200).optional().default(50),
-});
-
-const addMusicianSchema = z.object({
-  membershipId: z.string().trim().min(1, 'El miembro es requerido'),
-  instrument: optionalText(80),
-  note: optionalText(500),
-});
-
-const updateMusicianSchema = z.object({
-  status: attendanceStatusSchema.optional(),
-  instrument: optionalText(80),
-  note: optionalText(500),
-});
-
 @Injectable()
 export class EventsService {
   constructor(
@@ -71,13 +23,9 @@ export class EventsService {
     @Inject(NotificationsService) private readonly notifications: NotificationsService,
   ) {}
 
-  async list(member: OrgMember, query: Record<string, unknown>) {
+  async list(member: OrgMember, query: EventListQueryData) {
     const { userId, organizationId } = member;
-
-    const parsed = listQuerySchema.safeParse(query);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Filtros invalidos');
-
-    const { page, pageSize, ...filters } = parsed.data;
+    const { page, pageSize, ...filters } = query;
     const { items, total } = await this.eventsRepository.list(organizationId, {
       ...filters,
       skip: (page - 1) * pageSize,
@@ -98,34 +46,29 @@ export class EventsService {
     return mapEventDetail(await this.findOwnedEvent(organizationId, id), userId);
   }
 
-  async create(member: OrgMember, body: Record<string, unknown>) {
+  async create(member: OrgMember, data: CreateEventData) {
     const { userId, organizationId } = member;
-    const parsed = createEventSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
-    this.assertSchedule(parsed.data.startsAt, parsed.data.endsAt);
-    if (parsed.data.setlistId) await this.assertLinkableSetlist(organizationId, parsed.data.setlistId);
+    this.assertSchedule(data.startsAt, data.endsAt);
+    if (data.setlistId) await this.assertLinkableSetlist(organizationId, data.setlistId);
 
     const created = await this.eventsRepository.create({
       organizationId,
-      name: parsed.data.name,
-      startsAt: parsed.data.startsAt,
-      endsAt: parsed.data.endsAt ?? null,
-      location: parsed.data.location || null,
-      description: parsed.data.description || null,
-      setlistId: parsed.data.setlistId ?? null,
-      status: parsed.data.status || 'DRAFT',
+      name: data.name,
+      startsAt: data.startsAt,
+      endsAt: data.endsAt ?? null,
+      location: data.location || null,
+      description: data.description || null,
+      setlistId: data.setlistId ?? null,
+      status: data.status || 'DRAFT',
     });
     return mapEventDetail(created, userId);
   }
 
-  async update(member: OrgMember, id: string, body: Record<string, unknown>) {
+  async update(member: OrgMember, id: string, data: UpdateEventData) {
     const { userId, organizationId } = member;
     const current = await this.findOwnedEvent(organizationId, id);
-    const parsed = updateEventSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-
-    const { status, ...fields } = parsed.data;
+    const { status, ...fields } = data;
     const hasFieldChanges = Object.values(fields).some((value) => value !== undefined);
     if (current.status === 'FINISHED' && hasFieldChanges) {
       throw new BadRequestException('Un evento terminado ya no se puede editar');
@@ -174,15 +117,12 @@ export class EventsService {
     return { ok: true };
   }
 
-  async addMusician(member: OrgMember, eventId: string, body: Record<string, unknown>) {
+  async addMusician(member: OrgMember, eventId: string, data: AddEventMusicianData) {
     const { organizationId } = member;
     const event = await this.findOwnedEvent(organizationId, eventId);
     this.assertEditableTeam(event.status as EventStatus);
 
-    const parsed = addMusicianSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-
-    const membership = await this.eventsRepository.findActiveMembership(parsed.data.membershipId, organizationId);
+    const membership = await this.eventsRepository.findActiveMembership(data.membershipId, organizationId);
     if (!membership) throw new NotFoundException('Miembro no encontrado en la organizacion');
 
     const existing = await this.eventsRepository.findMusicianByMembership(eventId, membership.id);
@@ -191,14 +131,14 @@ export class EventsService {
     const added = await this.eventsRepository.addMusician({
       eventId,
       membershipId: membership.id,
-      instrument: parsed.data.instrument || null,
-      note: parsed.data.note || null,
+      instrument: data.instrument || null,
+      note: data.note || null,
     });
     await this.notifications.eventTeamAdded(event, { id: added.id, userId: membership.userId }, member.userId);
     return this.detail(member, eventId);
   }
 
-  async updateMusician(member: OrgMember, eventId: string, musicianId: string, body: Record<string, unknown>) {
+  async updateMusician(member: OrgMember, eventId: string, musicianId: string, data: UpdateEventMusicianData) {
     const { userId, organizationId } = member;
     const event = await this.findOwnedEvent(organizationId, eventId);
     this.assertEditableTeam(event.status as EventStatus);
@@ -206,27 +146,24 @@ export class EventsService {
     const musician = await this.eventsRepository.findMusician(eventId, musicianId);
     if (!musician) throw new NotFoundException('Musico no encontrado en el evento');
 
-    const parsed = updateMusicianSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-
     const isSelf = musician.membership.userId === userId;
     const canManage = this.permissions.can(member.role, 'events.manage');
-    if (parsed.data.status && !this.permissions.canUpdateEventAttendance(member.role, isSelf)) {
+    if (data.status && !this.permissions.canUpdateEventAttendance(member.role, isSelf)) {
       throw new ForbiddenException('Solo puedes responder tu propia asistencia');
     }
-    if ((parsed.data.instrument !== undefined || parsed.data.note !== undefined) && !canManage && !isSelf) {
+    if ((data.instrument !== undefined || data.note !== undefined) && !canManage && !isSelf) {
       throw new ForbiddenException('No tienes permisos para editar este musico');
     }
-    if (parsed.data.instrument !== undefined && !canManage) {
+    if (data.instrument !== undefined && !canManage) {
       throw new ForbiddenException('Solo un lider puede cambiar el instrumento asignado');
     }
 
     await this.eventsRepository.updateMusician(
       musicianId,
       clean({
-        status: parsed.data.status,
-        instrument: parsed.data.instrument === undefined ? undefined : parsed.data.instrument || null,
-        note: parsed.data.note === undefined ? undefined : parsed.data.note || null,
+        status: data.status,
+        instrument: data.instrument === undefined ? undefined : data.instrument || null,
+        note: data.note === undefined ? undefined : data.note || null,
       }),
     );
     return this.detail(member, eventId);

@@ -24,3 +24,12 @@ export type OrganizationType = (typeof ORGANIZATION_TYPES)[number];
 
 export const INVITATION_STATUSES = ['PENDING', 'ACCEPTED', 'CANCELLED', 'EXPIRED', 'DECLINED'] as const;
 export type InvitationStatus = (typeof INVITATION_STATUSES)[number];
+
+export const EVENT_STATUSES = ['DRAFT', 'PENDING', 'CONFIRMED', 'CANCELLED', 'FINISHED'] as const;
+export type EventStatus = (typeof EVENT_STATUSES)[number];
+
+export const ATTENDANCE_STATUSES = ['PENDING', 'CONFIRMED', 'DECLINED'] as const;
+export type AttendanceStatus = (typeof ATTENDANCE_STATUSES)[number];
+
+export const SETLIST_STATUSES = ['DRAFT', 'READY', 'PUBLISHED', 'ARCHIVED'] as const;
+export type SetlistStatus = (typeof SETLIST_STATUSES)[number];

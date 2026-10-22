@@ -1,6 +1,9 @@
 import { BadRequestException } from '@nestjs/common';
 import type { SetlistItemType, SetlistStatus } from '@prisma/client';
 
+/** Query params llegan como string: "false" debe ser false (z.coerce.boolean lo convertiria en true). Vive en los contratos. */
+export { parseBooleanQueryParam } from '@harmonyhub/contracts';
+
 export interface SetlistItemEffectiveValues {
   key: string | null;
   bpm: number | null;
@@ -78,16 +81,6 @@ const TEMPLATE_ACTION_MESSAGES: Record<SetlistTemplateAction, string> = {
 /** Las plantillas son estructuras reutilizables: nunca entran al ciclo DRAFT -> READY -> PUBLISHED -> ARCHIVED. */
 export function assertTemplateAllowsAction(isTemplate: boolean, action: SetlistTemplateAction) {
   if (isTemplate) throw new InvalidSetlistTemplateActionError(TEMPLATE_ACTION_MESSAGES[action]);
-}
-
-/** Query params llegan como string: "false" debe ser false (z.coerce.boolean lo convertiria en true). */
-export function parseBooleanQueryParam(value: unknown): boolean | undefined {
-  if (value === undefined || value === null || value === '') return undefined;
-  if (typeof value === 'boolean') return value;
-  const normalized = String(value).trim().toLowerCase();
-  if (normalized === 'true' || normalized === '1') return true;
-  if (normalized === 'false' || normalized === '0') return false;
-  return undefined;
 }
 
 /** Valida que la lista de reordenamiento sea exactamente el conjunto de items existentes, sin duplicados ni faltantes. */
