@@ -1,5 +1,4 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
-import { PermissionsService } from '../permissions/permissions.service';
 import { clean } from '../shared/object.utils';
 import { SongActivityService } from './activity/song-activity.service';
 import { SongRevisionsService } from './history/song-revisions.service';
@@ -12,6 +11,7 @@ import { SongsRepository } from './songs.repository';
 import { buildContentJson, parseTags, songSchema, updateSongSchema } from './songs.schemas';
 import { SongsTracksService } from './songs-tracks.service';
 import { SongsVersionsService } from './songs-versions.service';
+import type { OrgMember } from '../permissions/current-membership.decorator';
 
 type UploadedBinary = {
   buffer: Buffer;
@@ -24,7 +24,6 @@ type UploadedBinary = {
 export class SongsService {
   constructor(
     @Inject(SongsRepository) private readonly songsRepository: SongsRepository,
-    @Inject(PermissionsService) private readonly permissions: PermissionsService,
     @Inject(SongActivityService) private readonly activity: SongActivityService,
     @Inject(SongRevisionsService) private readonly revisions: SongRevisionsService,
     @Inject(SongsAccessService) private readonly access: SongsAccessService,
@@ -34,8 +33,8 @@ export class SongsService {
     @Inject(SongsFilesService) private readonly filesService: SongsFilesService,
   ) {}
 
-  async list(userId: string, organizationId: string, query: Record<string, unknown>) {
-    await this.permissions.assertOrganizationMember(userId, organizationId);
+  async list(member: OrgMember, query: Record<string, unknown>) {
+    const { organizationId } = member;
     const songs = await this.songsRepository.list({
       organizationId,
       search: query.search ? String(query.search) : undefined,
@@ -49,8 +48,9 @@ export class SongsService {
     return songs.map((song) => normalizeSongSummary(song));
   }
 
-  async detail(userId: string, organizationId: string, id: string) {
-    const song = await this.access.assertSongDetailInOrganization(userId, organizationId, id);
+  async detail(member: OrgMember, id: string) {
+    const { organizationId } = member;
+    const song = await this.access.assertSongDetailInOrganization(organizationId, id);
     return {
       ...song,
       tracks: song.tracks.map((track) => normalizeTrackResponse(track)),
@@ -58,64 +58,64 @@ export class SongsService {
     };
   }
 
-  async versions(userId: string, organizationId: string, songId: string) {
-    return this.versionsService.versions(userId, organizationId, songId);
+  async versions(member: OrgMember, songId: string) {
+    return this.versionsService.versions(member, songId);
   }
 
-  async version(userId: string, organizationId: string, songId: string, versionId: string) {
-    return this.versionsService.version(userId, organizationId, songId, versionId);
+  async version(member: OrgMember, songId: string, versionId: string) {
+    return this.versionsService.version(member, songId, versionId);
   }
 
-  async tracks(userId: string, organizationId: string, songId: string, query: Record<string, unknown>) {
-    return this.tracksService.tracks(userId, organizationId, songId, query);
+  async tracks(member: OrgMember, songId: string, query: Record<string, unknown>) {
+    return this.tracksService.tracks(member, songId, query);
   }
 
-  async track(userId: string, organizationId: string, songId: string, trackId: string) {
-    return this.tracksService.track(userId, organizationId, songId, trackId);
+  async track(member: OrgMember, songId: string, trackId: string) {
+    return this.tracksService.track(member, songId, trackId);
   }
 
-  async files(userId: string, organizationId: string, songId: string, query: Record<string, unknown> = {}) {
-    return this.filesService.files(userId, organizationId, songId, query);
+  async files(member: OrgMember, songId: string, query: Record<string, unknown> = {}) {
+    return this.filesService.files(member, songId, query);
   }
 
-  async file(userId: string, organizationId: string, songId: string, songFileId: string) {
-    return this.filesService.file(userId, organizationId, songId, songFileId);
+  async file(member: OrgMember, songId: string, songFileId: string) {
+    return this.filesService.file(member, songId, songFileId);
   }
 
-  async uploadSongFile(userId: string, organizationId: string, songId: string, input: Record<string, unknown>, file?: UploadedBinary) {
-    return this.filesService.uploadSongFile(userId, organizationId, songId, input, file);
+  async uploadSongFile(member: OrgMember, songId: string, input: Record<string, unknown>, file?: UploadedBinary) {
+    return this.filesService.uploadSongFile(member, songId, input, file);
   }
 
-  async updateSongFile(userId: string, organizationId: string, songId: string, songFileId: string, input: Record<string, unknown>) {
-    return this.filesService.updateSongFile(userId, organizationId, songId, songFileId, input);
+  async updateSongFile(member: OrgMember, songId: string, songFileId: string, input: Record<string, unknown>) {
+    return this.filesService.updateSongFile(member, songId, songFileId, input);
   }
 
-  async deleteSongFile(userId: string, organizationId: string, songId: string, songFileId: string) {
-    return this.filesService.deleteSongFile(userId, organizationId, songId, songFileId);
+  async deleteSongFile(member: OrgMember, songId: string, songFileId: string) {
+    return this.filesService.deleteSongFile(member, songId, songFileId);
   }
 
-  async setPrimarySongFile(userId: string, organizationId: string, songId: string, songFileId: string) {
-    return this.filesService.setPrimarySongFile(userId, organizationId, songId, songFileId);
+  async setPrimarySongFile(member: OrgMember, songId: string, songFileId: string) {
+    return this.filesService.setPrimarySongFile(member, songId, songFileId);
   }
 
-  async reorderSongFiles(userId: string, organizationId: string, songId: string, input: Record<string, unknown>) {
-    return this.filesService.reorderSongFiles(userId, organizationId, songId, input);
+  async reorderSongFiles(member: OrgMember, songId: string, input: Record<string, unknown>) {
+    return this.filesService.reorderSongFiles(member, songId, input);
   }
 
-  async songFileAsset(userId: string, organizationId: string, songId: string, songFileId: string) {
-    return this.filesService.songFileAsset(userId, organizationId, songId, songFileId);
+  async songFileAsset(member: OrgMember, songId: string, songFileId: string) {
+    return this.filesService.songFileAsset(member, songId, songFileId);
   }
 
-  async downloadSongFileName(userId: string, organizationId: string, songId: string, songFileId: string) {
-    return this.filesService.downloadSongFileName(userId, organizationId, songId, songFileId);
+  async downloadSongFileName(member: OrgMember, songId: string, songFileId: string) {
+    return this.filesService.downloadSongFileName(member, songId, songFileId);
   }
 
   async songFileStream(storageKey: string) {
     return this.filesService.songFileStream(storageKey);
   }
 
-  async create(userId: string, organizationId: string, input: Record<string, unknown>) {
-    await this.permissions.assertPermission(userId, organizationId, 'songs.manage');
+  async create(member: OrgMember, input: Record<string, unknown>) {
+    const { userId, organizationId } = member;
     const parsed = songSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
     const song = parsed.data;
@@ -193,9 +193,9 @@ export class SongsService {
     return created;
   }
 
-  async update(userId: string, organizationId: string, id: string, input: Record<string, unknown>) {
-    await this.permissions.assertPermission(userId, organizationId, 'songs.manage');
-    const existing = await this.detail(userId, organizationId, id);
+  async update(member: OrgMember, id: string, input: Record<string, unknown>) {
+    const { userId, organizationId } = member;
+    const existing = await this.detail(member, id);
     const parsed = updateSongSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
     const song = parsed.data;
@@ -249,9 +249,9 @@ export class SongsService {
     return updated;
   }
 
-  async archive(userId: string, organizationId: string, id: string) {
-    await this.permissions.assertPermission(userId, organizationId, 'songs.manage');
-    const existing = await this.detail(userId, organizationId, id);
+  async archive(member: OrgMember, id: string) {
+    const { userId, organizationId } = member;
+    const existing = await this.detail(member, id);
     const archived = await this.songsRepository.archive(id);
     await this.activity.recordBestEffort({
       songId: id,
@@ -265,84 +265,84 @@ export class SongsService {
     return archived;
   }
 
-  async createVersion(userId: string, organizationId: string, songId: string, input: Record<string, unknown>) {
-    return this.versionsService.createVersion(userId, organizationId, songId, input);
+  async createVersion(member: OrgMember, songId: string, input: Record<string, unknown>) {
+    return this.versionsService.createVersion(member, songId, input);
   }
 
-  async updateVersion(userId: string, organizationId: string, songId: string, versionId: string, input: Record<string, unknown>) {
-    return this.versionsService.updateVersion(userId, organizationId, songId, versionId, input);
+  async updateVersion(member: OrgMember, songId: string, versionId: string, input: Record<string, unknown>) {
+    return this.versionsService.updateVersion(member, songId, versionId, input);
   }
 
-  async setDefaultVersion(userId: string, organizationId: string, songId: string, versionId: string) {
-    return this.versionsService.setDefaultVersion(userId, organizationId, songId, versionId);
+  async setDefaultVersion(member: OrgMember, songId: string, versionId: string) {
+    return this.versionsService.setDefaultVersion(member, songId, versionId);
   }
 
-  async deleteVersion(userId: string, organizationId: string, songId: string, versionId: string) {
-    return this.versionsService.deleteVersion(userId, organizationId, songId, versionId);
+  async deleteVersion(member: OrgMember, songId: string, versionId: string) {
+    return this.versionsService.deleteVersion(member, songId, versionId);
   }
 
-  async links(userId: string, organizationId: string, songId: string, query: Record<string, unknown> = {}) {
-    return this.linksService.links(userId, organizationId, songId, query);
+  async links(member: OrgMember, songId: string, query: Record<string, unknown> = {}) {
+    return this.linksService.links(member, songId, query);
   }
 
-  async link(userId: string, organizationId: string, songId: string, linkId: string) {
-    return this.linksService.link(userId, organizationId, songId, linkId);
+  async link(member: OrgMember, songId: string, linkId: string) {
+    return this.linksService.link(member, songId, linkId);
   }
 
-  async createLink(userId: string, organizationId: string, songId: string, input: Record<string, unknown>) {
-    return this.linksService.createLink(userId, organizationId, songId, input);
+  async createLink(member: OrgMember, songId: string, input: Record<string, unknown>) {
+    return this.linksService.createLink(member, songId, input);
   }
 
-  async updateLink(userId: string, organizationId: string, songId: string, linkId: string, input: Record<string, unknown>) {
-    return this.linksService.updateLink(userId, organizationId, songId, linkId, input);
+  async updateLink(member: OrgMember, songId: string, linkId: string, input: Record<string, unknown>) {
+    return this.linksService.updateLink(member, songId, linkId, input);
   }
 
-  async deleteLink(userId: string, organizationId: string, songId: string, linkId: string) {
-    return this.linksService.deleteLink(userId, organizationId, songId, linkId);
+  async deleteLink(member: OrgMember, songId: string, linkId: string) {
+    return this.linksService.deleteLink(member, songId, linkId);
   }
 
-  async setPrimaryLink(userId: string, organizationId: string, songId: string, linkId: string) {
-    return this.linksService.setPrimaryLink(userId, organizationId, songId, linkId);
+  async setPrimaryLink(member: OrgMember, songId: string, linkId: string) {
+    return this.linksService.setPrimaryLink(member, songId, linkId);
   }
 
-  async reorderLinks(userId: string, organizationId: string, songId: string, input: Record<string, unknown>) {
-    return this.linksService.reorderLinks(userId, organizationId, songId, input);
+  async reorderLinks(member: OrgMember, songId: string, input: Record<string, unknown>) {
+    return this.linksService.reorderLinks(member, songId, input);
   }
 
-  async createTrack(userId: string, organizationId: string, songId: string, input: Record<string, unknown>) {
-    return this.tracksService.createTrack(userId, organizationId, songId, input);
+  async createTrack(member: OrgMember, songId: string, input: Record<string, unknown>) {
+    return this.tracksService.createTrack(member, songId, input);
   }
 
-  async uploadTrack(userId: string, organizationId: string, songId: string, input: Record<string, unknown>, file?: UploadedBinary) {
-    return this.tracksService.uploadTrack(userId, organizationId, songId, input, file);
+  async uploadTrack(member: OrgMember, songId: string, input: Record<string, unknown>, file?: UploadedBinary) {
+    return this.tracksService.uploadTrack(member, songId, input, file);
   }
 
-  async updateTrack(userId: string, organizationId: string, songId: string, trackId: string, input: Record<string, unknown>) {
-    return this.tracksService.updateTrack(userId, organizationId, songId, trackId, input);
+  async updateTrack(member: OrgMember, songId: string, trackId: string, input: Record<string, unknown>) {
+    return this.tracksService.updateTrack(member, songId, trackId, input);
   }
 
-  async deleteTrack(userId: string, organizationId: string, songId: string, trackId: string) {
-    return this.tracksService.deleteTrack(userId, organizationId, songId, trackId);
+  async deleteTrack(member: OrgMember, songId: string, trackId: string) {
+    return this.tracksService.deleteTrack(member, songId, trackId);
   }
 
-  async setPrimaryTrack(userId: string, organizationId: string, songId: string, trackId: string) {
-    return this.tracksService.setPrimaryTrack(userId, organizationId, songId, trackId);
+  async setPrimaryTrack(member: OrgMember, songId: string, trackId: string) {
+    return this.tracksService.setPrimaryTrack(member, songId, trackId);
   }
 
-  async reorderTracks(userId: string, organizationId: string, songId: string, input: Record<string, unknown>) {
-    return this.tracksService.reorderTracks(userId, organizationId, songId, input);
+  async reorderTracks(member: OrgMember, songId: string, input: Record<string, unknown>) {
+    return this.tracksService.reorderTracks(member, songId, input);
   }
 
-  async copyTrackReferences(userId: string, organizationId: string, songId: string, input: Record<string, unknown>) {
-    return this.tracksService.copyTrackReferences(userId, organizationId, songId, input);
+  async copyTrackReferences(member: OrgMember, songId: string, input: Record<string, unknown>) {
+    return this.tracksService.copyTrackReferences(member, songId, input);
   }
 
-  async trackAsset(userId: string, organizationId: string, songId: string, trackId: string) {
-    return this.tracksService.trackAsset(userId, organizationId, songId, trackId);
+  async trackAsset(member: OrgMember, songId: string, trackId: string) {
+    return this.tracksService.trackAsset(member, songId, trackId);
   }
 
-  async downloadFileName(userId: string, organizationId: string, songId: string, trackId: string) {
-    return this.tracksService.downloadFileName(userId, organizationId, songId, trackId);
+  async downloadFileName(member: OrgMember, songId: string, trackId: string) {
+    return this.tracksService.downloadFileName(member, songId, trackId);
   }
 
   async storageStream(storageKey: string) {

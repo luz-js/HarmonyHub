@@ -1,11 +1,11 @@
 import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
 import { Prisma, SongActivityType, SongEntityType } from '@prisma/client';
 import { z } from 'zod';
-import { PermissionsService } from '../../permissions/permissions.service';
 import { clean } from '../../shared/object.utils';
 import { assertSongAccess } from '../song-access.utils';
 import { SongsRepository } from '../songs.repository';
 import { SongActivityRepository } from './song-activity.repository';
+import type { OrgMember } from '../../permissions/current-membership.decorator';
 
 const listActivityQuerySchema = z.object({
   action: z.nativeEnum(SongActivityType).optional(),
@@ -36,7 +36,6 @@ export class SongActivityService {
   constructor(
     @Inject(SongActivityRepository) private readonly activityRepository: SongActivityRepository,
     @Inject(SongsRepository) private readonly songsRepository: SongsRepository,
-    @Inject(PermissionsService) private readonly permissions: PermissionsService,
   ) {}
 
   /** Uso critico: dentro de la misma transaccion del cambio principal (p.ej. creacion de version). */
@@ -63,8 +62,9 @@ export class SongActivityService {
     }
   }
 
-  async list(userId: string, organizationId: string, songId: string, query: Record<string, unknown> = {}) {
-    await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async list(member: OrgMember, songId: string, query: Record<string, unknown> = {}) {
+    const { organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     const parsed = listActivityQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 

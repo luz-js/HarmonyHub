@@ -1,55 +1,28 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { MembershipRole, Prisma, SongNoteVisibility } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { Permission, PERMISSION_DENIED_MESSAGE, roleCan } from './permission-table';
 
-type Permission = 'organization.manage' | 'members.manage' | 'invitations.manage' | 'songs.manage' | 'events.manage' | 'setlists.manage' | 'read';
+export type { Permission } from './permission-table';
 
-const permissionsByRole: Record<MembershipRole, Permission[]> = {
-  OWNER: ['organization.manage', 'members.manage', 'invitations.manage', 'songs.manage', 'events.manage', 'setlists.manage', 'read'],
-  ADMIN: ['organization.manage', 'members.manage', 'invitations.manage', 'songs.manage', 'events.manage', 'setlists.manage', 'read'],
-  LEADER: ['songs.manage', 'events.manage', 'setlists.manage', 'read'],
-  MUSICIAN: ['read'],
-  GUEST: ['read'],
-};
-
+/**
+ * Los permisos por rol viven en permission-table.ts y los verifica PermissionsGuard en cada ruta.
+ * Aqui quedan la consulta de la membresia y las reglas que dependen del dato (autor, asignado, propietario...).
+ */
 @Injectable()
 export class PermissionsService {
   constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   can(role: MembershipRole, permission: Permission) {
-    return permissionsByRole[role]?.includes(permission) || false;
+    return roleCan(role, permission);
   }
 
-  canManageOrganization(role: MembershipRole) {
-    return this.can(role, 'organization.manage');
-  }
-
-  canManageMembers(role: MembershipRole) {
-    return this.can(role, 'members.manage');
-  }
-
-  canInviteMembers(role: MembershipRole) {
-    return this.can(role, 'invitations.manage');
-  }
-
-  canManageSongs(role: MembershipRole) {
-    return this.can(role, 'songs.manage');
-  }
-
-  canManageEvents(role: MembershipRole) {
-    return this.can(role, 'events.manage');
-  }
-
-  canManageSetlists(role: MembershipRole) {
-    return this.can(role, 'setlists.manage');
-  }
-
-  canViewOrganization(role: MembershipRole) {
-    return this.can(role, 'read');
+  /** Para cuando el permiso depende del dato (p. ej. cambiar el estado a PUBLISHED exige 'setlists.publish'). */
+  assertRoleCan(role: MembershipRole, permission: Permission) {
+    if (!this.can(role, permission)) throw new ForbiddenException(PERMISSION_DENIED_MESSAGE);
   }
 
   // --- Notas y colaboracion (SongNote / SongCommentThread / SongComment) ---
-  // Centralizado aqui para no repetir comparaciones de rol en cada controller.
 
   /** OWNER/ADMIN/LEADER: unico conjunto de roles con visibilidad/gestion "de liderazgo" (LEADERS_ONLY, threads). */
   isLeadershipRole(role: MembershipRole) {
@@ -87,43 +60,7 @@ export class PermissionsService {
     return role === 'OWNER' || role === 'ADMIN';
   }
 
-  // --- Setlists (Setlist / SetlistItem) ---
-  // Centralizado aqui para no repetir comparaciones de rol en cada controller.
-
-  canViewSetlists(role: MembershipRole) {
-    return this.can(role, 'read');
-  }
-
-  canPublishSetlists(role: MembershipRole) {
-    return this.isLeadershipRole(role);
-  }
-
-  canArchiveSetlists(role: MembershipRole) {
-    return this.isLeadershipRole(role);
-  }
-
-  canDeleteSetlists(role: MembershipRole) {
-    return role === 'OWNER' || role === 'ADMIN';
-  }
-
-  // --- Asignaciones musicales (SetlistParticipant / SetlistAssignment / SetlistRoleRequirement) ---
-  // Centralizado aqui para no repetir comparaciones de rol en cada controller.
-
-  canViewSetlistAssignments(role: MembershipRole) {
-    return this.can(role, 'read');
-  }
-
-  canManageSetlistParticipants(role: MembershipRole) {
-    return this.isLeadershipRole(role);
-  }
-
-  canManageSetlistAssignments(role: MembershipRole) {
-    return this.isLeadershipRole(role);
-  }
-
-  canManageSetlistRequirements(role: MembershipRole) {
-    return this.isLeadershipRole(role);
-  }
+  // --- Asignaciones y cues: lo propio o, si no, rol de liderazgo ---
 
   /** Cualquier rol puede actualizar su propio estado de preparacion si la asignacion es suya. */
   canUpdateOwnPreparationStatus(isAssignee: boolean) {
@@ -131,16 +68,6 @@ export class PermissionsService {
   }
 
   canUpdateAnyPreparationStatus(role: MembershipRole) {
-    return this.isLeadershipRole(role);
-  }
-
-  // --- Cues y produccion (SetlistCue) ---
-
-  canViewSetlistCues(role: MembershipRole) {
-    return this.can(role, 'read');
-  }
-
-  canManageSetlistCues(role: MembershipRole) {
     return this.isLeadershipRole(role);
   }
 
@@ -153,20 +80,14 @@ export class PermissionsService {
     return this.isLeadershipRole(role);
   }
 
-  // --- Eventos (Event / EventMusician) ---
-
-  canViewEvents(role: MembershipRole) {
-    return this.can(role, 'read');
-  }
-
-  canDeleteEvents(role: MembershipRole) {
-    return role === 'OWNER' || role === 'ADMIN';
-  }
+  // --- Eventos (EventMusician) ---
 
   /** El propio musico confirma o rechaza su asistencia; los lideres pueden ajustar la de cualquiera. */
   canUpdateEventAttendance(role: MembershipRole, isSelf: boolean) {
     return isSelf || this.can(role, 'events.manage');
   }
+
+  // --- Membresia ---
 
   async getMembership(userId: string, organizationId: string) {
     if (!organizationId) throw new BadRequestException('Organizacion activa requerida');
@@ -184,18 +105,11 @@ export class PermissionsService {
     return membership;
   }
 
-  async assertRole(userId: string, organizationId: string, allowedRoles: MembershipRole[]) {
-    const membership = await this.assertOrganizationMember(userId, organizationId);
-    if (!allowedRoles.includes(membership.role)) {
-      throw new ForbiddenException('Permisos insuficientes');
-    }
-    return membership;
-  }
-
+  /** Lo usa PermissionsGuard; los servicios solo lo llaman cuando la organizacion sale del dato (excepciones documentadas). */
   async assertPermission(userId: string, organizationId: string, permission: Permission) {
     const membership = await this.assertOrganizationMember(userId, organizationId);
     if (!this.can(membership.role, permission)) {
-      throw new ForbiddenException('Permisos insuficientes');
+      throw new ForbiddenException(PERMISSION_DENIED_MESSAGE);
     }
     return membership;
   }

@@ -21,6 +21,7 @@ import {
   validateAudioUploadFile,
 } from './songs.schemas';
 import { TRACK_STORAGE, TrackStorageProvider } from './storage/track-storage.interface';
+import type { OrgMember } from '../permissions/current-membership.decorator';
 
 type UploadedTrackFile = {
   buffer: Buffer;
@@ -38,8 +39,9 @@ export class SongsTracksService {
     @Inject(SongActivityService) private readonly activity: SongActivityService,
   ) {}
 
-  async tracks(userId: string, organizationId: string, songId: string, query: Record<string, unknown>) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId);
+  async tracks(member: OrgMember, songId: string, query: Record<string, unknown>) {
+    const { organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     const parsed = listTrackQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
     const versionId = parsed.data.versionId ? parsed.data.versionId : undefined;
@@ -48,14 +50,16 @@ export class SongsTracksService {
     return tracks.map((track) => normalizeTrackResponse(track));
   }
 
-  async track(userId: string, organizationId: string, songId: string, trackId: string) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId);
+  async track(member: OrgMember, songId: string, trackId: string) {
+    const { organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     const track = await this.access.assertTrackInSong(songId, trackId);
     return normalizeTrackResponse(track);
   }
 
-  async createTrack(userId: string, organizationId: string, songId: string, input: Record<string, unknown>) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId, 'songs.manage');
+  async createTrack(member: OrgMember, songId: string, input: Record<string, unknown>) {
+    const { userId, organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     const parsed = createTrackSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
     const version = await this.access.assertVersionInSong(songId, parsed.data.versionId);
@@ -90,8 +94,9 @@ export class SongsTracksService {
     return normalizeTrackResponse(created);
   }
 
-  async uploadTrack(userId: string, organizationId: string, songId: string, input: Record<string, unknown>, file?: UploadedTrackFile) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId, 'songs.manage');
+  async uploadTrack(member: OrgMember, songId: string, input: Record<string, unknown>, file?: UploadedTrackFile) {
+    const { userId, organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     if (!file) throw new BadRequestException('Archivo requerido');
     validateAudioUploadFile(file);
 
@@ -148,8 +153,9 @@ export class SongsTracksService {
     }
   }
 
-  async updateTrack(userId: string, organizationId: string, songId: string, trackId: string, input: Record<string, unknown>) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId, 'songs.manage');
+  async updateTrack(member: OrgMember, songId: string, trackId: string, input: Record<string, unknown>) {
+    const { organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     const existing = await this.access.assertTrackInSong(songId, trackId);
     const parsed = updateTrackSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
@@ -179,8 +185,9 @@ export class SongsTracksService {
     return normalizeTrackResponse(updated);
   }
 
-  async deleteTrack(userId: string, organizationId: string, songId: string, trackId: string) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId, 'songs.manage');
+  async deleteTrack(member: OrgMember, songId: string, trackId: string) {
+    const { userId, organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     const track = await this.access.assertTrackInSong(songId, trackId);
     if (track.storageKey && track.provider !== 'EXTERNAL_URL' && track.provider !== 'OTHER') {
       const otherReferences = await this.songsRepository.countTracksByStorageKey(track.storageKey, trackId);
@@ -202,8 +209,9 @@ export class SongsTracksService {
     return { ok: true };
   }
 
-  async setPrimaryTrack(userId: string, organizationId: string, songId: string, trackId: string) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId, 'songs.manage');
+  async setPrimaryTrack(member: OrgMember, songId: string, trackId: string) {
+    const { userId, organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     await this.access.assertTrackInSong(songId, trackId);
     const track = await this.songsRepository.setTrackPrimary(songId, trackId);
     await this.activity.recordBestEffort({
@@ -219,8 +227,9 @@ export class SongsTracksService {
     return normalizeTrackResponse(track);
   }
 
-  async reorderTracks(userId: string, organizationId: string, songId: string, input: Record<string, unknown>) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId, 'songs.manage');
+  async reorderTracks(member: OrgMember, songId: string, input: Record<string, unknown>) {
+    const { organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     const parsed = reorderTrackSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
     const version = await this.access.assertVersionInSong(songId, parsed.data.versionId);
@@ -228,8 +237,9 @@ export class SongsTracksService {
     return tracks.map((track) => normalizeTrackResponse(track));
   }
 
-  async copyTrackReferences(userId: string, organizationId: string, songId: string, input: Record<string, unknown>) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId, 'songs.manage');
+  async copyTrackReferences(member: OrgMember, songId: string, input: Record<string, unknown>) {
+    const { userId, organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     const parsed = copyTracksSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
@@ -253,13 +263,14 @@ export class SongsTracksService {
     return { copied: created.length, tracks: created.map((track) => normalizeTrackResponse(track)) };
   }
 
-  async trackAsset(userId: string, organizationId: string, songId: string, trackId: string) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId);
+  async trackAsset(member: OrgMember, songId: string, trackId: string) {
+    const { organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     return this.songsRepository.songTrackFileContext(songId, trackId);
   }
 
-  async downloadFileName(userId: string, organizationId: string, songId: string, trackId: string) {
-    const track = await this.trackAsset(userId, organizationId, songId, trackId);
+  async downloadFileName(member: OrgMember, songId: string, trackId: string) {
+    const track = await this.trackAsset(member, songId, trackId);
     const extension = extname(track.originalFileName || track.url || track.name) || '.mp3';
     return `${sanitizeDownloadFileName(track.song.title)} - ${sanitizeDownloadFileName(track.name)}${extension.toLowerCase()}`;
   }

@@ -1,38 +1,39 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
-import { PermissionsService } from '../permissions/permissions.service';
 import { clean } from '../shared/object.utils';
 import { SongActivityService } from './activity/song-activity.service';
 import { SongRevisionsService } from './history/song-revisions.service';
 import { SongsAccessService } from './songs-access.service';
 import { SongsRepository } from './songs.repository';
 import { buildContentJson, versionSchema } from './songs.schemas';
+import type { OrgMember } from '../permissions/current-membership.decorator';
 
 @Injectable()
 export class SongsVersionsService {
   constructor(
     @Inject(SongsRepository) private readonly songsRepository: SongsRepository,
-    @Inject(PermissionsService) private readonly permissions: PermissionsService,
     @Inject(SongActivityService) private readonly activity: SongActivityService,
     @Inject(SongRevisionsService) private readonly revisions: SongRevisionsService,
     @Inject(SongsAccessService) private readonly access: SongsAccessService,
   ) {}
 
-  async versions(userId: string, organizationId: string, songId: string) {
-    await this.access.assertSongDetailInOrganization(userId, organizationId, songId);
+  async versions(member: OrgMember, songId: string) {
+    const { organizationId } = member;
+    await this.access.assertSongDetailInOrganization(organizationId, songId);
     return this.songsRepository.listVersions(songId);
   }
 
-  async version(userId: string, organizationId: string, songId: string, versionId: string) {
-    await this.access.assertSongDetailInOrganization(userId, organizationId, songId);
+  async version(member: OrgMember, songId: string, versionId: string) {
+    const { organizationId } = member;
+    await this.access.assertSongDetailInOrganization(organizationId, songId);
     const version = await this.songsRepository.findVersion(songId, versionId);
     if (!version) throw new NotFoundException('Version no encontrada');
     return version;
   }
 
-  async createVersion(userId: string, organizationId: string, songId: string, input: Record<string, unknown>) {
-    await this.permissions.assertPermission(userId, organizationId, 'songs.manage');
-    await this.access.assertSongDetailInOrganization(userId, organizationId, songId);
+  async createVersion(member: OrgMember, songId: string, input: Record<string, unknown>) {
+    const { userId, organizationId } = member;
+    await this.access.assertSongDetailInOrganization(organizationId, songId);
     const parsed = versionSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
     const version = parsed.data;
@@ -83,9 +84,9 @@ export class SongsVersionsService {
     return created;
   }
 
-  async updateVersion(userId: string, organizationId: string, songId: string, versionId: string, input: Record<string, unknown>) {
-    await this.permissions.assertPermission(userId, organizationId, 'songs.manage');
-    const before = await this.version(userId, organizationId, songId, versionId);
+  async updateVersion(member: OrgMember, songId: string, versionId: string, input: Record<string, unknown>) {
+    const { userId, organizationId } = member;
+    const before = await this.version(member, songId, versionId);
     const parsed = versionSchema.partial().safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
     const updated = await this.songsRepository.updateVersion(versionId, clean({
@@ -129,9 +130,9 @@ export class SongsVersionsService {
     return updated;
   }
 
-  async setDefaultVersion(userId: string, organizationId: string, songId: string, versionId: string) {
-    await this.permissions.assertPermission(userId, organizationId, 'songs.manage');
-    const version = await this.version(userId, organizationId, songId, versionId);
+  async setDefaultVersion(member: OrgMember, songId: string, versionId: string) {
+    const { userId, organizationId } = member;
+    const version = await this.version(member, songId, versionId);
     const updated = await this.songsRepository.setDefaultVersion(songId, versionId);
     await this.activity.recordBestEffort({
       songId,
@@ -146,9 +147,9 @@ export class SongsVersionsService {
     return updated;
   }
 
-  async deleteVersion(userId: string, organizationId: string, songId: string, versionId: string) {
-    await this.permissions.assertPermission(userId, organizationId, 'songs.manage');
-    const version = await this.version(userId, organizationId, songId, versionId);
+  async deleteVersion(member: OrgMember, songId: string, versionId: string) {
+    const { userId, organizationId } = member;
+    const version = await this.version(member, songId, versionId);
     let result;
     try {
       result = await this.songsRepository.deleteVersion(songId, versionId);

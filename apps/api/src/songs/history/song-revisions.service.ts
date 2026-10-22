@@ -1,12 +1,12 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma, RevisionSource } from '@prisma/client';
 import { z } from 'zod';
-import { PermissionsService } from '../../permissions/permissions.service';
 import { assertSongAccess, assertSongVersionAccess } from '../song-access.utils';
 import { SongsRepository } from '../songs.repository';
 import { SongActivityService } from '../activity/song-activity.service';
 import { calculateSongVersionRevisionHash, diffSongVersionRevisions, SongVersionRevisionSnapshot } from './song-revision.utils';
 import { SongRevisionsRepository } from './song-revisions.repository';
+import type { OrgMember } from '../../permissions/current-membership.decorator';
 
 const restoreSchema = z.object({
   reason: z.string().trim().max(300).optional(),
@@ -49,7 +49,6 @@ export class SongRevisionsService {
     @Inject(SongsRepository) private readonly songsRepository: SongsRepository,
     @Inject(SongRevisionsRepository) private readonly revisionsRepository: SongRevisionsRepository,
     @Inject(SongActivityService) private readonly activity: SongActivityService,
-    @Inject(PermissionsService) private readonly permissions: PermissionsService,
   ) {}
 
   private normalize(revision: {
@@ -152,16 +151,18 @@ export class SongRevisionsService {
     });
   }
 
-  async list(userId: string, organizationId: string, songId: string, versionId: string) {
-    await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async list(member: OrgMember, songId: string, versionId: string) {
+    const { organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     await assertSongVersionAccess(this.songsRepository, songId, versionId);
     await this.ensureInitialRevision(songId, versionId, organizationId);
     const revisions = await this.revisionsRepository.list(versionId);
     return revisions.map((revision) => this.normalize(revision));
   }
 
-  async get(userId: string, organizationId: string, songId: string, versionId: string, revisionNumber: number) {
-    await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async get(member: OrgMember, songId: string, versionId: string, revisionNumber: number) {
+    const { organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     await assertSongVersionAccess(this.songsRepository, songId, versionId);
     await this.ensureInitialRevision(songId, versionId, organizationId);
     const revision = await this.revisionsRepository.findByNumber(versionId, revisionNumber);
@@ -169,8 +170,9 @@ export class SongRevisionsService {
     return this.normalize(revision);
   }
 
-  async diff(userId: string, organizationId: string, songId: string, versionId: string, revisionNumber: number, compareToRevisionNumber?: number) {
-    await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async diff(member: OrgMember, songId: string, versionId: string, revisionNumber: number, compareToRevisionNumber?: number) {
+    const { organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     await assertSongVersionAccess(this.songsRepository, songId, versionId);
     await this.ensureInitialRevision(songId, versionId, organizationId);
 
@@ -198,8 +200,8 @@ export class SongRevisionsService {
     };
   }
 
-  async restore(userId: string, organizationId: string, songId: string, versionId: string, revisionNumber: number, input: Record<string, unknown>) {
-    await this.permissions.assertPermission(userId, organizationId, 'songs.manage');
+  async restore(member: OrgMember, songId: string, versionId: string, revisionNumber: number, input: Record<string, unknown>) {
+    const { userId, organizationId } = member;
     const song = await this.songsRepository.findSongSummaryInOrganization(songId, organizationId);
     if (!song) throw new NotFoundException('Cancion no encontrada');
     await assertSongVersionAccess(this.songsRepository, songId, versionId);

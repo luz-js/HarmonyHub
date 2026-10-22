@@ -1,8 +1,10 @@
-import { BadRequestException, Body, Controller, Get, Headers, Inject, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Inject, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../../auth/auth.guard';
-import { CurrentUser, CurrentUserPayload } from '../../auth/current-user.decorator';
 import { SongActivityService } from '../activity/song-activity.service';
 import { SongRevisionsService } from './song-revisions.service';
+import { CurrentMembership, OrgMember } from '../../permissions/current-membership.decorator';
+import { PermissionsGuard } from '../../permissions/permissions.guard';
+import { RequirePermission } from '../../permissions/require-permission.decorator';
 
 function parseRevisionNumber(value: string) {
   const parsed = Number(value);
@@ -11,7 +13,7 @@ function parseRevisionNumber(value: string) {
 }
 
 @Controller('api/songs')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, PermissionsGuard)
 export class SongHistoryController {
   constructor(
     @Inject(SongActivityService) private readonly activityService: SongActivityService,
@@ -19,41 +21,44 @@ export class SongHistoryController {
   ) {}
 
   @Get(':id/activity')
-  activity(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Query() query: Record<string, unknown>) {
-    return this.activityService.list(user.id, organizationId, id, query);
+  @RequirePermission('read')
+  activity(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Query() query: Record<string, unknown>) {
+    return this.activityService.list(member, id, query);
   }
 
   @Get(':id/versions/:versionId/revisions')
-  listRevisions(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('versionId') versionId: string) {
-    return this.revisionsService.list(user.id, organizationId, id, versionId);
+  @RequirePermission('read')
+  listRevisions(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('versionId') versionId: string) {
+    return this.revisionsService.list(member, id, versionId);
   }
 
   @Get(':id/versions/:versionId/revisions/:revisionNumber')
-  getRevision(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('versionId') versionId: string, @Param('revisionNumber') revisionNumber: string) {
-    return this.revisionsService.get(user.id, organizationId, id, versionId, parseRevisionNumber(revisionNumber));
+  @RequirePermission('read')
+  getRevision(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('versionId') versionId: string, @Param('revisionNumber') revisionNumber: string) {
+    return this.revisionsService.get(member, id, versionId, parseRevisionNumber(revisionNumber));
   }
 
   @Get(':id/versions/:versionId/revisions/:revisionNumber/diff')
+  @RequirePermission('read')
   diffRevision(
-    @CurrentUser() user: CurrentUserPayload,
-    @Headers('x-organization-id') organizationId: string,
+    @CurrentMembership() member: OrgMember,
     @Param('id') id: string,
     @Param('versionId') versionId: string,
     @Param('revisionNumber') revisionNumber: string,
     @Query('compareTo') compareTo?: string,
   ) {
-    return this.revisionsService.diff(user.id, organizationId, id, versionId, parseRevisionNumber(revisionNumber), compareTo ? parseRevisionNumber(compareTo) : undefined);
+    return this.revisionsService.diff(member, id, versionId, parseRevisionNumber(revisionNumber), compareTo ? parseRevisionNumber(compareTo) : undefined);
   }
 
   @Post(':id/versions/:versionId/revisions/:revisionNumber/restore')
+  @RequirePermission('songs.manage')
   restore(
-    @CurrentUser() user: CurrentUserPayload,
-    @Headers('x-organization-id') organizationId: string,
+    @CurrentMembership() member: OrgMember,
     @Param('id') id: string,
     @Param('versionId') versionId: string,
     @Param('revisionNumber') revisionNumber: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return this.revisionsService.restore(user.id, organizationId, id, versionId, parseRevisionNumber(revisionNumber), body ?? {});
+    return this.revisionsService.restore(member, id, versionId, parseRevisionNumber(revisionNumber), body ?? {});
   }
 }

@@ -1,23 +1,14 @@
 import { BadRequestException, NotFoundException } from '@nestjs/common';
-import { PermissionsService } from '../permissions/permissions.service';
 import { SongsRepository } from './songs.repository';
 
 /**
- * Helper compartido para validar acceso a una cancion + obtener la membresia
- * del usuario (rol incluido). Usado por los modulos de notas y colaboracion
- * para no repetir la misma verificacion de organizacion/cancion en cada servicio.
+ * Helper compartido: valida que la cancion sea de la organizacion (si no, 404). La membresia y el
+ * permiso ya los verifico PermissionsGuard; el rol llega a los servicios via @CurrentMembership().
  */
-export async function assertSongAccess(
-  songsRepository: SongsRepository,
-  permissions: PermissionsService,
-  userId: string,
-  organizationId: string,
-  songId: string,
-) {
-  const membership = await permissions.assertOrganizationMember(userId, organizationId);
+export async function assertSongAccess(songsRepository: SongsRepository, organizationId: string, songId: string) {
   const song = await songsRepository.findSongSummaryInOrganization(songId, organizationId);
   if (!song) throw new NotFoundException('Cancion no encontrada');
-  return { song, membership };
+  return song;
 }
 
 /** Valida que, si se indica una version, pertenezca realmente a la cancion. */

@@ -1,48 +1,57 @@
-import { Body, Controller, Delete, Get, Headers, Inject, Param, Patch, Post, Query, Res, StreamableFile, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query, Res, StreamableFile, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { AuthGuard } from '../auth/auth.guard';
-import { CurrentUser, CurrentUserPayload } from '../auth/current-user.decorator';
 import { SongsService } from './songs.service';
+import { CurrentMembership, OrgMember } from '../permissions/current-membership.decorator';
+import { PermissionsGuard } from '../permissions/permissions.guard';
+import { RequirePermission } from '../permissions/require-permission.decorator';
 
 @Controller('api/songs')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, PermissionsGuard)
 export class SongsController {
   constructor(@Inject(SongsService) private readonly songsService: SongsService) {}
 
   @Get()
-  list(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Query() query: Record<string, unknown>) {
-    return this.songsService.list(user.id, organizationId || String(query.organizationId || ''), query);
+  @RequirePermission('read', { organizationFrom: 'headerOrQuery' })
+  list(@CurrentMembership() member: OrgMember, @Query() query: Record<string, unknown>) {
+    return this.songsService.list(member, query);
   }
 
   @Get(':id')
-  detail(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string) {
-    return this.songsService.detail(user.id, organizationId, id);
+  @RequirePermission('read')
+  detail(@CurrentMembership() member: OrgMember, @Param('id') id: string) {
+    return this.songsService.detail(member, id);
   }
 
   @Get(':id/versions')
-  versions(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string) {
-    return this.songsService.versions(user.id, organizationId, id);
+  @RequirePermission('read')
+  versions(@CurrentMembership() member: OrgMember, @Param('id') id: string) {
+    return this.songsService.versions(member, id);
   }
 
   @Get(':id/versions/:versionId')
-  version(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('versionId') versionId: string) {
-    return this.songsService.version(user.id, organizationId, id, versionId);
+  @RequirePermission('read')
+  version(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('versionId') versionId: string) {
+    return this.songsService.version(member, id, versionId);
   }
 
   @Get(':id/tracks')
-  tracks(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Query() query: Record<string, unknown>) {
-    return this.songsService.tracks(user.id, organizationId, id, query);
+  @RequirePermission('read')
+  tracks(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Query() query: Record<string, unknown>) {
+    return this.songsService.tracks(member, id, query);
   }
 
   @Get(':id/tracks/:trackId')
-  track(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('trackId') trackId: string) {
-    return this.songsService.track(user.id, organizationId, id, trackId);
+  @RequirePermission('read')
+  track(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('trackId') trackId: string) {
+    return this.songsService.track(member, id, trackId);
   }
 
   @Get(':id/tracks/:trackId/stream')
-  async streamTrack(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('trackId') trackId: string, @Res({ passthrough: true }) response: any) {
-    const track = await this.songsService.trackAsset(user.id, organizationId, id, trackId);
+  @RequirePermission('read')
+  async streamTrack(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('trackId') trackId: string, @Res({ passthrough: true }) response: any) {
+    const track = await this.songsService.trackAsset(member, id, trackId);
 
     if ((track.provider === 'EXTERNAL_URL' || track.provider === 'OTHER') && track.url) {
       response.redirect(track.url);
@@ -60,9 +69,10 @@ export class SongsController {
   }
 
   @Get(':id/tracks/:trackId/download')
-  async downloadTrack(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('trackId') trackId: string, @Res({ passthrough: true }) response: any) {
-    const track = await this.songsService.trackAsset(user.id, organizationId, id, trackId);
-    const fileName = await this.songsService.downloadFileName(user.id, organizationId, id, trackId);
+  @RequirePermission('read')
+  async downloadTrack(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('trackId') trackId: string, @Res({ passthrough: true }) response: any) {
+    const track = await this.songsService.trackAsset(member, id, trackId);
+    const fileName = await this.songsService.downloadFileName(member, id, trackId);
 
     if ((track.provider === 'EXTERNAL_URL' || track.provider === 'OTHER') && track.url) {
       response.redirect(track.url);
@@ -81,28 +91,33 @@ export class SongsController {
   }
 
   @Get(':id/links')
-  links(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Query() query: Record<string, unknown>) {
-    return this.songsService.links(user.id, organizationId, id, query);
+  @RequirePermission('read')
+  links(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Query() query: Record<string, unknown>) {
+    return this.songsService.links(member, id, query);
   }
 
   @Get(':id/links/:linkId')
-  link(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('linkId') linkId: string) {
-    return this.songsService.link(user.id, organizationId, id, linkId);
+  @RequirePermission('read')
+  link(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('linkId') linkId: string) {
+    return this.songsService.link(member, id, linkId);
   }
 
   @Get(':id/files')
-  files(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Query() query: Record<string, unknown>) {
-    return this.songsService.files(user.id, organizationId, id, query);
+  @RequirePermission('read')
+  files(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Query() query: Record<string, unknown>) {
+    return this.songsService.files(member, id, query);
   }
 
   @Get(':id/files/:songFileId')
-  file(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('songFileId') songFileId: string) {
-    return this.songsService.file(user.id, organizationId, id, songFileId);
+  @RequirePermission('read')
+  file(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('songFileId') songFileId: string) {
+    return this.songsService.file(member, id, songFileId);
   }
 
   @Get(':id/files/:songFileId/stream')
-  async streamSongFile(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('songFileId') songFileId: string, @Res({ passthrough: true }) response: any) {
-    const context = await this.songsService.songFileAsset(user.id, organizationId, id, songFileId);
+  @RequirePermission('read')
+  async streamSongFile(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('songFileId') songFileId: string, @Res({ passthrough: true }) response: any) {
+    const context = await this.songsService.songFileAsset(member, id, songFileId);
     if (!context.file.storageKey) {
       response.status(404);
       return { message: 'Archivo no disponible' };
@@ -114,14 +129,15 @@ export class SongsController {
   }
 
   @Get(':id/files/:songFileId/download')
-  async downloadSongFile(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('songFileId') songFileId: string, @Res({ passthrough: true }) response: any) {
-    const context = await this.songsService.songFileAsset(user.id, organizationId, id, songFileId);
+  @RequirePermission('read')
+  async downloadSongFile(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('songFileId') songFileId: string, @Res({ passthrough: true }) response: any) {
+    const context = await this.songsService.songFileAsset(member, id, songFileId);
     if (!context.file.storageKey) {
       response.status(404);
       return { message: 'Archivo no disponible' };
     }
 
-    const fileName = await this.songsService.downloadSongFileName(user.id, organizationId, id, songFileId);
+    const fileName = await this.songsService.downloadSongFileName(member, id, songFileId);
     response.setHeader('Content-Type', context.file.mimeType || 'application/octet-stream');
     response.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
     if (context.file.sizeBytes) response.setHeader('Content-Length', String(context.file.sizeBytes));
@@ -129,130 +145,154 @@ export class SongsController {
   }
 
   @Post()
-  create(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.create(user.id, organizationId, body ?? {});
+  @RequirePermission('songs.manage')
+  create(@CurrentMembership() member: OrgMember, @Body() body: Record<string, unknown>) {
+    return this.songsService.create(member, body ?? {});
   }
 
   @Post(':id/versions')
-  createVersion(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.createVersion(user.id, organizationId, id, body ?? {});
+  @RequirePermission('songs.manage')
+  createVersion(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
+    return this.songsService.createVersion(member, id, body ?? {});
   }
 
   @Patch(':id/versions/:versionId')
-  updateVersion(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('versionId') versionId: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.updateVersion(user.id, organizationId, id, versionId, body ?? {});
+  @RequirePermission('songs.manage')
+  updateVersion(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('versionId') versionId: string, @Body() body: Record<string, unknown>) {
+    return this.songsService.updateVersion(member, id, versionId, body ?? {});
   }
 
   @Post(':id/versions/:versionId/set-default')
-  setDefaultVersion(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('versionId') versionId: string) {
-    return this.songsService.setDefaultVersion(user.id, organizationId, id, versionId);
+  @RequirePermission('songs.manage')
+  setDefaultVersion(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('versionId') versionId: string) {
+    return this.songsService.setDefaultVersion(member, id, versionId);
   }
 
   @Delete(':id/versions/:versionId')
-  deleteVersion(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('versionId') versionId: string) {
-    return this.songsService.deleteVersion(user.id, organizationId, id, versionId);
+  @RequirePermission('songs.manage')
+  deleteVersion(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('versionId') versionId: string) {
+    return this.songsService.deleteVersion(member, id, versionId);
   }
 
   @Post(':id/links')
-  createLink(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.createLink(user.id, organizationId, id, body ?? {});
+  @RequirePermission('songs.manage')
+  createLink(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
+    return this.songsService.createLink(member, id, body ?? {});
   }
 
   // PATCH .../links/reorder debe registrarse antes que PATCH .../links/:linkId:
   // Express resuelve rutas en orden de registro y ":linkId" capturaria "reorder".
   @Patch(':id/links/reorder')
-  reorderLinks(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.reorderLinks(user.id, organizationId, id, body ?? {});
+  @RequirePermission('songs.manage')
+  reorderLinks(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
+    return this.songsService.reorderLinks(member, id, body ?? {});
   }
 
   @Patch(':id/links/:linkId')
-  updateLink(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('linkId') linkId: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.updateLink(user.id, organizationId, id, linkId, body ?? {});
+  @RequirePermission('songs.manage')
+  updateLink(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('linkId') linkId: string, @Body() body: Record<string, unknown>) {
+    return this.songsService.updateLink(member, id, linkId, body ?? {});
   }
 
   @Delete(':id/links/:linkId')
-  deleteLink(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('linkId') linkId: string) {
-    return this.songsService.deleteLink(user.id, organizationId, id, linkId);
+  @RequirePermission('songs.manage')
+  deleteLink(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('linkId') linkId: string) {
+    return this.songsService.deleteLink(member, id, linkId);
   }
 
   @Post(':id/links/:linkId/set-primary')
-  setPrimaryLink(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('linkId') linkId: string) {
-    return this.songsService.setPrimaryLink(user.id, organizationId, id, linkId);
+  @RequirePermission('songs.manage')
+  setPrimaryLink(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('linkId') linkId: string) {
+    return this.songsService.setPrimaryLink(member, id, linkId);
   }
 
   @Post(':id/tracks')
-  createTrack(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.createTrack(user.id, organizationId, id, body ?? {});
+  @RequirePermission('songs.manage')
+  createTrack(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
+    return this.songsService.createTrack(member, id, body ?? {});
   }
 
   @Post(':id/tracks/upload')
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
-  uploadTrack(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Body() body: Record<string, unknown>, @UploadedFile() file?: { buffer: Buffer; size: number; mimetype: string; originalname: string }) {
-    return this.songsService.uploadTrack(user.id, organizationId, id, body ?? {}, file);
+  @RequirePermission('songs.manage')
+  uploadTrack(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>, @UploadedFile() file?: { buffer: Buffer; size: number; mimetype: string; originalname: string }) {
+    return this.songsService.uploadTrack(member, id, body ?? {}, file);
   }
 
   // PATCH .../tracks/reorder debe registrarse antes que PATCH .../tracks/:trackId
   // (mismo motivo que en links/reorder mas arriba).
   @Patch(':id/tracks/reorder')
-  reorderTracks(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.reorderTracks(user.id, organizationId, id, body ?? {});
+  @RequirePermission('songs.manage')
+  reorderTracks(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
+    return this.songsService.reorderTracks(member, id, body ?? {});
   }
 
   @Patch(':id/tracks/:trackId')
-  updateTrack(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('trackId') trackId: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.updateTrack(user.id, organizationId, id, trackId, body ?? {});
+  @RequirePermission('songs.manage')
+  updateTrack(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('trackId') trackId: string, @Body() body: Record<string, unknown>) {
+    return this.songsService.updateTrack(member, id, trackId, body ?? {});
   }
 
   @Delete(':id/tracks/:trackId')
-  deleteTrack(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('trackId') trackId: string) {
-    return this.songsService.deleteTrack(user.id, organizationId, id, trackId);
+  @RequirePermission('songs.manage')
+  deleteTrack(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('trackId') trackId: string) {
+    return this.songsService.deleteTrack(member, id, trackId);
   }
 
   @Post(':id/tracks/:trackId/set-primary')
-  setPrimaryTrack(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('trackId') trackId: string) {
-    return this.songsService.setPrimaryTrack(user.id, organizationId, id, trackId);
+  @RequirePermission('songs.manage')
+  setPrimaryTrack(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('trackId') trackId: string) {
+    return this.songsService.setPrimaryTrack(member, id, trackId);
   }
 
   @Post(':id/tracks/copy')
-  copyTracks(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.copyTrackReferences(user.id, organizationId, id, body ?? {});
+  @RequirePermission('songs.manage')
+  copyTracks(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
+    return this.songsService.copyTrackReferences(member, id, body ?? {});
   }
 
   @Post(':id/files/upload')
   @UseInterceptors(FileInterceptor('file', { storage: memoryStorage() }))
-  uploadSongFile(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Body() body: Record<string, unknown>, @UploadedFile() file?: { buffer: Buffer; size: number; mimetype: string; originalname: string }) {
-    return this.songsService.uploadSongFile(user.id, organizationId, id, body ?? {}, file);
+  @RequirePermission('songs.manage')
+  uploadSongFile(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>, @UploadedFile() file?: { buffer: Buffer; size: number; mimetype: string; originalname: string }) {
+    return this.songsService.uploadSongFile(member, id, body ?? {}, file);
   }
 
   // PATCH .../files/reorder debe registrarse antes que PATCH .../files/:songFileId
   // (mismo motivo que en links/reorder y tracks/reorder mas arriba).
   @Patch(':id/files/reorder')
-  reorderSongFiles(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.reorderSongFiles(user.id, organizationId, id, body ?? {});
+  @RequirePermission('songs.manage')
+  reorderSongFiles(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
+    return this.songsService.reorderSongFiles(member, id, body ?? {});
   }
 
   @Patch(':id/files/:songFileId')
-  updateSongFile(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('songFileId') songFileId: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.updateSongFile(user.id, organizationId, id, songFileId, body ?? {});
+  @RequirePermission('songs.manage')
+  updateSongFile(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('songFileId') songFileId: string, @Body() body: Record<string, unknown>) {
+    return this.songsService.updateSongFile(member, id, songFileId, body ?? {});
   }
 
   @Delete(':id/files/:songFileId')
-  deleteSongFile(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('songFileId') songFileId: string) {
-    return this.songsService.deleteSongFile(user.id, organizationId, id, songFileId);
+  @RequirePermission('songs.manage')
+  deleteSongFile(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('songFileId') songFileId: string) {
+    return this.songsService.deleteSongFile(member, id, songFileId);
   }
 
   @Post(':id/files/:songFileId/set-primary')
-  setPrimarySongFile(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Param('songFileId') songFileId: string) {
-    return this.songsService.setPrimarySongFile(user.id, organizationId, id, songFileId);
+  @RequirePermission('songs.manage')
+  setPrimarySongFile(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('songFileId') songFileId: string) {
+    return this.songsService.setPrimarySongFile(member, id, songFileId);
   }
 
   @Patch(':id')
-  update(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.update(user.id, organizationId, id, body ?? {});
+  @RequirePermission('songs.manage')
+  update(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
+    return this.songsService.update(member, id, body ?? {});
   }
 
   @Delete(':id')
-  archive(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string) {
-    return this.songsService.archive(user.id, organizationId, id);
+  @RequirePermission('songs.manage')
+  archive(@CurrentMembership() member: OrgMember, @Param('id') id: string) {
+    return this.songsService.archive(member, id);
   }
 }

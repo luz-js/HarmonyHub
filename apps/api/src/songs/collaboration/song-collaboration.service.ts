@@ -8,6 +8,7 @@ import { assertSongAccess, assertSongVersionAccess } from '../song-access.utils'
 import { SongsRepository } from '../songs.repository';
 import { SongCollaborationRepository } from './song-collaboration.repository';
 import { assertValidThreadTarget, InvalidThreadTargetError, normalizeMentionedUserIds, sectionExistsInContent } from './song-collaboration.utils';
+import type { OrgMember } from '../../permissions/current-membership.decorator';
 
 const MAX_COMMENT_LENGTH = 5000;
 
@@ -127,8 +128,9 @@ export class SongCollaborationService {
     return validIds;
   }
 
-  async listThreads(userId: string, organizationId: string, songId: string, query: Record<string, unknown> = {}) {
-    await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async listThreads(member: OrgMember, songId: string, query: Record<string, unknown> = {}) {
+    const { organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     const parsed = listThreadQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
@@ -146,8 +148,9 @@ export class SongCollaborationService {
     return threads.map((thread) => this.normalizeThread(thread));
   }
 
-  async getThread(userId: string, organizationId: string, songId: string, threadId: string) {
-    await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async getThread(member: OrgMember, songId: string, threadId: string) {
+    const { organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     const thread = await this.collabRepository.findThreadWithComments(songId, threadId);
     if (!thread) throw new NotFoundException('Conversacion no encontrada');
     return {
@@ -169,8 +172,9 @@ export class SongCollaborationService {
     };
   }
 
-  async createThread(userId: string, organizationId: string, songId: string, input: Record<string, unknown>) {
-    await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async createThread(member: OrgMember, songId: string, input: Record<string, unknown>) {
+    const { userId, organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     const parsed = createThreadSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
@@ -221,10 +225,11 @@ export class SongCollaborationService {
     return this.normalizeThread(thread);
   }
 
-  async updateThread(userId: string, organizationId: string, songId: string, threadId: string, input: Record<string, unknown>) {
-    const { membership } = await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async updateThread(member: OrgMember, songId: string, threadId: string, input: Record<string, unknown>) {
+    const { userId, organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     const existing = await this.assertThreadInSong(songId, threadId);
-    if (!this.permissions.isLeadershipRole(membership.role) && existing.createdById !== userId) {
+    if (!this.permissions.isLeadershipRole(member.role) && existing.createdById !== userId) {
       throw new ForbiddenException('No tienes permiso para editar esta conversacion');
     }
 
@@ -235,10 +240,11 @@ export class SongCollaborationService {
     return this.normalizeThread(updated);
   }
 
-  async resolveThread(userId: string, organizationId: string, songId: string, threadId: string) {
-    const { membership } = await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async resolveThread(member: OrgMember, songId: string, threadId: string) {
+    const { userId, organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     const existing = await this.assertThreadInSong(songId, threadId);
-    if (!this.permissions.canResolveSongThread(membership.role, existing.createdById === userId)) {
+    if (!this.permissions.canResolveSongThread(member.role, existing.createdById === userId)) {
       throw new ForbiddenException('No tienes permiso para resolver esta conversacion');
     }
     const updated = await this.collabRepository.updateThread(threadId, { status: 'RESOLVED', resolvedAt: new Date(), resolvedById: userId });
@@ -255,10 +261,11 @@ export class SongCollaborationService {
     return this.normalizeThread(updated);
   }
 
-  async reopenThread(userId: string, organizationId: string, songId: string, threadId: string) {
-    const { membership } = await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async reopenThread(member: OrgMember, songId: string, threadId: string) {
+    const { userId, organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     const existing = await this.assertThreadInSong(songId, threadId);
-    if (!this.permissions.canResolveSongThread(membership.role, existing.createdById === userId)) {
+    if (!this.permissions.canResolveSongThread(member.role, existing.createdById === userId)) {
       throw new ForbiddenException('No tienes permiso para reabrir esta conversacion');
     }
     const updated = await this.collabRepository.updateThread(threadId, { status: 'OPEN', resolvedAt: null, resolvedById: null });
@@ -275,8 +282,9 @@ export class SongCollaborationService {
     return this.normalizeThread(updated);
   }
 
-  async createComment(userId: string, organizationId: string, songId: string, threadId: string, input: Record<string, unknown>) {
-    await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async createComment(member: OrgMember, songId: string, threadId: string, input: Record<string, unknown>) {
+    const { userId, organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     const thread = await this.assertThreadInSong(songId, threadId);
     const parsed = createCommentSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
@@ -296,8 +304,9 @@ export class SongCollaborationService {
     return this.normalizeComment(comment);
   }
 
-  async updateComment(userId: string, organizationId: string, songId: string, threadId: string, commentId: string, input: Record<string, unknown>) {
-    await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async updateComment(member: OrgMember, songId: string, threadId: string, commentId: string, input: Record<string, unknown>) {
+    const { userId, organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     await this.assertThreadInSong(songId, threadId);
     const comment = await this.collabRepository.findCommentInThread(threadId, commentId);
     if (!comment || comment.deletedAt) throw new NotFoundException('Comentario no encontrado');
@@ -310,12 +319,13 @@ export class SongCollaborationService {
     return this.normalizeComment(updated);
   }
 
-  async deleteComment(userId: string, organizationId: string, songId: string, threadId: string, commentId: string) {
-    const { membership } = await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async deleteComment(member: OrgMember, songId: string, threadId: string, commentId: string) {
+    const { userId, organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     await this.assertThreadInSong(songId, threadId);
     const comment = await this.collabRepository.findCommentInThread(threadId, commentId);
     if (!comment || comment.deletedAt) throw new NotFoundException('Comentario no encontrado');
-    if (comment.authorId !== userId && !this.permissions.canModerateSongComment(membership.role)) {
+    if (comment.authorId !== userId && !this.permissions.canModerateSongComment(member.role)) {
       throw new ForbiddenException('No tienes permiso para eliminar este comentario');
     }
     await this.collabRepository.softDeleteComment(commentId);

@@ -6,6 +6,7 @@ import { normalizeLinkResponse } from './songs.presenter';
 import { createLinkSchema, listLinkQuerySchema, reorderLinksSchema, updateLinkSchema } from './songs.schemas';
 import { SongsAccessService } from './songs-access.service';
 import { SongsRepository } from './songs.repository';
+import type { OrgMember } from '../permissions/current-membership.decorator';
 
 @Injectable()
 export class SongsLinksService {
@@ -15,8 +16,9 @@ export class SongsLinksService {
     @Inject(SongActivityService) private readonly activity: SongActivityService,
   ) {}
 
-  async links(userId: string, organizationId: string, songId: string, query: Record<string, unknown> = {}) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId);
+  async links(member: OrgMember, songId: string, query: Record<string, unknown> = {}) {
+    const { organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     const parsed = listLinkQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
     const versionId = parsed.data.versionId ? parsed.data.versionId : undefined;
@@ -25,14 +27,16 @@ export class SongsLinksService {
     return links.map((link) => normalizeLinkResponse(link));
   }
 
-  async link(userId: string, organizationId: string, songId: string, linkId: string) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId);
+  async link(member: OrgMember, songId: string, linkId: string) {
+    const { organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     const link = await this.access.assertLinkInSong(songId, linkId);
     return normalizeLinkResponse(link);
   }
 
-  async createLink(userId: string, organizationId: string, songId: string, input: Record<string, unknown>) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId, 'songs.manage');
+  async createLink(member: OrgMember, songId: string, input: Record<string, unknown>) {
+    const { userId, organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     const parsed = createLinkSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
     const version = await this.access.assertVersionInSong(songId, parsed.data.versionId);
@@ -67,8 +71,9 @@ export class SongsLinksService {
     return normalizeLinkResponse(created);
   }
 
-  async updateLink(userId: string, organizationId: string, songId: string, linkId: string, input: Record<string, unknown>) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId, 'songs.manage');
+  async updateLink(member: OrgMember, songId: string, linkId: string, input: Record<string, unknown>) {
+    const { organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     await this.access.assertLinkInSong(songId, linkId);
     const parsed = updateLinkSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
@@ -91,8 +96,9 @@ export class SongsLinksService {
     return normalizeLinkResponse(updated);
   }
 
-  async deleteLink(userId: string, organizationId: string, songId: string, linkId: string) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId, 'songs.manage');
+  async deleteLink(member: OrgMember, songId: string, linkId: string) {
+    const { userId, organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     const link = await this.access.assertLinkInSong(songId, linkId);
     await this.songsRepository.deleteLink(linkId);
     await this.activity.recordBestEffort({
@@ -108,8 +114,9 @@ export class SongsLinksService {
     return { ok: true };
   }
 
-  async setPrimaryLink(userId: string, organizationId: string, songId: string, linkId: string) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId, 'songs.manage');
+  async setPrimaryLink(member: OrgMember, songId: string, linkId: string) {
+    const { userId, organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     await this.access.assertLinkInSong(songId, linkId);
     const link = await this.songsRepository.setLinkPrimary(songId, linkId);
     await this.activity.recordBestEffort({
@@ -125,8 +132,9 @@ export class SongsLinksService {
     return normalizeLinkResponse(link);
   }
 
-  async reorderLinks(userId: string, organizationId: string, songId: string, input: Record<string, unknown>) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId, 'songs.manage');
+  async reorderLinks(member: OrgMember, songId: string, input: Record<string, unknown>) {
+    const { organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     const parsed = reorderLinksSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
     const version = await this.access.assertVersionInSong(songId, parsed.data.versionId);

@@ -1,29 +1,22 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { PermissionsService } from '../permissions/permissions.service';
 import { normalizeOptionalId } from './songs.schemas';
 import { SongsRepository } from './songs.repository';
 
+/**
+ * Comprobaciones de recurso de canciones (que la cancion, version, pista... sean de la organizacion).
+ * Los permisos por rol los verifica PermissionsGuard con @RequirePermission en cada ruta.
+ */
 @Injectable()
 export class SongsAccessService {
-  constructor(
-    @Inject(SongsRepository) private readonly songsRepository: SongsRepository,
-    @Inject(PermissionsService) private readonly permissions: PermissionsService,
-  ) {}
+  constructor(@Inject(SongsRepository) private readonly songsRepository: SongsRepository) {}
 
-  async assertSongInOrganization(userId: string, organizationId: string, songId: string, permission: 'read' | 'songs.manage' = 'read') {
-    if (permission === 'songs.manage') {
-      await this.permissions.assertPermission(userId, organizationId, 'songs.manage');
-    } else {
-      await this.permissions.assertOrganizationMember(userId, organizationId);
-    }
-
+  async assertSongInOrganization(organizationId: string, songId: string) {
     const song = await this.songsRepository.findSongSummaryInOrganization(songId, organizationId);
     if (!song) throw new NotFoundException('Cancion no encontrada');
     return song;
   }
 
-  async assertSongDetailInOrganization(userId: string, organizationId: string, songId: string) {
-    await this.permissions.assertOrganizationMember(userId, organizationId);
+  async assertSongDetailInOrganization(organizationId: string, songId: string) {
     const song = await this.songsRepository.findByIdInOrganization(songId, organizationId);
     if (!song || song.status === 'ARCHIVED') throw new NotFoundException('Cancion no encontrada');
     return song;

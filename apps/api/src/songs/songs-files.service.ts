@@ -21,6 +21,7 @@ import {
   updateSongFileSchema,
 } from './songs.schemas';
 import { TRACK_STORAGE, TrackStorageProvider } from './storage/track-storage.interface';
+import type { OrgMember } from '../permissions/current-membership.decorator';
 
 type UploadedSongFile = {
   buffer: Buffer;
@@ -38,8 +39,9 @@ export class SongsFilesService {
     @Inject(SongActivityService) private readonly activity: SongActivityService,
   ) {}
 
-  async files(userId: string, organizationId: string, songId: string, query: Record<string, unknown> = {}) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId);
+  async files(member: OrgMember, songId: string, query: Record<string, unknown> = {}) {
+    const { organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     const parsed = listSongFileQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
     const versionId = parsed.data.versionId ? parsed.data.versionId : undefined;
@@ -48,14 +50,16 @@ export class SongsFilesService {
     return files.map((file) => normalizeSongFileResponse(file));
   }
 
-  async file(userId: string, organizationId: string, songId: string, songFileId: string) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId);
+  async file(member: OrgMember, songId: string, songFileId: string) {
+    const { organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     const songFile = await this.access.assertSongFileInSong(songId, songFileId);
     return normalizeSongFileResponse(songFile);
   }
 
-  async uploadSongFile(userId: string, organizationId: string, songId: string, input: Record<string, unknown>, file?: UploadedSongFile) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId, 'songs.manage');
+  async uploadSongFile(member: OrgMember, songId: string, input: Record<string, unknown>, file?: UploadedSongFile) {
+    const { userId, organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     if (!file) throw new BadRequestException('Archivo requerido');
 
     try {
@@ -124,8 +128,9 @@ export class SongsFilesService {
     }
   }
 
-  async updateSongFile(userId: string, organizationId: string, songId: string, songFileId: string, input: Record<string, unknown>) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId, 'songs.manage');
+  async updateSongFile(member: OrgMember, songId: string, songFileId: string, input: Record<string, unknown>) {
+    const { organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     await this.access.assertSongFileInSong(songId, songFileId);
     const parsed = updateSongFileSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
@@ -143,8 +148,9 @@ export class SongsFilesService {
     return normalizeSongFileResponse(updated);
   }
 
-  async deleteSongFile(userId: string, organizationId: string, songId: string, songFileId: string) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId, 'songs.manage');
+  async deleteSongFile(member: OrgMember, songId: string, songFileId: string) {
+    const { userId, organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     const existing = await this.access.assertSongFileInSong(songId, songFileId);
     const deleted = await this.songsRepository.deleteSongFile(songFileId);
 
@@ -170,8 +176,9 @@ export class SongsFilesService {
     return { ok: true };
   }
 
-  async setPrimarySongFile(userId: string, organizationId: string, songId: string, songFileId: string) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId, 'songs.manage');
+  async setPrimarySongFile(member: OrgMember, songId: string, songFileId: string) {
+    const { userId, organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     await this.access.assertSongFileInSong(songId, songFileId);
     const songFile = await this.songsRepository.setSongFilePrimary(songId, songFileId);
     await this.activity.recordBestEffort({
@@ -187,8 +194,9 @@ export class SongsFilesService {
     return normalizeSongFileResponse(songFile);
   }
 
-  async reorderSongFiles(userId: string, organizationId: string, songId: string, input: Record<string, unknown>) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId, 'songs.manage');
+  async reorderSongFiles(member: OrgMember, songId: string, input: Record<string, unknown>) {
+    const { organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     const parsed = reorderSongFilesSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
     const version = await this.access.assertVersionInSong(songId, parsed.data.versionId);
@@ -196,13 +204,14 @@ export class SongsFilesService {
     return files.map((file) => normalizeSongFileResponse(file));
   }
 
-  async songFileAsset(userId: string, organizationId: string, songId: string, songFileId: string) {
-    await this.access.assertSongInOrganization(userId, organizationId, songId);
+  async songFileAsset(member: OrgMember, songId: string, songFileId: string) {
+    const { organizationId } = member;
+    await this.access.assertSongInOrganization(organizationId, songId);
     return this.songsRepository.songFileContext(songId, songFileId);
   }
 
-  async downloadSongFileName(userId: string, organizationId: string, songId: string, songFileId: string) {
-    const context = await this.songFileAsset(userId, organizationId, songId, songFileId);
+  async downloadSongFileName(member: OrgMember, songId: string, songFileId: string) {
+    const context = await this.songFileAsset(member, songId, songFileId);
     const extension = extname(context.file.originalName || context.file.name) || '';
     return `${sanitizeDownloadFileName(context.song.title)} - ${sanitizeDownloadFileName(context.title || context.file.name)}${extension.toLowerCase()}`;
   }

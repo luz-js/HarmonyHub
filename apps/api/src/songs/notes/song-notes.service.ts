@@ -7,6 +7,7 @@ import { SongActivityService } from '../activity/song-activity.service';
 import { assertSongAccess, assertSongVersionAccess } from '../song-access.utils';
 import { SongsRepository } from '../songs.repository';
 import { SongNotesRepository } from './song-notes.repository';
+import type { OrgMember } from '../../permissions/current-membership.decorator';
 
 const MAX_NOTE_CONTENT_LENGTH = 10000;
 
@@ -100,15 +101,16 @@ export class SongNotesService {
     if (note.visibility === 'LEADERS_ONLY' && !this.permissions.isLeadershipRole(role)) throw new NotFoundException('Nota no encontrada');
   }
 
-  async list(userId: string, organizationId: string, songId: string, query: Record<string, unknown> = {}) {
-    const { membership } = await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async list(member: OrgMember, songId: string, query: Record<string, unknown> = {}) {
+    const { userId, organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     const parsed = listNoteQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
     const versionId = parsed.data.versionId ? parsed.data.versionId : undefined;
     if (versionId) await assertSongVersionAccess(this.songsRepository, songId, versionId);
 
-    const andConditions: Prisma.SongNoteWhereInput[] = [this.permissions.buildVisibleSongNoteWhere(userId, membership.role)];
+    const andConditions: Prisma.SongNoteWhereInput[] = [this.permissions.buildVisibleSongNoteWhere(userId, member.role)];
     if (parsed.data.visibility) andConditions.push({ visibility: parsed.data.visibility });
     if (!parsed.data.includeArchived) andConditions.push({ isArchived: false });
     if (versionId !== undefined) {
@@ -119,19 +121,21 @@ export class SongNotesService {
     return notes.map((note) => normalizeNote(note as NoteRecord));
   }
 
-  async get(userId: string, organizationId: string, songId: string, noteId: string) {
-    const { membership } = await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async get(member: OrgMember, songId: string, noteId: string) {
+    const { userId, organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     const note = await this.assertNoteInSong(songId, noteId);
-    this.assertNoteVisible(note, userId, membership.role);
+    this.assertNoteVisible(note, userId, member.role);
     return normalizeNote(note);
   }
 
-  async create(userId: string, organizationId: string, songId: string, input: Record<string, unknown>) {
-    const { membership } = await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async create(member: OrgMember, songId: string, input: Record<string, unknown>) {
+    const { userId, organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     const parsed = createNoteSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
-    if (!this.permissions.canCreateSongNoteVisibility(membership.role, parsed.data.visibility)) {
+    if (!this.permissions.canCreateSongNoteVisibility(member.role, parsed.data.visibility)) {
       throw new ForbiddenException('No tienes permiso para crear notas con esta visibilidad');
     }
 
@@ -157,19 +161,20 @@ export class SongNotesService {
     return normalizeNote(created as NoteRecord);
   }
 
-  async update(userId: string, organizationId: string, songId: string, noteId: string, input: Record<string, unknown>) {
-    const { membership } = await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async update(member: OrgMember, songId: string, noteId: string, input: Record<string, unknown>) {
+    const { userId, organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     const existing = await this.assertNoteInSong(songId, noteId);
-    this.assertNoteVisible(existing, userId, membership.role);
+    this.assertNoteVisible(existing, userId, member.role);
 
-    if (!this.permissions.canModifySongNote(membership.role, existing, userId)) {
+    if (!this.permissions.canModifySongNote(member.role, existing, userId)) {
       throw new ForbiddenException('No tienes permiso para editar esta nota');
     }
 
     const parsed = updateNoteSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
-    if (parsed.data.visibility && !this.permissions.canCreateSongNoteVisibility(membership.role, parsed.data.visibility)) {
+    if (parsed.data.visibility && !this.permissions.canCreateSongNoteVisibility(member.role, parsed.data.visibility)) {
       throw new ForbiddenException('No tienes permiso para usar esta visibilidad');
     }
 
@@ -190,11 +195,12 @@ export class SongNotesService {
     return normalizeNote(updated as NoteRecord);
   }
 
-  async delete(userId: string, organizationId: string, songId: string, noteId: string) {
-    const { membership } = await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async delete(member: OrgMember, songId: string, noteId: string) {
+    const { userId, organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     const existing = await this.assertNoteInSong(songId, noteId);
-    this.assertNoteVisible(existing, userId, membership.role);
-    if (!this.permissions.canModifySongNote(membership.role, existing, userId)) {
+    this.assertNoteVisible(existing, userId, member.role);
+    if (!this.permissions.canModifySongNote(member.role, existing, userId)) {
       throw new ForbiddenException('No tienes permiso para eliminar esta nota');
     }
     await this.notesRepository.delete(noteId);
@@ -207,11 +213,12 @@ export class SongNotesService {
     return { ok: true };
   }
 
-  async togglePin(userId: string, organizationId: string, songId: string, noteId: string) {
-    const { membership } = await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async togglePin(member: OrgMember, songId: string, noteId: string) {
+    const { userId, organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     const existing = await this.assertNoteInSong(songId, noteId);
-    this.assertNoteVisible(existing, userId, membership.role);
-    if (!this.permissions.canModifySongNote(membership.role, existing, userId)) {
+    this.assertNoteVisible(existing, userId, member.role);
+    if (!this.permissions.canModifySongNote(member.role, existing, userId)) {
       throw new ForbiddenException('No tienes permiso para fijar esta nota');
     }
     const updated = await this.notesRepository.togglePin(noteId);
@@ -224,11 +231,12 @@ export class SongNotesService {
     return normalizeNote(updated as NoteRecord);
   }
 
-  async toggleArchive(userId: string, organizationId: string, songId: string, noteId: string) {
-    const { membership } = await assertSongAccess(this.songsRepository, this.permissions, userId, organizationId, songId);
+  async toggleArchive(member: OrgMember, songId: string, noteId: string) {
+    const { userId, organizationId } = member;
+    await assertSongAccess(this.songsRepository, organizationId, songId);
     const existing = await this.assertNoteInSong(songId, noteId);
-    this.assertNoteVisible(existing, userId, membership.role);
-    if (!this.permissions.canModifySongNote(membership.role, existing, userId)) {
+    this.assertNoteVisible(existing, userId, member.role);
+    if (!this.permissions.canModifySongNote(member.role, existing, userId)) {
       throw new ForbiddenException('No tienes permiso para archivar esta nota');
     }
     const updated = await this.notesRepository.toggleArchive(noteId);

@@ -65,45 +65,45 @@ test('canModerateSongComment solo OWNER/ADMIN', () => {
   assert.equal(permissions.canModerateSongComment('MUSICIAN'), false);
 });
 
-test('canViewSetlists permite a cualquier miembro activo (incluido GUEST)', () => {
-  assert.equal(permissions.canViewSetlists('GUEST'), true);
-  assert.equal(permissions.canViewSetlists('MUSICIAN'), true);
-  assert.equal(permissions.canViewSetlists('OWNER'), true);
+test('los setlists (read) los ve cualquier miembro activo, incluido GUEST', () => {
+  assert.equal(permissions.can('GUEST', 'read'), true);
+  assert.equal(permissions.can('MUSICIAN', 'read'), true);
+  assert.equal(permissions.can('OWNER', 'read'), true);
 });
 
-test('canManageSetlists permite OWNER/ADMIN/LEADER unicamente', () => {
-  assert.equal(permissions.canManageSetlists('OWNER'), true);
-  assert.equal(permissions.canManageSetlists('ADMIN'), true);
-  assert.equal(permissions.canManageSetlists('LEADER'), true);
-  assert.equal(permissions.canManageSetlists('MUSICIAN'), false);
-  assert.equal(permissions.canManageSetlists('GUEST'), false);
+test('setlists.manage permite OWNER/ADMIN/LEADER unicamente', () => {
+  assert.equal(permissions.can('OWNER', 'setlists.manage'), true);
+  assert.equal(permissions.can('ADMIN', 'setlists.manage'), true);
+  assert.equal(permissions.can('LEADER', 'setlists.manage'), true);
+  assert.equal(permissions.can('MUSICIAN', 'setlists.manage'), false);
+  assert.equal(permissions.can('GUEST', 'setlists.manage'), false);
 });
 
-test('canPublishSetlists y canArchiveSetlists siguen la regla de liderazgo', () => {
-  assert.equal(permissions.canPublishSetlists('LEADER'), true);
-  assert.equal(permissions.canPublishSetlists('MUSICIAN'), false);
-  assert.equal(permissions.canArchiveSetlists('LEADER'), true);
-  assert.equal(permissions.canArchiveSetlists('MUSICIAN'), false);
+test('setlists.publish y setlists.archive siguen la regla de liderazgo', () => {
+  assert.equal(permissions.can('LEADER', 'setlists.publish'), true);
+  assert.equal(permissions.can('MUSICIAN', 'setlists.publish'), false);
+  assert.equal(permissions.can('LEADER', 'setlists.archive'), true);
+  assert.equal(permissions.can('MUSICIAN', 'setlists.archive'), false);
 });
 
-test('canDeleteSetlists solo OWNER/ADMIN', () => {
-  assert.equal(permissions.canDeleteSetlists('OWNER'), true);
-  assert.equal(permissions.canDeleteSetlists('ADMIN'), true);
-  assert.equal(permissions.canDeleteSetlists('LEADER'), false);
+test('setlists.delete solo OWNER/ADMIN', () => {
+  assert.equal(permissions.can('OWNER', 'setlists.delete'), true);
+  assert.equal(permissions.can('ADMIN', 'setlists.delete'), true);
+  assert.equal(permissions.can('LEADER', 'setlists.delete'), false);
 });
 
-test('canViewSetlistAssignments permite a cualquier miembro activo (incluido GUEST)', () => {
-  assert.equal(permissions.canViewSetlistAssignments('GUEST'), true);
-  assert.equal(permissions.canViewSetlistAssignments('MUSICIAN'), true);
+test('el equipo del setlist (read) lo ve cualquier miembro activo, incluido GUEST', () => {
+  assert.equal(permissions.can('GUEST', 'read'), true);
+  assert.equal(permissions.can('MUSICIAN', 'read'), true);
 });
 
-test('canManageSetlistParticipants/Assignments/Requirements solo roles de liderazgo', () => {
-  for (const method of ['canManageSetlistParticipants', 'canManageSetlistAssignments', 'canManageSetlistRequirements'] as const) {
-    assert.equal(permissions[method]('OWNER'), true);
-    assert.equal(permissions[method]('ADMIN'), true);
-    assert.equal(permissions[method]('LEADER'), true);
-    assert.equal(permissions[method]('MUSICIAN'), false);
-    assert.equal(permissions[method]('GUEST'), false);
+test('setlists.participants/assignments/requirements.manage solo roles de liderazgo', () => {
+  for (const permission of ['setlists.participants.manage', 'setlists.assignments.manage', 'setlists.requirements.manage'] as const) {
+    assert.equal(permissions.can('OWNER', permission), true);
+    assert.equal(permissions.can('ADMIN', permission), true);
+    assert.equal(permissions.can('LEADER', permission), true);
+    assert.equal(permissions.can('MUSICIAN', permission), false);
+    assert.equal(permissions.can('GUEST', permission), false);
   }
 });
 
@@ -117,17 +117,17 @@ test('canUpdateAnyPreparationStatus solo roles de liderazgo', () => {
   assert.equal(permissions.canUpdateAnyPreparationStatus('MUSICIAN'), false);
 });
 
-test('canViewSetlistCues permite a cualquier miembro activo (incluido GUEST)', () => {
-  assert.equal(permissions.canViewSetlistCues('GUEST'), true);
-  assert.equal(permissions.canViewSetlistCues('MUSICIAN'), true);
+test('la produccion del setlist (read) la ve cualquier miembro activo, incluido GUEST', () => {
+  assert.equal(permissions.can('GUEST', 'read'), true);
+  assert.equal(permissions.can('MUSICIAN', 'read'), true);
 });
 
-test('canManageSetlistCues solo roles de liderazgo', () => {
-  assert.equal(permissions.canManageSetlistCues('OWNER'), true);
-  assert.equal(permissions.canManageSetlistCues('ADMIN'), true);
-  assert.equal(permissions.canManageSetlistCues('LEADER'), true);
-  assert.equal(permissions.canManageSetlistCues('MUSICIAN'), false);
-  assert.equal(permissions.canManageSetlistCues('GUEST'), false);
+test('setlists.cues.manage solo roles de liderazgo', () => {
+  assert.equal(permissions.can('OWNER', 'setlists.cues.manage'), true);
+  assert.equal(permissions.can('ADMIN', 'setlists.cues.manage'), true);
+  assert.equal(permissions.can('LEADER', 'setlists.cues.manage'), true);
+  assert.equal(permissions.can('MUSICIAN', 'setlists.cues.manage'), false);
+  assert.equal(permissions.can('GUEST', 'setlists.cues.manage'), false);
 });
 
 test('canUpdateOwnCueStatus depende exclusivamente de ser el responsable', () => {
