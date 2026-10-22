@@ -237,6 +237,7 @@ model User {
   completedSetlistCues      SetlistCue[]         @relation("SetlistCueCompletedBy")
   instruments               UserInstrument[]
   refreshTokens             RefreshToken[]
+  archivedOrganizations     Organization[]       @relation("OrganizationArchiver")
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
@@ -291,6 +292,10 @@ model Organization {
   type         OrganizationType @default(BAND)
   description  String?
   primaryColor String           @default("#18e0ae")
+  /// Archivada: queda de solo lectura para todos (nada se borra); un propietario puede restaurarla.
+  archivedAt   DateTime?
+  archivedById String?
+  archivedBy   User?            @relation("OrganizationArchiver", fields: [archivedById], references: [id], onDelete: SetNull)
   memberships  Membership[]
   invitations  Invitation[]
   songs        Song[]

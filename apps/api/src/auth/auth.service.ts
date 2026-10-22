@@ -52,6 +52,7 @@ export class AuthService {
         type: membership.organization.type,
         description: membership.organization.description,
         primaryColor: membership.organization.primaryColor,
+        archivedAt: membership.organization.archivedAt,
         role: membership.role,
       })),
     };

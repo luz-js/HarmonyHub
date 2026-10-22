@@ -36,6 +36,10 @@ const legacyRules: Record<Permission, (role: MembershipRole) => boolean> = {
   'setlists.assignments.manage': isLeadership, // canManageSetlistAssignments
   'setlists.requirements.manage': isLeadership, // canManageSetlistRequirements
   'setlists.cues.manage': isLeadership, // canManageSetlistCues
+  // Nuevos en la tarea 22 (no existian antes): salir lo puede cualquiera; transferir y archivar, solo un propietario.
+  'organization.leave': () => true,
+  'organization.transfer': (role) => role === 'OWNER',
+  'organization.archive': (role) => role === 'OWNER',
 };
 
 test('la tabla nueva da exactamente los mismos permisos que las reglas anteriores, rol por rol', () => {

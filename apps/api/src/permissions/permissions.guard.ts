@@ -5,6 +5,7 @@ import { PermissionsService } from './permissions.service';
 import { OrganizationSource, PERMISSION_KEY, PermissionRequirement } from './require-permission.decorator';
 
 type GuardRequest = {
+  method?: string;
   user?: { id: string };
   headers: Record<string, string | string[] | undefined>;
   params?: Record<string, string>;
@@ -29,6 +30,8 @@ export function resolveOrganizationId(request: GuardRequest, source: Organizatio
  * Corre despues de AuthGuard (que deja `req.user`). Si la ruta tiene @RequirePermission, comprueba que la
  * persona sea miembro activo de la organizacion y que su rol tenga ese permiso; guarda la membresia en
  * `req.membership` para @CurrentMembership(). Sin etiqueta no hace nada.
+ * En una organizacion archivada solo deja pasar lecturas (GET), salir y restaurar: tambien bloquea rutas
+ * 'read' que escriben lo propio (asistencia, notas, comentarios...).
  */
 @Injectable()
 export class PermissionsGuard implements CanActivate {
@@ -44,6 +47,8 @@ export class PermissionsGuard implements CanActivate {
     const request = context.switchToHttp().getRequest<GuardRequest>();
     const organizationId = resolveOrganizationId(request, requirement.organizationFrom);
     const membership = await this.permissions.assertPermission(request.user!.id, organizationId, requirement.permission);
+    const isRead = request.method === 'GET' || request.method === 'HEAD';
+    if (!isRead) this.permissions.assertOrganizationWritable(membership.organization, requirement.permission);
     request.membership = { id: membership.id, userId: membership.userId, organizationId: membership.organizationId, role: membership.role };
     return true;
   }

@@ -16,9 +16,11 @@ function makeService(memberships: FakeMembership[]) {
   const prisma = {
     membership: {
       async findUnique({ where }: FindUniqueArgs) {
-        if (where.id) return memberships.find((m) => m.id === where.id) ?? null;
+        // Incluye la organizacion (no archivada), como la consulta real.
+        const withOrganization = (m?: FakeMembership) => (m ? { ...m, organization: { archivedAt: null } } : null);
+        if (where.id) return withOrganization(memberships.find((m) => m.id === where.id));
         const { userId, organizationId } = where.userId_organizationId!;
-        return memberships.find((m) => m.userId === userId && m.organizationId === organizationId) ?? null;
+        return withOrganization(memberships.find((m) => m.userId === userId && m.organizationId === organizationId));
       },
       async count({ where }: CountArgs) {
         return memberships.filter((m) => m.organizationId === where.organizationId && m.role === where.role && m.status === where.status && m.id !== where.id.not).length;

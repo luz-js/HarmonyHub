@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { MembershipRole, Prisma, SongNoteVisibility } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { Permission, PERMISSION_DENIED_MESSAGE, roleCan } from './permission-table';
+import { ARCHIVED_ORGANIZATION_MESSAGE, WRITES_ALLOWED_WHEN_ARCHIVED, Permission, PERMISSION_DENIED_MESSAGE, roleCan } from './permission-table';
 
 export type { Permission } from './permission-table';
 
@@ -15,6 +15,16 @@ export class PermissionsService {
 
   can(role: MembershipRole, permission: Permission) {
     return roleCan(role, permission);
+  }
+
+  /**
+   * Para un CAMBIO: una organizacion archivada es de solo lectura, asi que se rechaza todo salvo salir o restaurar
+   * (tambien las rutas 'read' que escriben lo propio, como la asistencia o las notas).
+   */
+  assertOrganizationWritable(organization: { archivedAt: Date | null }, permission: Permission) {
+    if (organization.archivedAt && !WRITES_ALLOWED_WHEN_ARCHIVED.includes(permission)) {
+      throw new ForbiddenException(ARCHIVED_ORGANIZATION_MESSAGE);
+    }
   }
 
   /** Para cuando el permiso depende del dato (p. ej. cambiar el estado a PUBLISHED exige 'setlists.publish'). */
@@ -124,6 +134,7 @@ export class PermissionsService {
     const target = await this.getMembershipById(targetMembershipId);
     const actor = await this.assertPermission(actorUserId, target.organizationId, 'members.manage');
 
+    this.assertOrganizationWritable(actor.organization, 'members.manage');
     if (actor.role === 'ADMIN' && target.role === 'OWNER') {
       throw new ForbiddenException('Un ADMIN no puede modificar un OWNER');
     }

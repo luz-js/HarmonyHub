@@ -95,7 +95,8 @@ export class InvitationsService {
   async cancel(userId: string, id: string) {
     const invitation = await this.prisma.invitation.findUnique({ where: { id } });
     if (!invitation) throw new NotFoundException('Invitacion no encontrada');
-    await this.permissions.assertPermission(userId, invitation.organizationId, 'invitations.manage');
+    const actor = await this.permissions.assertPermission(userId, invitation.organizationId, 'invitations.manage');
+    this.permissions.assertOrganizationWritable(actor.organization, 'invitations.manage');
     if (invitation.status !== 'PENDING') throw new BadRequestException('Solo se puede cancelar una invitacion pendiente');
     return this.prisma.$transaction((tx) => this.setStatus(tx, invitation, 'CANCELLED'));
   }
@@ -163,6 +164,8 @@ export class InvitationsService {
     }
     if (invitation.status !== 'PENDING') throw new BadRequestException('La invitacion ya no esta pendiente');
     if (invitation.expiresAt < new Date()) throw new BadRequestException('La invitacion expiro');
+    const organization = await this.prisma.organization.findUniqueOrThrow({ where: { id: invitation.organizationId }, select: { archivedAt: true } });
+    if (organization.archivedAt) throw new BadRequestException('Esa organizacion esta archivada; pide que la restauren para unirte');
 
     return this.prisma.$transaction(async (tx) => {
       // Si ya es miembro activo (p. ej. entro por otra invitacion) no se le cambia el rol que tiene.

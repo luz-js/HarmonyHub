@@ -4,7 +4,7 @@ import { test } from 'node:test';
 import { ForbiddenException, type ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { PermissionsGuard, resolveOrganizationId } from './permissions.guard';
-import type { PermissionsService } from './permissions.service';
+import { PermissionsService } from './permissions.service';
 import { RequirePermission } from './require-permission.decorator';
 
 class FakeController {
@@ -27,15 +27,17 @@ function makeContext(handler: () => void, request: FakeRequest) {
   } as unknown as ExecutionContext;
 }
 
-/** PermissionsService falso: ADMIN puede todo lo de la prueba, MUSICIAN solo 'read'. */
-function makeGuard(role: 'ADMIN' | 'MUSICIAN') {
+/** PermissionsService falso: ADMIN puede todo lo de la prueba, MUSICIAN solo 'read'. La regla de archivada es la real. */
+function makeGuard(role: 'ADMIN' | 'MUSICIAN', archivedAt: Date | null = null) {
   const calls: unknown[] = [];
+  const real = new PermissionsService(null as never);
   const permissions = {
     async assertPermission(userId: string, organizationId: string, permission: string) {
       calls.push({ userId, organizationId, permission });
       if (role === 'MUSICIAN' && permission !== 'read') throw new ForbiddenException('No tienes permiso para hacer esto');
-      return { id: 'm1', userId, organizationId, role, status: 'ACTIVE', user: {}, organization: {} };
+      return { id: 'm1', userId, organizationId, role, status: 'ACTIVE', user: {}, organization: { archivedAt } };
     },
+    assertOrganizationWritable: real.assertOrganizationWritable.bind(real),
   } as unknown as PermissionsService;
   return { guard: new PermissionsGuard(new Reflector(), permissions), calls };
 }
@@ -67,6 +69,16 @@ test('puede tomar la organizacion de un parametro de la URL', async () => {
   const { guard, calls } = makeGuard('MUSICIAN');
   await guard.canActivate(makeContext(FakeController.prototype.detail, { headers: { 'x-organization-id': 'otra' }, params: { id: 'org-9' }, user: { id: 'u1' } }));
   assert.deepEqual(calls, [{ userId: 'u1', organizationId: 'org-9', permission: 'read' }]);
+});
+
+test('en una organizacion archivada deja leer (GET) pero rechaza cualquier cambio, incluso con permiso read', async () => {
+  const { guard } = makeGuard('MUSICIAN', new Date());
+  const ok = await guard.canActivate(makeContext(FakeController.prototype.detail, { method: 'GET', headers: {}, params: { id: 'org-9' }, user: { id: 'u1' } }));
+  assert.equal(ok, true);
+  await assert.rejects(
+    guard.canActivate(makeContext(FakeController.prototype.detail, { method: 'POST', headers: {}, params: { id: 'org-9' }, user: { id: 'u1' } })),
+    /archivada/,
+  );
 });
 
 test('resolveOrganizationId: header, header o query, parametro y cuerpo', () => {
