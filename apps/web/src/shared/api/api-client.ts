@@ -66,6 +66,9 @@ import type {
   CreateSetlistRoleRequirementInput,
   ReorderSetlistCuesInput,
   SaveSetlistAsTemplateInput,
+  CreatedShareLink,
+  CreateShareLinkInput,
+  ShareLinkList,
   SetlistAssignment,
   SetlistCue,
   SetlistDetail,
@@ -682,6 +685,20 @@ export function getSetlist(id: string) {
 
 export function createSetlist(input: CreateSetlistInput) {
   return http<SetlistDetail>('/api/setlists', { method: 'POST', body: JSON.stringify(input) });
+}
+
+/** Enlaces de solo lectura de un setlist (activos). */
+export function getShareLinks(setlistId: string) {
+  return http<ShareLinkList>(`/api/setlists/${encodeURIComponent(setlistId)}/share-links`);
+}
+
+/** Crea un enlace: el token solo viene en esta respuesta. */
+export function createShareLink(setlistId: string, input: CreateShareLinkInput) {
+  return http<CreatedShareLink>(`/api/setlists/${encodeURIComponent(setlistId)}/share-links`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function revokeShareLink(setlistId: string, linkId: string) {
+  return http<{ ok: true }>(`/api/setlists/${encodeURIComponent(setlistId)}/share-links/${encodeURIComponent(linkId)}`, { method: 'DELETE' });
 }
 
 export function saveSetlistAsTemplate(id: string, input: SaveSetlistAsTemplateInput) {

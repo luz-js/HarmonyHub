@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Share2 } from 'lucide-react';
 import { getCurrentOrganizationId } from '../../../shared/api/http';
 import { takeUrlFlag } from '../../../shared/utils';
 import { SetlistEditor } from '../editor';
 import { SetlistDraft, SetlistFormDialog, SetlistHeader } from '../components';
+import { ShareSetlistDialog } from '../components/share/ShareSetlistDialog';
 import { StageMode } from '../stage-mode/components/StageMode';
 import { SetlistPdfButton } from '../../print/SetlistPdfButton';
 import {
@@ -29,6 +31,7 @@ export function SetlistDetailPage({ id, navigate }: { id: string; navigate: Navi
   const [showUseTemplate, setShowUseTemplate] = useState(false);
   const [formError, setFormError] = useState('');
   const [stageModeOpen, setStageModeOpen] = useState(false);
+  const [showShare, setShowShare] = useState(false);
 
   useEffect(() => {
     if (takeUrlFlag('stage')) setStageModeOpen(true);
@@ -157,7 +160,16 @@ export function SetlistDetailPage({ id, navigate }: { id: string; navigate: Navi
         onEnterStageMode={() => setStageModeOpen(true)}
         onSaveAsTemplate={canManage ? () => setShowSaveTemplate(true) : undefined}
         onCreateFromTemplate={canManage ? () => setShowUseTemplate(true) : undefined}
-        extraActions={<SetlistPdfButton setlist={setlist} />}
+        extraActions={
+          <>
+            <SetlistPdfButton setlist={setlist} />
+            {canManage && !setlist.isTemplate && (
+              <button className="btn-ghost" onClick={() => setShowShare(true)}>
+                <Share2 className="h-4 w-4" /> Compartir
+              </button>
+            )}
+          </>
+        }
       />
 
       <SetlistEditor
@@ -170,6 +182,8 @@ export function SetlistDetailPage({ id, navigate }: { id: string; navigate: Navi
         publishing={publishMutation.isPending}
         onPublish={() => void handlePublish()}
       />
+
+      {showShare && <ShareSetlistDialog organizationId={organizationId} setlistId={id} setlistName={setlist.name} onClose={() => setShowShare(false)} />}
 
       {showEdit && (
         <SetlistFormDialog

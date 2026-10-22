@@ -1,6 +1,7 @@
 export {
   archiveSetlist,
   createSetlist,
+  createShareLink,
   createSetlistItem,
   deleteSetlist,
   deleteSetlistItem,
@@ -8,8 +9,10 @@ export {
   getSetlist,
   getSetlistItems,
   getSetlists,
+  getShareLinks,
   publishSetlist,
   reorderSetlistItems,
+  revokeShareLink,
   saveSetlistAsTemplate,
   updateSetlist,
   updateSetlistItem,

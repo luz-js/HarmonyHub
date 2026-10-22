@@ -26,6 +26,8 @@ import { getCurrentUser, logoutRequest, saveActiveOrganization } from './shared/
 import { clearAuthSession, clearCurrentOrganizationId, ORGANIZATION_ACCESS_LOST_EVENT, SESSION_EXPIRED_EVENT, setCurrentOrganizationId } from './shared/api/http';
 import { queryClient } from './shared/api/query-client';
 import { clearOfflineData, syncOfflineDataOwner } from './pwa/offline-data';
+import { sharedSetlistToken } from './features/shared-setlist/route';
+import { SharedSetlistPage } from './features/shared-setlist/SharedSetlistPage';
 
 /**
  * Sin organizacion activa (recien registrada, o la desactivaron/quitaron) se entra igual a la app: Inicio muestra la
@@ -172,6 +174,10 @@ function App() {
     if (!user.currentOrganizationId) return resolveNoOrganizationPage(path, user, navigate, updateProfile, activateOrganization);
     return resolvePage(path, user, navigate, updateProfile);
   }, [activateOrganization, navigate, path, updateProfile, user]);
+
+  // Setlist compartido por enlace: pagina publica, igual con o sin sesion (no usa la sesion para nada).
+  const sharedToken = sharedSetlistToken(path);
+  if (sharedToken) return <SharedSetlistPage token={sharedToken} />;
 
   if (!user || path === '/login') {
     return <>{page}</>;
