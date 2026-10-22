@@ -38,6 +38,16 @@ export function clearAuthSession() {
 /** Evento global que App escucha para volver al login cuando el token vencio o fue rechazado. */
 export const SESSION_EXPIRED_EVENT = 'hh:session-expired';
 
+/** La API dice que ya no eres miembro activo de la organizacion activa: App vuelve a sincronizar la sesion. */
+export const ORGANIZATION_ACCESS_LOST_EVENT = 'hh:organization-access-lost';
+const ACCESS_LOST_MESSAGE = 'No tienes acceso a esta organizacion';
+
+function notifyIfAccessLost(status: number, message?: string) {
+  if (status === 403 && message === ACCESS_LOST_MESSAGE && typeof window !== 'undefined') {
+    window.dispatchEvent(new Event(ORGANIZATION_ACCESS_LOST_EVENT));
+  }
+}
+
 function expireAuthSession() {
   clearAuthSession();
   if (typeof window !== 'undefined') window.dispatchEvent(new Event(SESSION_EXPIRED_EVENT));
@@ -122,6 +132,7 @@ export async function http<T>(url: string, init?: RequestInit): Promise<T> {
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
+    notifyIfAccessLost(response.status, data?.message);
     const error = new Error(data?.message || (response.status === 403 ? 'No tienes permisos para esta acción' : 'No se pudo completar la solicitud'));
     Object.assign(error, { status: response.status });
     throw error;

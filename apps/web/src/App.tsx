@@ -1,5 +1,4 @@
 import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
-import { ArrowLeft } from 'lucide-react';
 import { CalendarPage } from './features/calendar';
 import { ActivityPage, DashboardPage as HomeDashboard } from './features/dashboard';
 import { EventDetailPage, EventsPage } from './features/events';
@@ -8,17 +7,19 @@ import { AudioPlayerProvider, PersistentAudioPlayer } from './features/songs/pla
 import { SetlistDetailPage, SetlistsPage as RealSetlistsPage } from './features/setlists';
 import { SettingsPage } from './app/LegacyPages';
 import { LoginPage } from './app/LoginPage';
+import { NoOrganizationLayout } from './app/NoOrganizationLayout';
 import { OnboardingPage } from './app/OnboardingPage';
+import { WelcomeHome } from './app/WelcomeHome';
 import { ArchivesPage } from './features/files';
 import { MyInvitationsPage } from './features/invitations';
 import { MusiciansPage } from './features/musicians';
 import { ProfilePage } from './features/profile';
-import { readStoredUser, storeUser, withOrganization } from './app/session';
+import { readStoredUser, reconcileSession, storeUser, withOrganization } from './app/session';
 import { Shell } from './app/Shell';
 import type { AppOrganization, AppUser, Navigate } from './app/types';
 import { useRoute } from './app/useRoute';
-import { logoutRequest } from './shared/api/api-client';
-import { clearAuthSession, SESSION_EXPIRED_EVENT, setCurrentOrganizationId } from './shared/api/http';
+import { getCurrentUser, logoutRequest } from './shared/api/api-client';
+import { clearAuthSession, clearCurrentOrganizationId, ORGANIZATION_ACCESS_LOST_EVENT, SESSION_EXPIRED_EVENT, setCurrentOrganizationId } from './shared/api/http';
 import { queryClient } from './shared/api/query-client';
 
 function resolvePage(path: string, user: AppUser, navigate: Navigate, onProfileUpdated: (changes: { name: string }) => void): ReactNode {
@@ -64,6 +65,40 @@ function App() {
     return () => window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired);
   }, []);
 
+  /**
+   * Trae del servidor las organizaciones activas y corrige la sesion guardada: si la activa ya no esta
+   * (la desactivaron o la quitaron) pasa a otra o a la bienvenida, en vez de quedarse mostrando errores.
+   */
+  const syncSession = useCallback(async () => {
+    try {
+      const { user: server } = await getCurrentUser();
+      const stored = readStoredUser();
+      if (!stored) return;
+      const next = reconcileSession(stored, server);
+      if (next.currentOrganizationId !== stored.currentOrganizationId) {
+        if (next.currentOrganizationId) setCurrentOrganizationId(next.currentOrganizationId);
+        else clearCurrentOrganizationId();
+        queryClient.clear();
+      }
+      storeUser(next);
+      setUser(next);
+    } catch {
+      // Sin sesion valida http.ts ya avisa (SESSION_EXPIRED_EVENT); cualquier otro error deja la sesion como estaba.
+    }
+  }, []);
+
+  const userId = user?.id;
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- carga asincrona: el estado cambia cuando responde el servidor, no durante el efecto
+    if (userId) void syncSession();
+  }, [userId, syncSession]);
+
+  useEffect(() => {
+    const onAccessLost = () => void syncSession();
+    window.addEventListener(ORGANIZATION_ACCESS_LOST_EVENT, onAccessLost);
+    return () => window.removeEventListener(ORGANIZATION_ACCESS_LOST_EVENT, onAccessLost);
+  }, [syncSession]);
+
   function logout() {
     void logoutRequest();
     clearAuthSession();
@@ -105,30 +140,21 @@ function App() {
     return <>{page}</>;
   }
 
-  // Sin organizacion todavia: puede aceptar una invitacion en vez de crear una.
-  if (!user.currentOrganizationId && path === '/invitations') {
-    return (
-      <main className="min-h-screen bg-background px-5 py-10 text-white subtle-grid">
-        <div className="mx-auto max-w-2xl space-y-5">
-          <button type="button" className="btn-ghost h-8 px-2 text-xs" onClick={() => navigate('/')}>
-            <ArrowLeft className="h-3.5 w-3.5" /> Volver
-          </button>
-          <MyInvitationsPage onAccepted={activateOrganization} />
-        </div>
-      </main>
-    );
+  // Crear una organizacion ya no es obligatorio: se llega aqui desde la bienvenida o desde el selector.
+  if (path === '/onboarding') {
+    return <OnboardingPage user={user} onCreated={activateOrganization} onCancel={() => navigate('/')} onLogout={logout} />;
   }
 
-  if (!user.currentOrganizationId || path === '/onboarding') {
-    return (
-      <OnboardingPage
-        user={user}
-        onCreated={activateOrganization}
-        onCancel={user.currentOrganizationId ? () => navigate('/') : undefined}
-        onLogout={logout}
-        onOpenInvitations={() => navigate('/invitations')}
-      />
-    );
+  // Sin ninguna organizacion activa (recien registrada, o la desactivaron/quitaron): bienvenida, invitaciones o perfil.
+  if (!user.currentOrganizationId) {
+    if (path === '/invitations' || path === '/profile') {
+      return (
+        <NoOrganizationLayout onBack={() => navigate('/')}>
+          {path === '/invitations' ? <MyInvitationsPage onAccepted={activateOrganization} /> : <ProfilePage onUserUpdated={updateProfile} />}
+        </NoOrganizationLayout>
+      );
+    }
+    return <WelcomeHome user={user} navigate={navigate} onJoined={activateOrganization} onLogout={logout} />;
   }
 
   return (

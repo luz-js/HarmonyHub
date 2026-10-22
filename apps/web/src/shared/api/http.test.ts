@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { getAuthToken, http, SESSION_EXPIRED_EVENT, setAuthToken } from './http';
+import { getAuthToken, http, ORGANIZATION_ACCESS_LOST_EVENT, SESSION_EXPIRED_EVENT, setAuthToken } from './http';
 
 function json(status: number, body: unknown) {
   return new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
@@ -57,6 +57,17 @@ describe('http: renovacion de sesion ante un 401', () => {
     window.removeEventListener(SESSION_EXPIRED_EVENT, onExpired);
     expect(onExpired).toHaveBeenCalledTimes(1);
     expect(getAuthToken()).toBeUndefined();
+  });
+
+  it('un 403 de "ya no eres miembro" avisa a la app para que vuelva a sincronizar la sesion', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => json(403, { message: 'No tienes acceso a esta organizacion' })));
+    const onLost = vi.fn();
+    window.addEventListener(ORGANIZATION_ACCESS_LOST_EVENT, onLost);
+    await expect(http('/api/events')).rejects.toMatchObject({ status: 403 });
+    vi.stubGlobal('fetch', vi.fn(async () => json(403, { message: 'No tienes permiso para hacer esto' })));
+    await expect(http('/api/events')).rejects.toMatchObject({ status: 403 });
+    window.removeEventListener(ORGANIZATION_ACCESS_LOST_EVENT, onLost);
+    expect(onLost).toHaveBeenCalledTimes(1);
   });
 
   it('un 401 del login (clave incorrecta) no intenta renovar', async () => {

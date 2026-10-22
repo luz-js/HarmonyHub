@@ -32,6 +32,24 @@ export function withOrganization(user: AppUser, organization: AppOrganization): 
   };
 }
 
+/**
+ * Ajusta la sesion guardada a lo que dice el servidor (/api/auth/me): si la organizacion activa ya no esta entre
+ * las membresias activas (la desactivaron o la quitaron), pasa a la primera que quede o a ninguna (pantalla de bienvenida).
+ */
+export function reconcileSession(stored: AppUser, server: AppUser): AppUser {
+  const organizations = server.organizations || [];
+  const current = organizations.find((organization) => organization.id === stored.currentOrganizationId) ?? organizations[0];
+  return {
+    ...stored,
+    name: server.name,
+    email: server.email,
+    organizations,
+    currentOrganizationId: current?.id,
+    currentOrganizationSlug: current?.slug,
+    role: current?.role,
+  };
+}
+
 export function getRoleLabel(role?: string) {
   return formatRole(role);
 }
