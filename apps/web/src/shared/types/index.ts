@@ -10,5 +10,6 @@ export * from './setlist.types';
 export * from './song.types';
 export type { ArchiveOrganizationInput, LoginInput, RegisterInput, TransferOrganizationInput } from '@harmonyhub/contracts';
 export type { ImportChordProInput, ImportChordProResult } from '@harmonyhub/contracts';
+export type { MemberLoadStat, MemberLoadStats, RepertoireKeyStat, RepertoireSongStat, RepertoireStats, StatsPeriodMonths } from '@harmonyhub/contracts';
 export type { CreatedShareLink, CreateShareLinkInput, SharedSetlist, SharedSetlistItem, SharedSongContent, ShareLink, ShareLinkDuration, ShareLinkList } from '@harmonyhub/contracts';
 export type { AdvanceLiveStageInput, HandoverLiveStageInput, LiveStageLeader, LiveStageState, StartLiveStageInput } from '@harmonyhub/contracts';

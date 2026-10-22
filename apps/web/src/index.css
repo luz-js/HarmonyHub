@@ -486,6 +486,7 @@ button:disabled {
 }
 
 .tab-pill[aria-selected="true"],
+.tab-pill[aria-checked="true"],
 .tab-pill.is-active {
   border-color: transparent;
   background: var(--primary-tint);

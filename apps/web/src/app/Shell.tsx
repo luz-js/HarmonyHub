@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from 'react';
 import {
   Activity,
+  BarChart3,
   CalendarDays,
   CalendarRange,
   FolderOpen,
@@ -35,6 +36,7 @@ const navItems: NavItem[] = [
   { href: '/musicians', label: 'Músicos', icon: Users },
   { href: '/archives', label: 'Archivos', icon: FolderOpen },
   { href: '/activity', label: 'Actividad', icon: Activity },
+  { href: '/stats', label: 'Estadísticas', icon: BarChart3 },
 ];
 
 const settingsItem: NavItem = { href: '/settings', label: 'Ajustes', icon: Settings };

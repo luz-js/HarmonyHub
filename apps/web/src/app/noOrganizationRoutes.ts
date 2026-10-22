@@ -7,6 +7,7 @@ const ORGANIZATION_PAGES: Array<{ prefix: string; label: string }> = [
   { prefix: '/musicians', label: 'Músicos' },
   { prefix: '/archives', label: 'Archivos' },
   { prefix: '/activity', label: 'Actividad' },
+  { prefix: '/stats', label: 'Estadísticas' },
   { prefix: '/settings', label: 'Ajustes' },
 ];
 

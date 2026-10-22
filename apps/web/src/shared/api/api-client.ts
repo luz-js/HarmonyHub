@@ -66,6 +66,9 @@ import type {
   CreateSetlistRoleRequirementInput,
   ReorderSetlistCuesInput,
   SaveSetlistAsTemplateInput,
+  MemberLoadStats,
+  RepertoireStats,
+  StatsPeriodMonths,
   CreatedShareLink,
   CreateShareLinkInput,
   ShareLinkList,
@@ -685,6 +688,16 @@ export function getSetlist(id: string) {
 
 export function createSetlist(input: CreateSetlistInput) {
   return http<SetlistDetail>('/api/setlists', { method: 'POST', body: JSON.stringify(input) });
+}
+
+/** Estadisticas del repertorio de la organizacion activa (cualquier miembro). */
+export function getRepertoireStats(months: StatsPeriodMonths) {
+  return http<RepertoireStats>(`/api/stats/repertoire?months=${months}`);
+}
+
+/** Carga por musico (solo quien arma equipos). */
+export function getMemberLoadStats(months: StatsPeriodMonths) {
+  return http<MemberLoadStats>(`/api/stats/members?months=${months}`);
 }
 
 /** Enlaces de solo lectura de un setlist (activos). */

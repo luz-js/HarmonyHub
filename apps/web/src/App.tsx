@@ -1,6 +1,7 @@
 import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { CalendarPage } from './features/calendar';
 import { ActivityPage, DashboardPage as HomeDashboard } from './features/dashboard';
+import { StatsPage } from './features/stats/StatsPage';
 import { EventDetailPage, EventsPage } from './features/events';
 import { SongDetailPage, SongsPage } from './features/songs';
 import { AudioPlayerProvider, PersistentAudioPlayer } from './features/songs/player';
@@ -70,6 +71,7 @@ function resolvePage(path: string, user: AppUser, navigate: Navigate, onProfileU
     '/archives': <ArchivesPage organizationId={user.currentOrganizationId || ''} navigate={navigate} />,
     '/calendar': <CalendarPage navigate={navigate} />,
     '/activity': <ActivityPage navigate={navigate} />,
+    '/stats': <StatsPage navigate={navigate} role={user.role} />,
     '/notifications': <NotificationsPage navigate={navigate} />,
     '/settings': <SettingsPage />,
     '/profile': <ProfilePage onUserUpdated={onProfileUpdated} />,
