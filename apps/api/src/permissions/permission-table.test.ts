@@ -40,6 +40,8 @@ const legacyRules: Record<Permission, (role: MembershipRole) => boolean> = {
   'organization.leave': () => true,
   'organization.transfer': (role) => role === 'OWNER',
   'organization.archive': (role) => role === 'OWNER',
+  // Nuevo en la tarea 25: ver la disponibilidad del equipo es de quien lo arma.
+  'availability.read': isLeadership,
 };
 
 test('la tabla nueva da exactamente los mismos permisos que las reglas anteriores, rol por rol', () => {

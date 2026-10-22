@@ -242,6 +242,7 @@ model User {
   activeOrganizationId      String?
   activeOrganization        Organization?        @relation("UserActiveOrganization", fields: [activeOrganizationId], references: [id], onDelete: SetNull)
   notifications             Notification[]
+  unavailability            Unavailability[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
@@ -292,6 +293,20 @@ model Notification {
 }
 
 /// Token para renovar la sesion. Solo se guarda su hash; rota en cada uso y todos los de un mismo login comparten familyId.
+/// Fechas en que la persona no puede tocar (en todas sus organizaciones). La nota es privada: nadie mas la ve.
+model Unavailability {
+  id        String   @id @default(cuid())
+  userId    String
+  /// Dias de calendario, ambos incluidos.
+  startsOn  DateTime @db.Date
+  endsOn    DateTime @db.Date
+  note      String?
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, endsOn])
+}
+
 model RefreshToken {
   id           String    @id @default(cuid())
   userId       String

@@ -21,6 +21,7 @@ export const PERMISSIONS = [
   'setlists.assignments.manage',
   'setlists.requirements.manage',
   'setlists.cues.manage',
+  'availability.read',
   'organization.leave',
   'organization.transfer',
   'organization.archive',
@@ -40,6 +41,7 @@ const LEADERSHIP: Permission[] = [
   'setlists.assignments.manage',
   'setlists.requirements.manage',
   'setlists.cues.manage',
+  'availability.read',
 ];
 
 const ORGANIZATION_ADMIN: Permission[] = [...LEADERSHIP, 'organization.manage', 'members.manage', 'invitations.manage', 'events.delete', 'setlists.delete'];
