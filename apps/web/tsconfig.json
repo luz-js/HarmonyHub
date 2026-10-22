@@ -29,5 +29,8 @@
     "src",
     "../../packages/contracts/src"
   ],
-  "references": []
+  "references": [],
+  "exclude": [
+    "src/sw.ts"
+  ]
 }

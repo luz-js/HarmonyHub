@@ -33,6 +33,12 @@ export default tseslint.config(
     languageOptions: { globals: globals.node },
   },
 
+  // Scripts de la web que corren con Node (ej. generar los iconos de la app instalable).
+  {
+    files: ["apps/web/scripts/**/*.mjs"],
+    languageOptions: { globals: globals.node },
+  },
+
   // Web (React + Vite en el navegador).
   {
     files: ["apps/web/**/*.{ts,tsx}"],

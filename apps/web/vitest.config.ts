@@ -10,7 +10,11 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     // Los contratos compartidos se usan desde el codigo fuente (la API usa su version compilada en dist).
-    alias: { '@harmonyhub/contracts': resolve(appRoot, '../../packages/contracts/src/index.ts') },
+    alias: {
+      '@harmonyhub/contracts': resolve(appRoot, '../../packages/contracts/src/index.ts'),
+      // En las pruebas no hay plugin PWA: el registro del service worker se reemplaza por uno vacio.
+      'virtual:pwa-register': resolve(appRoot, 'src/pwa/testing/pwa-register.stub.ts'),
+    },
   },
   test: {
     environment: 'jsdom',
