@@ -7,12 +7,15 @@ export type TestApp = { app: INestApplication; prisma: PrismaService; baseUrl: s
 /**
  * Levanta la API real (AppModule con sus guards) contra la base de pruebas, ya vacia y con el esquema al dia.
  * DATABASE_URL se cambia antes de importar la app: Prisma nunca ve la base de desarrollo.
+ * Con `reset: false` levanta otra instancia sobre la misma base sin vaciarla (simula varios servidores).
  */
-export async function startTestApp(testDatabaseUrl: string): Promise<TestApp> {
+export async function startTestApp(testDatabaseUrl: string, options: { reset?: boolean } = {}): Promise<TestApp> {
   process.env.DATABASE_URL = testDatabaseUrl;
   process.env.JWT_SECRET ||= 'e2e-secret';
-  pushSchema(testDatabaseUrl);
-  await truncateAll(testDatabaseUrl);
+  if (options.reset ?? true) {
+    pushSchema(testDatabaseUrl);
+    await truncateAll(testDatabaseUrl);
+  }
 
   const { NestFactory } = await import('@nestjs/core');
   const { AppModule } = await import('../app.module');

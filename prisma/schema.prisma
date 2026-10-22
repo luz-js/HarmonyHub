@@ -242,6 +242,17 @@ model User {
   @@index([email])
 }
 
+/// Intentos fallidos de login por ip + correo (guardados como hash), compartidos por todas las instancias de la API.
+model LoginAttempt {
+  keyHash      String    @id
+  count        Int       @default(0)
+  windowStart  DateTime
+  blockedUntil DateTime?
+  updatedAt    DateTime
+
+  @@index([updatedAt])
+}
+
 /// Token para renovar la sesion. Solo se guarda su hash; rota en cada uso y todos los de un mismo login comparten familyId.
 model RefreshToken {
   id           String    @id @default(cuid())

@@ -23,12 +23,11 @@ const registerSchema = z.object({
 
 @Injectable()
 export class AuthService {
-  private readonly loginLimiter = new LoginRateLimiter();
-
   constructor(
     @Inject(AuthRepository) private readonly authRepository: AuthRepository,
     @Inject(JwtService) private readonly jwtService: JwtService,
     @Inject(RefreshTokenService) private readonly refreshTokens: RefreshTokenService,
+    @Inject(LoginRateLimiter) private readonly loginLimiter: LoginRateLimiter,
   ) {}
 
   private toSessionUser(user: NonNullable<Awaited<ReturnType<AuthRepository['findUserForLogin']>>>) {
@@ -58,8 +57,10 @@ export class AuthService {
     };
   }
 
-  /** `ip` alimenta el limitador de intentos (ip + correo); sin ip se limita solo por correo. */
-  /** `refresh` lo convierte el controller en cookie httpOnly; nunca viaja en el cuerpo. */
+  /**
+   * `ip` alimenta el limitador de intentos (ip + correo); sin ip se limita solo por correo.
+   * `refresh` lo convierte el controller en cookie httpOnly; nunca viaja en el cuerpo.
+   */
   async login(input: unknown, ip?: string, userAgent?: string) {
     const parsed = loginSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
@@ -67,7 +68,7 @@ export class AuthService {
     const { email, password } = parsed.data;
     const limiterKey = LoginRateLimiter.key(ip, email);
     try {
-      this.loginLimiter.assertAllowed(limiterKey);
+      await this.loginLimiter.assertAllowed(limiterKey);
     } catch (error) {
       if (error instanceof TooManyLoginAttemptsError) throw new HttpException(error.message, HttpStatus.TOO_MANY_REQUESTS);
       throw error;
@@ -77,10 +78,10 @@ export class AuthService {
     const validPassword = user ? verifyPassword(password, user.passwordHash) || isLegacyDevPassword(password, user.passwordHash) : false;
 
     if (!user || !user.active || !validPassword) {
-      this.loginLimiter.registerFailure(limiterKey);
+      await this.loginLimiter.registerFailure(limiterKey);
       throw new UnauthorizedException('Credenciales invalidas');
     }
-    this.loginLimiter.registerSuccess(limiterKey);
+    await this.loginLimiter.registerSuccess(limiterKey);
 
     if (isLegacyDevPassword(password, user.passwordHash)) {
       await this.authRepository.updatePasswordHash(user.id, hashPassword(password));
