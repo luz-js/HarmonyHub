@@ -29,6 +29,21 @@ function makeService(memberships: FakeMembership[]) {
         updates.push({ id: where.id, data });
         return { ...memberships.find((m) => m.id === where.id), ...data };
       },
+      async findFirst() {
+        return null;
+      },
+    },
+    // Nadie tiene guardada una organizacion activa en estas pruebas (repointActiveOrganization no cambia nada).
+    user: {
+      async findUnique() {
+        return { activeOrganizationId: null };
+      },
+      async update() {
+        return {};
+      },
+    },
+    $transaction(fn: (tx: unknown) => unknown) {
+      return fn(prisma);
     },
   };
   const fakePrisma = prisma as unknown as PrismaService;

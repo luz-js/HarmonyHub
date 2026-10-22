@@ -3,6 +3,7 @@ import { OrganizationType } from '@prisma/client';
 import { z } from 'zod';
 import type { OrgMember } from '../permissions/current-membership.decorator';
 import { PrismaService } from '../prisma/prisma.service';
+import { repointActiveOrganization } from '../shared/active-organization';
 
 const organizationCreateSchema = z.object({
   name: z.string().min(1).transform((value) => value.trim()),
@@ -104,6 +105,7 @@ export class OrganizationsService {
         }
       }
       await tx.membership.update({ where: { id: member.id }, data: { status: 'INACTIVE' } });
+      await repointActiveOrganization(tx, member.userId, member.organizationId);
     });
     return { ok: true };
   }

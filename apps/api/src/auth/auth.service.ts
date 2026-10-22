@@ -31,7 +31,8 @@ export class AuthService {
   ) {}
 
   private toSessionUser(user: NonNullable<Awaited<ReturnType<AuthRepository['findUserForLogin']>>>) {
-    const currentMembership = user.memberships[0];
+    // La organizacion activa vive en la cuenta; si ya no es valida (salio o la desactivaron) se usa la primera activa.
+    const currentMembership = user.memberships.find((membership) => membership.organizationId === user.activeOrganizationId) ?? user.memberships[0];
 
     return {
       id: user.id,

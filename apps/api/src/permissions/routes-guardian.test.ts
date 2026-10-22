@@ -15,6 +15,7 @@ export const EXEMPT_ROUTES: Record<string, string> = {
   'AuthController.logout': 'Cierra la sesion de la cookie; no depende de una organizacion.',
   'ProfileController.update': 'Mi perfil: siempre el usuario del token.',
   'ProfileController.replaceInstruments': 'Mi perfil: siempre el usuario del token.',
+  'ProfileController.setActiveOrganization': 'Organizacion activa de la cuenta: el servicio exige membresia activa en ella (si no, 404); no hay organizacion de la peticion.',
   'OrganizationsController.list': 'Lista las organizaciones del usuario; no hay una activa que verificar.',
   'OrganizationsController.create': 'Crear una organizacion no requiere pertenecer a otra.',
   'InvitationsController.accept': 'Quien acepta todavia no es miembro de la organizacion.',

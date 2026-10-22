@@ -14,6 +14,12 @@ export class ProfileController {
     return { ok: true, user: profile };
   }
 
+  @Put('active-organization')
+  async setActiveOrganization(@CurrentUser() user: CurrentUserPayload, @Body() body: unknown) {
+    const result = await this.profileService.setActiveOrganization(user.id, body ?? {});
+    return { ok: true, ...result };
+  }
+
   @Put('instruments')
   async replaceInstruments(@CurrentUser() user: CurrentUserPayload, @Body() body: unknown) {
     const instruments = await this.profileService.replaceInstruments(user.id, body ?? {});

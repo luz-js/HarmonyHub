@@ -13,6 +13,14 @@ export class ProfileRepository {
     return this.prisma.user.update({ where: { id: userId }, data, select: profileSelect });
   }
 
+  findActiveMembership(userId: string, organizationId: string) {
+    return this.prisma.membership.findFirst({ where: { userId, organizationId, status: 'ACTIVE' }, select: { id: true } });
+  }
+
+  setActiveOrganization(userId: string, organizationId: string) {
+    return this.prisma.user.update({ where: { id: userId }, data: { activeOrganizationId: organizationId }, select: { activeOrganizationId: true } });
+  }
+
   /** Borra y vuelve a crear la lista dentro de una transaccion: nunca queda a medias. */
   replaceInstruments(userId: string, instruments: { instrument: SetlistMusicalRole; isPrimary: boolean }[]) {
     return this.prisma.$transaction(async (tx) => {

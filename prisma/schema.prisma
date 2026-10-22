@@ -238,6 +238,9 @@ model User {
   instruments               UserInstrument[]
   refreshTokens             RefreshToken[]
   archivedOrganizations     Organization[]       @relation("OrganizationArchiver")
+  /// Organizacion activa guardada en la cuenta (sirve en cualquier dispositivo). Si se borra la organizacion queda vacia.
+  activeOrganizationId      String?
+  activeOrganization        Organization?        @relation("UserActiveOrganization", fields: [activeOrganizationId], references: [id], onDelete: SetNull)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
@@ -296,6 +299,7 @@ model Organization {
   archivedAt   DateTime?
   archivedById String?
   archivedBy   User?            @relation("OrganizationArchiver", fields: [archivedById], references: [id], onDelete: SetNull)
+  activeForUsers User[]          @relation("UserActiveOrganization")
   memberships  Membership[]
   invitations  Invitation[]
   songs        Song[]

@@ -7,7 +7,7 @@ import { normalizeInstruments, sortInstruments } from './profile.utils';
 
 /** Repositorio falso: registra lo que el servicio le pide y devuelve algo con la forma de Prisma. */
 function makeService() {
-  const calls: { updateUser: unknown[]; replaceInstruments: unknown[] } = { updateUser: [], replaceInstruments: [] };
+  const calls: { updateUser: unknown[]; replaceInstruments: unknown[]; setActiveOrganization: unknown[] } = { updateUser: [], replaceInstruments: [], setActiveOrganization: [] };
   const repository = {
     async updateUser(userId: string, data: { name?: string; phone?: string | null }) {
       calls.updateUser.push({ userId, data });
@@ -16,6 +16,14 @@ function makeService() {
     async replaceInstruments(userId: string, instruments: { instrument: string; isPrimary: boolean }[]) {
       calls.replaceInstruments.push({ userId, instruments });
       return instruments.map((item, index) => ({ id: `i${index}`, ...item, createdAt: new Date(2026, 0, index + 1) }));
+    },
+    // La persona solo es miembro activo de org-1.
+    async findActiveMembership(userId: string, organizationId: string) {
+      return organizationId === 'org-1' ? { id: 'm1' } : null;
+    },
+    async setActiveOrganization(userId: string, organizationId: string) {
+      calls.setActiveOrganization.push({ userId, organizationId });
+      return { activeOrganizationId: organizationId };
     },
   };
   return { service: new ProfileService(repository as unknown as ProfileRepository), calls };
@@ -94,4 +102,12 @@ test('normalizeInstruments y sortInstruments: un solo principal y principal prim
     { instrument: 'DRUMS', isPrimary: true, createdAt: new Date(2026, 0, 2) },
   ]);
   assert.deepEqual(sorted.map((item) => item.instrument), ['DRUMS', 'BASS', 'KEYS']);
+});
+
+test('PUT /api/me/active-organization: guarda solo una organizacion donde es miembro activo; otra da 404', async () => {
+  const { service, calls } = makeService();
+  assert.deepEqual(await service.setActiveOrganization('user-1', { organizationId: ' org-1 ' }), { activeOrganizationId: 'org-1' });
+  await assert.rejects(service.setActiveOrganization('user-1', { organizationId: 'org-ajena' }), /Organizacion no encontrada/);
+  await assert.rejects(service.setActiveOrganization('user-1', {}), BadRequestException);
+  assert.deepEqual(calls.setActiveOrganization, [{ userId: 'user-1', organizationId: 'org-1' }]);
 });

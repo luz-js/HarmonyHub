@@ -4,6 +4,7 @@ import { z } from 'zod';
 import type { OrgMember } from '../permissions/current-membership.decorator';
 import { PermissionsService } from '../permissions/permissions.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { repointActiveOrganization } from '../shared/active-organization';
 import { userInstrumentsSelect } from '../shared/user-instruments';
 
 // El instrumento ya no vive en la membresia: lo elige cada persona en "Mi perfil" (UserInstrument).
@@ -44,12 +45,17 @@ export class MembershipsService {
       await this.permissions.assertNotLastOwner(target.organizationId, id);
     }
 
-    return this.prisma.membership.update({
-      where: { id },
-      data: {
-        role: parsed.data.role,
-        status: parsed.data.status,
-      },
+    return this.prisma.$transaction(async (tx) => {
+      const updated = await tx.membership.update({
+        where: { id },
+        data: {
+          role: parsed.data.role,
+          status: parsed.data.status,
+        },
+      });
+      // Si la desactivan y esa era su organizacion activa guardada, se le cambia por otra (o queda vacia).
+      if (updated.status !== 'ACTIVE') await repointActiveOrganization(tx, updated.userId, updated.organizationId);
+      return updated;
     });
   }
 }

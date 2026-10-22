@@ -14,6 +14,11 @@ export const updateMeSchema = z.object({
     .transform((value) => (value === '' ? null : value)),
 });
 
+/** PUT /api/me/active-organization: la organizacion que se abre al entrar, en cualquier dispositivo. */
+export const activeOrganizationSchema = z.object({
+  organizationId: z.string().trim().min(1, 'Indica la organizacion'),
+});
+
 /** PUT /api/me/instruments: reemplaza la lista completa de lo que la persona sabe tocar. */
 export const replaceInstrumentsSchema = z
   .object({
