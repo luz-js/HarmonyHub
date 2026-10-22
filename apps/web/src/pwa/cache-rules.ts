@@ -2,7 +2,8 @@
  * Reglas de la cache sin conexion (las usa el service worker y se prueban aparte, sin navegador).
  *
  * - Solo lectura: se guardan respuestas GET exitosas (200) de canciones, setlists y eventos que la persona ya abrio,
- *   y los archivos/pistas que ya descargo. Nunca sesion (/api/auth, /api/login, /api/me), nunca escrituras, nunca errores.
+ *   y los archivos/pistas que ya descargo. Nunca sesion (/api/auth, /api/login, /api/me), nunca escrituras, nunca errores,
+ *   nunca setlists compartidos por enlace (/api/public).
  * - Cada entrada se guarda con la organizacion activa en la clave: dos organizaciones nunca comparten datos.
  * - Al cerrar sesion o cambiar de persona, la app borra estas caches (ver offline-data.ts).
  */
@@ -23,7 +24,15 @@ export const CACHE_MAX_AGE_SECONDS = 30 * 24 * 60 * 60;
 export type CacheRule = 'api-read' | 'files';
 
 const ID = '[^/]+';
-const NEVER = [/^\/api\/auth(\/|$)/, /^\/api\/login$/, /^\/api\/me(\/|$)/];
+const NEVER = [
+  /^\/api\/auth(\/|$)/,
+  /^\/api\/login$/,
+  /^\/api\/me(\/|$)/,
+  // Setlists compartidos por enlace: la pagina publica puede abrirse en el navegador de otra persona y no debe quedar
+  // guardada en su sesion; la lista de enlaces de un setlist tampoco.
+  /^\/api\/public(\/|$)/,
+  new RegExp(`^/api/setlists/${ID}/share-links(/|$)`),
+];
 const FILES = [new RegExp(`^/api/songs/${ID}/(tracks|files)/${ID}/(stream|download)$`)];
 const API_READS = [
   // Canciones: lista, detalle (letra y acordes), versiones, y las listas de pistas, archivos y enlaces.

@@ -42,6 +42,8 @@ describe('classifyRequest: que se guarda para usar sin conexion', () => {
       expect(rule(path), path).toBeNull();
     }
     for (const path of ['/api/notifications', '/api/dashboard/summary', '/api/memberships', '/api/organizations', '/api/invitations']) expect(rule(path), path).toBeNull();
+    // Enlaces compartidos: ni la pagina publica ni la lista de enlaces de un setlist.
+    for (const path of ['/api/public/shared-setlists/abc', '/api/setlists/l1/share-links', '/api/setlists/l1/share-links/k1']) expect(rule(path), path).toBeNull();
     expect(rule('/songs/s1')).toBeNull();
     expect(rule('/api/songs/s1', 'GET', 'https://otro-sitio.test')).toBeNull();
   });
