@@ -73,6 +73,11 @@ describe('ProfilePage', () => {
     fireEvent.click(within(chosenList()).getAllByRole('button', { name: 'Hacer principal' })[0]);
     fireEvent.click(screen.getByRole('button', { name: 'Quitar Teclado' }));
 
+    // Despues de guardar, la API devuelve el perfil nuevo (como la real).
+    vi.mocked(getCurrentUser).mockResolvedValue({
+      ok: true,
+      user: makeUser({ name: 'Ana M.', phone: null, instruments: [{ id: 'i3', instrument: 'LEAD_VOCAL', isPrimary: true }, { id: 'i4', instrument: 'BASS', isPrimary: false }] }),
+    });
     fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' }));
 
     await waitFor(() => expect(replaceMyInstruments).toHaveBeenCalled());
@@ -84,6 +89,9 @@ describe('ProfilePage', () => {
       ],
     });
     await waitFor(() => expect(onUserUpdated).toHaveBeenCalledWith({ name: 'Ana M.' }));
+    // Con organizacion no cambia nada: "Cambios guardados." y sin el aviso de perfil completo.
+    expect(await screen.findByText('Cambios guardados.')).toBeInTheDocument();
+    expect(screen.queryByRole('status', { name: 'Perfil completo' })).not.toBeInTheDocument();
   });
 
   it('Cancelar descarta los cambios sin guardar', async () => {

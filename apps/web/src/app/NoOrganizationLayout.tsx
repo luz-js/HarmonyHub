@@ -1,10 +1,10 @@
 import type { ReactNode } from 'react';
-import { ArrowLeft, LogOut, Music2 } from 'lucide-react';
+import { ArrowRight, LogOut, Music2 } from 'lucide-react';
 
 /**
  * Marco de las pantallas para quien todavia no tiene organizacion (bienvenida, invitaciones, perfil).
- * Con `onBack` (perfil e invitaciones) hay "Volver al inicio" arriba y tambien abajo: despues de guardar el perfil
- * y bajar hasta "No disponible", la salida tiene que estar a la vista.
+ * Con `onBack` (perfil e invitaciones) hay "Entrar" arriba y tambien abajo (lleva a la bienvenida): despues de
+ * guardar el perfil y bajar hasta "No disponible", la salida tiene que estar a la vista.
  */
 export function NoOrganizationLayout({ children, onBack, onLogout }: { children: ReactNode; onBack?: () => void; onLogout?: () => void }) {
   return (
@@ -19,7 +19,7 @@ export function NoOrganizationLayout({ children, onBack, onLogout }: { children:
           </span>
           {onBack ? (
             <button type="button" className="btn-ghost h-8 px-2 text-xs" onClick={onBack}>
-              <ArrowLeft className="h-3.5 w-3.5" /> Volver al inicio
+              Entrar <ArrowRight className="h-3.5 w-3.5" />
             </button>
           ) : (
             onLogout && (
@@ -33,7 +33,7 @@ export function NoOrganizationLayout({ children, onBack, onLogout }: { children:
         {onBack && (
           <div className="flex justify-center border-t border-[#23252A] pt-6">
             <button type="button" className="btn-ghost" onClick={onBack}>
-              <ArrowLeft className="h-4 w-4" /> Volver al inicio
+              Entrar <ArrowRight className="h-4 w-4" />
             </button>
           </div>
         )}

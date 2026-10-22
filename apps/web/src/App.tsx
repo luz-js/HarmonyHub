@@ -163,7 +163,7 @@ function App() {
     if (path === '/invitations' || path === '/profile') {
       return (
         <NoOrganizationLayout onBack={() => navigate('/')}>
-          {path === '/invitations' ? <MyInvitationsPage onAccepted={activateOrganization} /> : <ProfilePage onUserUpdated={updateProfile} />}
+          {path === '/invitations' ? <MyInvitationsPage onAccepted={activateOrganization} /> : <ProfilePage onUserUpdated={updateProfile} onEnter={() => navigate('/')} />}
         </NoOrganizationLayout>
       );
     }

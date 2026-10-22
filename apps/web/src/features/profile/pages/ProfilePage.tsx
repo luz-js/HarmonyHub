@@ -1,5 +1,5 @@
 import { FormEvent, useState } from 'react';
-import { Check, Star, X } from 'lucide-react';
+import { ArrowRight, Check, PartyPopper, Star, X } from 'lucide-react';
 import { useCurrentUser, useSaveMyProfile } from '../../auth/hooks';
 import { UnavailabilitySection } from '../../availability/components/UnavailabilitySection';
 import { getInitials } from '../../dashboard/utils';
@@ -10,12 +10,18 @@ import { INSTRUMENT_GROUPS, makePrimary, removeInstrument, SelectedInstrument, t
 type ProfilePageProps = {
   /** Avisa a App del nombre nuevo para que el menu de la cuenta lo muestre sin recargar. */
   onUserUpdated?: (user: { name: string }) => void;
+  /**
+   * Para quien todavia no tiene organizacion: al guardar se muestra "Tu perfil esta completo" con el boton
+   * "Entrar", que lleva a la bienvenida. Sin esto (ya tiene organizacion) solo se ve "Cambios guardados".
+   */
+  onEnter?: () => void;
 };
 
-export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
+export function ProfilePage({ onUserUpdated, onEnter }: ProfilePageProps) {
   const userQuery = useCurrentUser();
-  // Vive aqui y no en el formulario: al guardar, el formulario se vuelve a montar con los datos nuevos.
+  // Viven aqui y no en el formulario: al guardar, el formulario se vuelve a montar con los datos nuevos.
   const [justSaved, setJustSaved] = useState(false);
+  const [completed, setCompleted] = useState(false);
 
   return (
     <div className="space-y-5">
@@ -34,12 +40,47 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
           key={profileKey(userQuery.data)}
           user={userQuery.data}
           justSaved={justSaved}
-          onSavedChange={setJustSaved}
+          onSavedChange={(saved) => {
+            setJustSaved(saved);
+            if (saved && onEnter) setCompleted(true);
+          }}
           onUserUpdated={onUserUpdated}
+          showSavedMessage={!onEnter}
         />
       )}
       {/* Aparte del formulario: cada fecha se guarda o se borra al momento, sin "Guardar cambios". */}
       {userQuery.data && <UnavailabilitySection />}
+
+      {completed && onEnter && <ProfileCompletedNotice onEnter={onEnter} onClose={() => setCompleted(false)} />}
+    </div>
+  );
+}
+
+/** Aviso fijo abajo (se ve sin bajar ni subir): el perfil quedo listo y "Entrar" lleva a la bienvenida. */
+function ProfileCompletedNotice({ onEnter, onClose }: { onEnter: () => void; onClose: () => void }) {
+  return (
+    <div className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center px-4">
+      <div
+        role="status"
+        aria-label="Perfil completo"
+        className="pointer-events-auto flex w-full max-w-md items-start gap-3 rounded-2xl border border-[var(--primary)] bg-[#0F2A25] p-4 shadow-[0_20px_60px_rgba(0,0,0,0.55)]"
+      >
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-[var(--primary)] text-[var(--on-primary)]">
+          <PartyPopper className="h-5 w-5" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <p className="font-bold text-white">¡Listo, tu perfil está completo!</p>
+          <p className="mt-1 text-sm text-[#C9E9E1]">Ahora puedes crear tu organización o aceptar la invitación de tu equipo cuando te llegue.</p>
+          <div className="mt-3 flex gap-2">
+            <button type="button" className="btn-primary h-9 px-4 text-sm" onClick={onEnter}>
+              Entrar <ArrowRight className="h-4 w-4" />
+            </button>
+            <button type="button" className="btn-ghost h-9 px-3 text-sm" onClick={onClose}>
+              Seguir editando
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -57,9 +98,11 @@ type ProfileFormProps = {
   justSaved: boolean;
   onSavedChange: (saved: boolean) => void;
   onUserUpdated?: ProfilePageProps['onUserUpdated'];
+  /** "Cambios guardados." debajo del formulario (sin organizacion se muestra el aviso de perfil completo). */
+  showSavedMessage: boolean;
 };
 
-function ProfileForm({ user, justSaved, onSavedChange, onUserUpdated }: ProfileFormProps) {
+function ProfileForm({ user, justSaved, onSavedChange, onUserUpdated, showSavedMessage }: ProfileFormProps) {
   const [name, setName] = useState(user.name);
   const [phone, setPhone] = useState(user.phone ?? '');
   const [instruments, setInstruments] = useState<SelectedInstrument[]>(() => initialInstruments(user));
@@ -203,7 +246,7 @@ function ProfileForm({ user, justSaved, onSavedChange, onUserUpdated }: ProfileF
       </div>
 
       {error && <p className="rounded-xl border border-[#F27A6E]/30 bg-[#2A1817] p-3 text-sm text-[#F7A39A]" role="alert">{error}</p>}
-      {justSaved && !dirty && <p className="text-sm font-semibold text-[var(--primary)]" role="status">Cambios guardados.</p>}
+      {showSavedMessage && justSaved && !dirty && <p className="text-sm font-semibold text-[var(--primary)]" role="status">Cambios guardados.</p>}
 
       <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
         <button type="button" className="btn-ghost" onClick={cancel} disabled={!dirty || saveProfile.isPending}>
