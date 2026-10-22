@@ -22,6 +22,9 @@ import { SetlistsAccessService } from './setlists-access.service';
 import { SetlistsController } from './setlists.controller';
 import { SetlistsRepository } from './setlists.repository';
 import { SetlistsService } from './setlists.service';
+import { LiveStageController } from './live/live-stage.controller';
+import { LiveStageHub } from './live/live-stage.hub';
+import { LiveStageService } from './live/live-stage.service';
 
 @Module({
   imports: [AuthModule, PrismaModule, PermissionsModule, NotificationsModule],
@@ -32,6 +35,7 @@ import { SetlistsService } from './setlists.service';
     SetlistAssignmentsController,
     SetlistRoleRequirementsController,
     SetlistCuesController,
+    LiveStageController,
   ],
   providers: [
     SetlistsRepository,
@@ -47,6 +51,8 @@ import { SetlistsService } from './setlists.service';
     SetlistRoleRequirementsService,
     SetlistCuesRepository,
     SetlistCuesService,
+    LiveStageHub,
+    LiveStageService,
   ],
 })
 export class SetlistsModule {}
