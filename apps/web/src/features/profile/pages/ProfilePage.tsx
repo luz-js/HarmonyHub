@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react';
 import { Check, Star, X } from 'lucide-react';
 import { useCurrentUser, useSaveMyProfile } from '../../auth/hooks';
+import { UnavailabilitySection } from '../../availability/components/UnavailabilitySection';
 import { getInitials } from '../../dashboard/utils';
 import { getRoleLabel } from '../../setlists/assignments/utils/assignmentLabels';
 import type { CurrentUser } from '../../../shared/types';
@@ -20,7 +21,7 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
     <div className="space-y-5">
       <section>
         <h1 className="page-title">Mi perfil</h1>
-        <p className="page-subtitle">Tus datos y lo que sabes tocar. Así te ven las personas de tus equipos.</p>
+        <p className="page-subtitle">Tus datos, lo que sabes tocar y cuándo no estás disponible. Así te ven las personas de tus equipos.</p>
       </section>
 
       {userQuery.isLoading && <section className="panel p-5 text-muted">Cargando tu perfil...</section>}
@@ -37,6 +38,8 @@ export function ProfilePage({ onUserUpdated }: ProfilePageProps) {
           onUserUpdated={onUserUpdated}
         />
       )}
+      {/* Aparte del formulario: cada fecha se guarda o se borra al momento, sin "Guardar cambios". */}
+      {userQuery.data && <UnavailabilitySection />}
     </div>
   );
 }

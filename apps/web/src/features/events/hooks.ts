@@ -16,6 +16,8 @@ function invalidateEventQueries(organizationId: string, eventId?: string) {
   queryClient.invalidateQueries({ queryKey: ['events', organizationId] });
   queryClient.invalidateQueries({ queryKey: ['dashboard', organizationId] });
   if (eventId) queryClient.invalidateQueries({ queryKey: ['event', organizationId, eventId] });
+  // Un cambio de equipo, horario o estado cambia los avisos de "Ya tiene otro evento".
+  queryClient.invalidateQueries({ queryKey: ['availability'] });
 }
 
 export function useEvents(organizationId: string, filters: EventListFilters = {}, options: { enabled?: boolean } = {}) {

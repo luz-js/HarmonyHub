@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import { Plus, Search } from 'lucide-react';
 import type { SetlistItemType, SetlistMusicalRole } from '../../../../shared/types';
+import { AvailabilityBadges } from '../../../availability/components/AvailabilityBadges';
+import { availabilityByMembership, useSetlistAvailability } from '../../../availability/hooks';
 import { primaryInstrumentLabel } from '../../../profile/utils/instrumentGroups';
 import { useCreateSetlistAssignment } from '../hooks/useSetlistAssignmentMutations';
 import { useSetlistParticipants } from '../hooks/useSetlistParticipants';
@@ -24,6 +26,7 @@ export function QuickAssignPopover({
 
   const participantsQuery = useSetlistParticipants(organizationId, setlistId);
   const createMutation = useCreateSetlistAssignment(organizationId, setlistId, itemId);
+  const availability = availabilityByMembership(useSetlistAvailability(organizationId, setlistId, open).data?.members);
 
   const participants = participantsQuery.data || [];
   const filtered = participants.filter((participant) => participant.membership.user.name.toLowerCase().includes(search.trim().toLowerCase()));
@@ -64,7 +67,10 @@ export function QuickAssignPopover({
                       className="flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-sm text-white hover:bg-white/[0.06]"
                       onClick={() => setParticipantId(participant.id)}
                     >
-                      <span className="truncate">{participant.membership.user.name}</span>
+                      <span className="flex min-w-0 flex-col gap-1">
+                        <span className="truncate">{participant.membership.user.name}</span>
+                        <AvailabilityBadges availability={availability.get(participant.membership.id)} />
+                      </span>
                       <span className="shrink-0 text-xs text-muted">{primaryInstrumentLabel(participant.membership.user.instruments)}</span>
                     </button>
                   ))}

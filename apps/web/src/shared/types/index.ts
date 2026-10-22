@@ -1,4 +1,5 @@
 export * from './auth.types';
+export * from './availability.types';
 export * from './dashboard.types';
 export * from './event.types';
 export * from './invitation.types';

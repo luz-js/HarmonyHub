@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { OverlayDialog } from '../../../../shared/components/OverlayDialog';
+import { availabilityByMembership, useSetlistAvailability } from '../../../availability/hooks';
+import { formatEventMoment } from '../../../availability/utils/availability.utils';
 import { useAddSetlistParticipant } from '../hooks/useSetlistParticipantMutations';
 import { MemberPicker } from './MemberPicker';
 
@@ -16,6 +18,8 @@ export function AddParticipantDialog({
 }) {
   const addMutation = useAddSetlistParticipant(organizationId, setlistId);
   const [error, setError] = useState('');
+  const availabilityQuery = useSetlistAvailability(organizationId, setlistId, true);
+  const nextEvent = availabilityQuery.data?.event;
 
   function handleSelect(membershipId: string) {
     setError('');
@@ -31,7 +35,17 @@ export function AddParticipantDialog({
   return (
     <OverlayDialog title="Agregar participante" subtitle="Selecciona un músico de la organización" onClose={onClose}>
       {error && <p className="mb-2 text-sm text-[#F7A39A]">{error}</p>}
-      <MemberPicker organizationId={organizationId} excludeMembershipIds={excludeMembershipIds} onSelect={handleSelect} />
+      {nextEvent && (
+        <p className="mb-2 text-xs text-muted">
+          Disponibilidad para <span className="font-semibold text-white">{nextEvent.name}</span> ({formatEventMoment(nextEvent.startsAt)}), el próximo evento con este setlist.
+        </p>
+      )}
+      <MemberPicker
+        organizationId={organizationId}
+        excludeMembershipIds={excludeMembershipIds}
+        onSelect={handleSelect}
+        availability={availabilityByMembership(availabilityQuery.data?.members)}
+      />
     </OverlayDialog>
   );
 }

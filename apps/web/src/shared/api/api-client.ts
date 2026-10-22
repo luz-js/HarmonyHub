@@ -1,6 +1,10 @@
 import type {
   AcceptedInvitation,
   AppNotification,
+  CreateUnavailabilityInput,
+  SetlistMusicalRole,
+  TeamAvailability,
+  Unavailability,
   NotificationsPage,
   CreateInvitationInput,
   MyInvitation,
@@ -116,6 +120,36 @@ export function markNotificationRead(id: string) {
 
 export function markAllNotificationsRead() {
   return http<{ updated: number }>('/api/notifications/read-all', { method: 'POST' });
+}
+
+/** "Mi perfil" > No disponible: las fechas bloqueadas de la persona (valen en todas sus organizaciones). */
+export function getMyUnavailability() {
+  return http<Unavailability[]>('/api/me/unavailability');
+}
+
+export function createMyUnavailability(input: CreateUnavailabilityInput) {
+  return http<Unavailability>('/api/me/unavailability', { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function deleteMyUnavailability(id: string) {
+  return http<{ ok: boolean }>(`/api/me/unavailability/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}
+
+/** Zona horaria del navegador: el servidor la usa para saber que dia cae un evento para quien consulta. */
+function availabilityQuery(role?: SetlistMusicalRole) {
+  const params = new URLSearchParams({ tz: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC' });
+  if (role) params.set('role', role);
+  return params.toString();
+}
+
+/** Quien no esta disponible o ya tiene otro evento a esa hora (solo lideres; nunca incluye notas privadas). */
+export function getEventAvailability(eventId: string, role?: SetlistMusicalRole) {
+  return http<TeamAvailability>(`/api/events/${encodeURIComponent(eventId)}/availability?${availabilityQuery(role)}`);
+}
+
+/** Igual que el de eventos, comparando con el proximo evento que usa el setlist. */
+export function getSetlistAvailability(setlistId: string, role?: SetlistMusicalRole) {
+  return http<TeamAvailability>(`/api/setlists/${encodeURIComponent(setlistId)}/availability?${availabilityQuery(role)}`);
 }
 
 /** Guarda en la cuenta la organizacion activa, para abrirla en cualquier dispositivo. */

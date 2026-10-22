@@ -1,17 +1,24 @@
 import { useMemo, useState } from 'react';
 import { Search } from 'lucide-react';
+import type { MemberAvailability } from '../../../../shared/types';
+import { AvailabilityBadges } from '../../../availability/components/AvailabilityBadges';
 import { useMemberships } from '../../../musicians/hooks';
 import { primaryInstrumentLabel } from '../../../profile/utils/instrumentGroups';
 
-/** Selector de miembros para agregar como participante del setlist: reusa GET /api/memberships filtrando client-side. */
+/**
+ * Selector de miembros (equipo de un setlist o de un evento): reusa GET /api/memberships filtrando client-side.
+ * Con `availability`, marca a quien no esta disponible o ya tiene otro evento; igual se puede elegir.
+ */
 export function MemberPicker({
   organizationId,
   excludeMembershipIds,
   onSelect,
+  availability,
 }: {
   organizationId: string;
   excludeMembershipIds: string[];
   onSelect: (membershipId: string) => void;
+  availability?: Map<string, MemberAvailability>;
 }) {
   const membershipsQuery = useMemberships(organizationId);
   const [search, setSearch] = useState('');
@@ -41,7 +48,10 @@ export function MemberPicker({
             className="flex w-full items-center justify-between gap-2 rounded-lg border border-transparent px-2 py-1.5 text-left text-sm text-white hover:border-[#30333A] hover:bg-white/5"
             onClick={() => onSelect(member.id)}
           >
-            <span className="truncate">{member.user.name}</span>
+            <span className="flex min-w-0 flex-col gap-1">
+              <span className="truncate">{member.user.name}</span>
+              <AvailabilityBadges availability={availability?.get(member.id)} />
+            </span>
             <span className="shrink-0 text-xs text-muted">{primaryInstrumentLabel(member.user.instruments) || member.role}</span>
           </button>
         ))}

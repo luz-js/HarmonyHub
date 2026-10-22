@@ -3,6 +3,8 @@ import { Trash2, UserPlus } from 'lucide-react';
 import { OverlayDialog } from '../../../shared/components/OverlayDialog';
 import type { AttendanceStatus, EventDetail } from '../../../shared/types';
 import { formatRole, plural } from '../../../shared/utils/format';
+import { AvailabilityBadges } from '../../availability/components/AvailabilityBadges';
+import { availabilityByMembership, useEventAvailability } from '../../availability/hooks';
 import { primaryInstrumentLabel } from '../../profile/utils/instrumentGroups';
 import { MemberPicker } from '../../setlists/assignments/components/MemberPicker';
 import { useAddEventMusician, useRemoveEventMusician, useUpdateEventMusician } from '../hooks';
@@ -44,6 +46,9 @@ export function EventTeamPanel({
   const updateMutation = useUpdateEventMusician(organizationId);
   const removeMutation = useRemoveEventMusician(organizationId, event.id);
   const locked = isEventLocked(event.status);
+  // Solo quien arma el equipo ve los choques (la API no se los muestra a musicos ni invitados).
+  const availabilityQuery = useEventAvailability(organizationId, event.id, canManage && !locked);
+  const availability = availabilityByMembership(availabilityQuery.data?.members);
   const { attendance } = event;
 
   function onError(err: unknown) {
@@ -101,6 +106,7 @@ export function EventTeamPanel({
               <div className="min-w-0 flex-1">
                 <p className="truncate text-[15px] font-semibold text-white">{musician.name}{isSelf && <span className="font-medium text-muted"> (tú)</span>}</p>
                 <p className="truncate text-[13px] text-muted">{musician.instrument || primaryInstrumentLabel(musician.instruments) || formatRole(musician.role)}{musician.note ? ` · ${musician.note}` : ''}</p>
+                {musician.status !== 'DECLINED' && <div className="mt-1"><AvailabilityBadges availability={availability.get(musician.membershipId)} /></div>}
               </div>
               <div className={`flex items-center gap-2 ${hasControls ? 'basis-full pl-12 sm:basis-auto sm:pl-0' : ''}`}>
                 {isSelf && !locked ? (
@@ -146,6 +152,7 @@ export function EventTeamPanel({
             organizationId={organizationId}
             excludeMembershipIds={event.musicians.map((musician) => musician.membershipId)}
             onSelect={addMember}
+            availability={availability}
           />
         </OverlayDialog>
       )}
