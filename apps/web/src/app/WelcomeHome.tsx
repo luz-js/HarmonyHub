@@ -3,7 +3,6 @@ import { ChevronRight, Mail, Plus, UserRound } from 'lucide-react';
 import { InvitationCard } from '../features/invitations/components/InvitationCard';
 import { useMyInvitations } from '../features/invitations/hooks';
 import type { AcceptedInvitation } from '../shared/types';
-import { NoOrganizationLayout } from './NoOrganizationLayout';
 import type { AppUser, Navigate } from './types';
 
 type WelcomeHomeProps = {
@@ -11,20 +10,20 @@ type WelcomeHomeProps = {
   navigate: Navigate;
   /** Al aceptar una invitacion la app entra directo a esa organizacion. */
   onJoined: (organization: AcceptedInvitation['organization']) => void;
-  onLogout: () => void;
 };
 
 /**
- * Inicio de quien no tiene ninguna organizacion activa (recien registrada, o la desactivaron/quitaron):
- * primero sus invitaciones, despues crear una organizacion propia o completar su perfil. Nada es obligatorio.
+ * Inicio (dentro de la app) de quien no tiene ninguna organizacion activa: recien registrada, o la desactivaron o
+ * quitaron. Primero sus invitaciones, despues crear una organizacion propia, ver invitaciones o completar el perfil.
+ * Nada es obligatorio: el resto de la app se puede recorrer y cada pagina explica que necesita una organizacion.
  */
-export function WelcomeHome({ user, navigate, onJoined, onLogout }: WelcomeHomeProps) {
+export function WelcomeHome({ user, navigate, onJoined }: WelcomeHomeProps) {
   const invitationsQuery = useMyInvitations();
   const invitations = invitationsQuery.data || [];
   const firstName = user.name.split(' ')[0];
 
   return (
-    <NoOrganizationLayout onLogout={onLogout}>
+    <div className="space-y-6">
       <section>
         <h1 className="text-[28px] font-bold leading-tight text-white sm:text-[34px]">¡Hola, {firstName}!</h1>
         <p className="mt-2 text-sm text-muted">
@@ -48,12 +47,18 @@ export function WelcomeHome({ user, navigate, onJoined, onLogout }: WelcomeHomeP
         </section>
       )}
 
-      <section className="grid gap-3 sm:grid-cols-2" aria-label="Otras opciones">
+      <section className="grid gap-3 sm:grid-cols-3" aria-label="Otras opciones">
         <WelcomeOption
           icon={<Plus className="h-5 w-5" />}
           title="Crear una organización"
           description="Crea el espacio de tu banda o ministerio. Vas a ser su propietario y podrás invitar a tu equipo."
           onClick={() => navigate('/onboarding')}
+        />
+        <WelcomeOption
+          icon={<Mail className="h-5 w-5" />}
+          title={invitations.length > 0 ? `Ver mis invitaciones (${invitations.length})` : 'Ver mis invitaciones'}
+          description="Las invitaciones de tu equipo llegan a tu correo y aparecen aquí para aceptarlas."
+          onClick={() => navigate('/invitations')}
         />
         <WelcomeOption
           icon={<UserRound className="h-5 w-5" />}
@@ -71,7 +76,7 @@ export function WelcomeHome({ user, navigate, onJoined, onLogout }: WelcomeHomeP
           </span>
         </p>
       )}
-    </NoOrganizationLayout>
+    </div>
   );
 }
 

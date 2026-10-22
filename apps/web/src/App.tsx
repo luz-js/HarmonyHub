@@ -7,7 +7,8 @@ import { AudioPlayerProvider, PersistentAudioPlayer } from './features/songs/pla
 import { SetlistDetailPage, SetlistsPage as RealSetlistsPage } from './features/setlists';
 import { SettingsPage } from './app/LegacyPages';
 import { LoginPage } from './app/LoginPage';
-import { NoOrganizationLayout } from './app/NoOrganizationLayout';
+import { EnterFrame, NoOrganizationNotice } from './app/NoOrganizationPages';
+import { organizationPageFor } from './app/noOrganizationRoutes';
 import { OnboardingPage } from './app/OnboardingPage';
 import { WelcomeHome } from './app/WelcomeHome';
 import { ArchivesPage } from './features/files';
@@ -25,6 +26,25 @@ import { getCurrentUser, logoutRequest, saveActiveOrganization } from './shared/
 import { clearAuthSession, clearCurrentOrganizationId, ORGANIZATION_ACCESS_LOST_EVENT, SESSION_EXPIRED_EVENT, setCurrentOrganizationId } from './shared/api/http';
 import { queryClient } from './shared/api/query-client';
 import { clearOfflineData, syncOfflineDataOwner } from './pwa/offline-data';
+
+/**
+ * Sin organizacion activa (recien registrada, o la desactivaron/quitaron) se entra igual a la app: Inicio muestra la
+ * bienvenida, las paginas de la organizacion explican como empezar (sin llamar a la API) y Mi perfil, Mis
+ * invitaciones y Avisos funcionan normal.
+ */
+function resolveNoOrganizationPage(path: string, user: AppUser, navigate: Navigate, onProfileUpdated: (changes: { name: string }) => void, onJoined: (organization: AppOrganization) => void): ReactNode {
+  const organizationPage = organizationPageFor(path);
+  if (organizationPage) return <NoOrganizationNotice title={organizationPage.label} navigate={navigate} />;
+  if (path === '/profile') {
+    return (
+      <EnterFrame navigate={navigate}>
+        <ProfilePage onUserUpdated={onProfileUpdated} onEnter={() => navigate('/')} />
+      </EnterFrame>
+    );
+  }
+  if (path === '/notifications') return <NotificationsPage navigate={navigate} />;
+  return <WelcomeHome user={user} navigate={navigate} onJoined={onJoined} />;
+}
 
 function resolvePage(path: string, user: AppUser, navigate: Navigate, onProfileUpdated: (changes: { name: string }) => void): ReactNode {
   if (path.startsWith('/songs/')) {
@@ -118,18 +138,21 @@ function App() {
     navigate('/login');
   }
 
-  /** Activa otra organizacion (o la recien creada): guarda el rol de esa membresia y recarga los datos. */
-  function activateOrganization(organization: AppOrganization) {
-    if (!user) return;
-    const nextUser = withOrganization(user, organization);
-    storeUser(nextUser);
-    setCurrentOrganizationId(organization.id);
-    queryClient.clear();
-    setUser(nextUser);
-    navigate('/');
-    // La eleccion se guarda en la cuenta (otros dispositivos la abren igual). Si falla, en este navegador ya quedo.
-    void saveActiveOrganization(organization.id).catch(() => null);
-  }
+  /** Activa otra organizacion (o la recien creada, o la de una invitacion aceptada): guarda el rol y recarga los datos. */
+  const activateOrganization = useCallback(
+    (organization: AppOrganization) => {
+      if (!user) return;
+      const nextUser = withOrganization(user, organization);
+      storeUser(nextUser);
+      setCurrentOrganizationId(organization.id);
+      queryClient.clear();
+      setUser(nextUser);
+      navigate('/');
+      // La eleccion se guarda en la cuenta (otros dispositivos la abren igual). Si falla, en este navegador ya quedo.
+      void saveActiveOrganization(organization.id).catch(() => null);
+    },
+    [navigate, user],
+  );
 
   /** Mi perfil cambio el nombre: se actualiza la sesion guardada para que el menu lo muestre al instante. */
   const updateProfile = useCallback((changes: { name: string }) => {
@@ -146,8 +169,9 @@ function App() {
       return <LoginPage onLogin={setUser} />;
     }
 
+    if (!user.currentOrganizationId) return resolveNoOrganizationPage(path, user, navigate, updateProfile, activateOrganization);
     return resolvePage(path, user, navigate, updateProfile);
-  }, [navigate, path, updateProfile, user]);
+  }, [activateOrganization, navigate, path, updateProfile, user]);
 
   if (!user || path === '/login') {
     return <>{page}</>;
@@ -156,18 +180,6 @@ function App() {
   // Crear una organizacion ya no es obligatorio: se llega aqui desde la bienvenida o desde el selector.
   if (path === '/onboarding') {
     return <OnboardingPage user={user} onCreated={activateOrganization} onCancel={() => navigate('/')} onLogout={logout} />;
-  }
-
-  // Sin ninguna organizacion activa (recien registrada, o la desactivaron/quitaron): bienvenida, invitaciones o perfil.
-  if (!user.currentOrganizationId) {
-    if (path === '/invitations' || path === '/profile') {
-      return (
-        <NoOrganizationLayout onBack={() => navigate('/')}>
-          {path === '/invitations' ? <MyInvitationsPage onAccepted={activateOrganization} /> : <ProfilePage onUserUpdated={updateProfile} onEnter={() => navigate('/')} />}
-        </NoOrganizationLayout>
-      );
-    }
-    return <WelcomeHome user={user} navigate={navigate} onJoined={activateOrganization} onLogout={logout} />;
   }
 
   const currentOrganization = user.organizations?.find((organization) => organization.id === user.currentOrganizationId);
@@ -183,7 +195,13 @@ function App() {
       >
         {currentOrganization?.archivedAt && <ArchivedOrganizationBanner organization={currentOrganization} onRestored={() => void syncSession()} />}
         {path === '/invitations' ? (
-          <MyInvitationsPage onAccepted={activateOrganization} />
+          user.currentOrganizationId ? (
+            <MyInvitationsPage onAccepted={activateOrganization} />
+          ) : (
+            <EnterFrame navigate={navigate}>
+              <MyInvitationsPage onAccepted={activateOrganization} />
+            </EnterFrame>
+          )
         ) : path === '/settings' ? (
           <div className="space-y-5">
             {page}

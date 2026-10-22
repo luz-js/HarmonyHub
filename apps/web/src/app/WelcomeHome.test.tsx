@@ -33,7 +33,7 @@ const invitation: MyInvitation = {
 };
 
 function renderHome() {
-  const props = { navigate: vi.fn(), onJoined: vi.fn(), onLogout: vi.fn() };
+  const props = { navigate: vi.fn(), onJoined: vi.fn() };
   render(<WelcomeHome user={user} {...props} />, { wrapper });
   return props;
 }
@@ -60,16 +60,16 @@ describe('WelcomeHome', () => {
     await waitFor(() => expect(onJoined).toHaveBeenCalledWith({ id: 'org-1', name: 'Renacer', slug: 'renacer', role: 'LEADER' }));
   });
 
-  it('crear una organización y completar el perfil son opciones, no obligación', async () => {
+  it('crear una organización, ver invitaciones y completar el perfil son opciones, no obligación', async () => {
     vi.mocked(getMyInvitations).mockResolvedValue([]);
-    const { navigate, onLogout } = renderHome();
+    const { navigate } = renderHome();
     const options = screen.getByRole('region', { name: 'Otras opciones' });
     fireEvent.click(within(options).getByRole('button', { name: /Crear una organización/ }));
     expect(navigate).toHaveBeenCalledWith('/onboarding');
     fireEvent.click(within(options).getByRole('button', { name: /Completar mi perfil/ }));
     expect(navigate).toHaveBeenCalledWith('/profile');
-    fireEvent.click(screen.getByRole('button', { name: /Salir/ }));
-    expect(onLogout).toHaveBeenCalled();
+    fireEvent.click(within(options).getByRole('button', { name: /Ver mis invitaciones/ }));
+    expect(navigate).toHaveBeenCalledWith('/invitations');
   });
 
   it('sin invitaciones explica con qué correo la pueden invitar', async () => {

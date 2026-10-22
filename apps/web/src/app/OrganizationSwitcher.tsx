@@ -59,7 +59,8 @@ export function OrganizationSwitcher({
       </button>
     );
   }
-  const name = current?.name || 'Organización';
+  // Sin organizacion activa (cuenta nueva): el selector lo dice y su menu ofrece crear una.
+  const name = current?.name || 'Sin organización';
   const compact = variant === 'compact';
 
   return (
