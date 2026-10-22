@@ -38,7 +38,7 @@ describe('classifyRequest: que se guarda para usar sin conexion', () => {
     for (const path of ['/api/auth/me', '/api/auth/refresh', '/api/login', '/api/me', '/api/me/unavailability']) expect(rule(path), path).toBeNull();
     for (const method of ['POST', 'PATCH', 'PUT', 'DELETE']) expect(rule('/api/songs/s1', method), method).toBeNull();
     // Notas, conversaciones e historial no entran (no son "letras/acordes"); la disponibilidad del equipo tampoco.
-    for (const path of ['/api/songs/s1/notes', '/api/songs/s1/threads', '/api/songs/s1/activity', '/api/setlists/l1/availability', '/api/events/e1/availability']) {
+    for (const path of ['/api/songs/s1/notes', '/api/songs/s1/threads', '/api/songs/s1/activity', '/api/setlists/l1/availability', '/api/setlists/l1/live', '/api/setlists/l1/live/stream', '/api/events/e1/availability']) {
       expect(rule(path), path).toBeNull();
     }
     for (const path of ['/api/notifications', '/api/dashboard/summary', '/api/memberships', '/api/organizations', '/api/invitations']) expect(rule(path), path).toBeNull();

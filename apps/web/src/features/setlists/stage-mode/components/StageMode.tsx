@@ -9,6 +9,9 @@ import { StageFooter } from './StageFooter';
 import { StageLayout } from './StageLayout';
 import { StageSettings } from './StageSettings';
 import { useMarkStageModeOpen } from '../../../../pwa/hooks';
+import { canManageSetlistsClientSide, getCurrentUser } from '../../utils';
+import { LiveStageBar } from '../live/LiveStageBar';
+import { useLiveStage } from '../live/useLiveStage';
 import { StageTopBar } from './StageTopBar';
 
 export function StageMode({ organizationId, setlistId, setlistName, onExit }: { organizationId: string; setlistId: string; setlistName: string; onExit: () => void }) {
@@ -19,6 +22,14 @@ export function StageMode({ organizationId, setlistId, setlistName, onExit }: { 
 
   const stage = useStageMode(organizationId, setlistId);
   useMarkStageModeOpen();
+  // En vivo: sigue al lider o, si dirige esta persona, avisa cada cambio de item a los demas dispositivos.
+  const live = useLiveStage({
+    setlistId,
+    currentUserId: stage.currentUser.id,
+    currentItemId: stage.navigation.currentItemId,
+    goToItem: stage.navigation.goToItem,
+    canLead: canManageSetlistsClientSide(getCurrentUser().role),
+  });
   const { state, update, navigation, cue, timers, currentUserId } = { ...stage, currentUserId: stage.currentUser.id };
 
   function toggleFullscreen() {
@@ -51,6 +62,7 @@ export function StageMode({ organizationId, setlistId, setlistName, onExit }: { 
         clockFormat={state.clockFormat}
         onOpenSettings={() => setSettingsOpen(true)}
         onExit={onExit}
+        live={<LiveStageBar live={live} organizationId={organizationId} />}
       />
 
       <div className="flex-1 overflow-hidden">

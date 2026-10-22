@@ -158,7 +158,8 @@ export async function http<T>(url: string, init?: RequestInit): Promise<T> {
   if (!response.ok) {
     notifyIfAccessLost(response.status, data?.message);
     const error = new Error(data?.message || (response.status === 403 ? 'No tienes permisos para esta acción' : 'No se pudo completar la solicitud'));
-    Object.assign(error, { status: response.status });
+    // `body`: la respuesta completa (ej. el 409 del modo en vivo trae quien dirige).
+    Object.assign(error, { status: response.status, body: data });
     throw error;
   }
 
@@ -174,6 +175,14 @@ export async function requestBlob(url: string, init?: RequestInit) {
     throw error;
   }
   return response.blob();
+}
+
+/**
+ * Abre un stream (Server-Sent Events) con los headers de sesion: el token va en el header Authorization, nunca
+ * en la URL (por eso no se usa EventSource). Renueva la sesion ante un 401 igual que http().
+ */
+export function openAuthorizedStream(url: string, signal: AbortSignal) {
+  return authorizedFetch(url, { signal, cache: 'no-store' }, () => applyAuthHeaders({ Accept: 'text/event-stream' }));
 }
 
 export function buildAuthHeaders(headers?: HeadersInit) {

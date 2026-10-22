@@ -1,6 +1,10 @@
 import type {
   AcceptedInvitation,
   AppNotification,
+  AdvanceLiveStageInput,
+  HandoverLiveStageInput,
+  LiveStageState,
+  StartLiveStageInput,
   ArchiveOrganizationInput,
   TransferOrganizationInput,
   LoginInput,
@@ -170,6 +174,27 @@ export function getEventAvailability(eventId: string, role?: SetlistMusicalRole)
 /** Igual que el de eventos, comparando con el proximo evento que usa el setlist. */
 export function getSetlistAvailability(setlistId: string, role?: SetlistMusicalRole) {
   return http<TeamAvailability>(`/api/setlists/${encodeURIComponent(setlistId)}/availability?${availabilityQuery(role)}`);
+}
+
+/** Modo escenario en vivo (el stream se abre aparte, con openAuthorizedStream). */
+export function getLiveStage(setlistId: string) {
+  return http<LiveStageState>(`/api/setlists/${encodeURIComponent(setlistId)}/live`);
+}
+
+export function startLiveStage(setlistId: string, input: StartLiveStageInput = {}) {
+  return http<LiveStageState>(`/api/setlists/${encodeURIComponent(setlistId)}/live/start`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function advanceLiveStage(setlistId: string, input: AdvanceLiveStageInput) {
+  return http<LiveStageState>(`/api/setlists/${encodeURIComponent(setlistId)}/live/advance`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function handoverLiveStage(setlistId: string, input: HandoverLiveStageInput) {
+  return http<LiveStageState>(`/api/setlists/${encodeURIComponent(setlistId)}/live/handover`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function endLiveStage(setlistId: string) {
+  return http<LiveStageState>(`/api/setlists/${encodeURIComponent(setlistId)}/live/end`, { method: 'POST', body: '{}' });
 }
 
 /** Guarda en la cuenta la organizacion activa, para abrirla en cualquier dispositivo. */

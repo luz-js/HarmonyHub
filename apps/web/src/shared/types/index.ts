@@ -9,3 +9,4 @@ export * from './organization.types';
 export * from './setlist.types';
 export * from './song.types';
 export type { ArchiveOrganizationInput, LoginInput, RegisterInput, TransferOrganizationInput } from '@harmonyhub/contracts';
+export type { AdvanceLiveStageInput, HandoverLiveStageInput, LiveStageLeader, LiveStageState, StartLiveStageInput } from '@harmonyhub/contracts';

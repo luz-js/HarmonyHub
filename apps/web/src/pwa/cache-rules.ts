@@ -31,9 +31,10 @@ const API_READS = [
   new RegExp(`^/api/songs/${ID}$`),
   new RegExp(`^/api/songs/${ID}/versions(/${ID})?$`),
   new RegExp(`^/api/songs/${ID}/(tracks|files|links)$`),
-  // Setlists: lista, detalle y lo que usa el modo escenario (items, equipo, cues), sin la disponibilidad del equipo.
+  // Setlists: lista, detalle y lo que usa el modo escenario (items, equipo, cues), sin la disponibilidad del equipo
+  // ni el modo en vivo (estado y stream: siempre de la red).
   /^\/api\/setlists$/,
-  new RegExp(`^/api/setlists/${ID}(/(?!availability$)[^?]*)?$`),
+  new RegExp(`^/api/setlists/${ID}(/(?!availability$|live(/|$))[^?]*)?$`),
   // Eventos: lista y detalle.
   /^\/api\/events$/,
   new RegExp(`^/api/events/${ID}$`),
