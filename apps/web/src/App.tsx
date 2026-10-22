@@ -1,4 +1,5 @@
 import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import { ArrowLeft } from 'lucide-react';
 import { CalendarPage } from './features/calendar';
 import { ActivityPage, DashboardPage as HomeDashboard } from './features/dashboard';
 import { EventDetailPage, EventsPage } from './features/events';
@@ -9,6 +10,7 @@ import { SettingsPage } from './app/LegacyPages';
 import { LoginPage } from './app/LoginPage';
 import { OnboardingPage } from './app/OnboardingPage';
 import { ArchivesPage } from './features/files';
+import { MyInvitationsPage } from './features/invitations';
 import { MusiciansPage } from './features/musicians';
 import { ProfilePage } from './features/profile';
 import { readStoredUser, storeUser, withOrganization } from './app/session';
@@ -103,6 +105,20 @@ function App() {
     return <>{page}</>;
   }
 
+  // Sin organizacion todavia: puede aceptar una invitacion en vez de crear una.
+  if (!user.currentOrganizationId && path === '/invitations') {
+    return (
+      <main className="min-h-screen bg-background px-5 py-10 text-white subtle-grid">
+        <div className="mx-auto max-w-2xl space-y-5">
+          <button type="button" className="btn-ghost h-8 px-2 text-xs" onClick={() => navigate('/')}>
+            <ArrowLeft className="h-3.5 w-3.5" /> Volver
+          </button>
+          <MyInvitationsPage onAccepted={activateOrganization} />
+        </div>
+      </main>
+    );
+  }
+
   if (!user.currentOrganizationId || path === '/onboarding') {
     return (
       <OnboardingPage
@@ -110,6 +126,7 @@ function App() {
         onCreated={activateOrganization}
         onCancel={user.currentOrganizationId ? () => navigate('/') : undefined}
         onLogout={logout}
+        onOpenInvitations={() => navigate('/invitations')}
       />
     );
   }
@@ -123,7 +140,7 @@ function App() {
         onLogout={logout}
         onSwitchOrganization={activateOrganization}
       >
-        {page}
+        {path === '/invitations' ? <MyInvitationsPage onAccepted={activateOrganization} /> : page}
       </Shell>
       <PersistentAudioPlayer />
     </AudioPlayerProvider>

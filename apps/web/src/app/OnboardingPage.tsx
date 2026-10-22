@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { ArrowLeft, LogOut, Music2, Users } from 'lucide-react';
+import { MyInvitationsBanner } from '../features/invitations/components/MyInvitationsBanner';
 import { useCreateOrganization } from '../features/organizations/hooks';
 import type { AppOrganization, AppUser } from './types';
 
@@ -17,11 +18,14 @@ export function OnboardingPage({
   onCreated,
   onCancel,
   onLogout,
+  onOpenInvitations,
 }: {
   user: AppUser;
   onCreated: (organization: AppOrganization) => void;
   onCancel?: () => void;
   onLogout: () => void;
+  /** Si la invitaron a una organizacion, puede unirse en vez de crear una. */
+  onOpenInvitations?: () => void;
 }) {
   const createMutation = useCreateOrganization();
   const [name, setName] = useState('');
@@ -65,6 +69,12 @@ export function OnboardingPage({
             Crea el espacio de tu banda o ministerio. Vas a ser su propietario y podrás invitar a tu equipo después.
           </p>
         </div>
+
+        {onOpenInvitations && (
+          <div className="mt-6">
+            <MyInvitationsBanner onOpen={onOpenInvitations} />
+          </div>
+        )}
 
         <form onSubmit={submit} className="mt-6 space-y-4">
           <label className="block">

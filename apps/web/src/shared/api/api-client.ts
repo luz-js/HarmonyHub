@@ -1,5 +1,7 @@
 import type {
+  AcceptedInvitation,
   CreateInvitationInput,
+  MyInvitation,
   CurrentUser,
   InvitationSummary,
   OrganizationFile,
@@ -128,6 +130,19 @@ export function createInvitation(input: CreateInvitationInput) {
 
 export function acceptInvitation(token: string) {
   return http<InvitationSummary>(`/api/invitations/${token}/accept`, { method: 'POST' });
+}
+
+/** "Mis invitaciones": las del correo de la sesion, en cualquier organizacion. */
+export function getMyInvitations() {
+  return http<MyInvitation[]>('/api/me/invitations');
+}
+
+export function acceptMyInvitation(id: string) {
+  return http<AcceptedInvitation>(`/api/me/invitations/${encodeURIComponent(id)}/accept`, { method: 'POST' });
+}
+
+export function declineMyInvitation(id: string) {
+  return http<InvitationSummary>(`/api/me/invitations/${encodeURIComponent(id)}/decline`, { method: 'POST' });
 }
 
 export function cancelInvitation(id: string) {

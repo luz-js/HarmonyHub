@@ -7,6 +7,7 @@ import {
   Home,
   ListMusic,
   LogOut,
+  Mail,
   Menu,
   MoreHorizontal,
   Music2,
@@ -17,6 +18,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { getInitials } from '../features/dashboard/utils';
+import { useMyInvitations } from '../features/invitations/hooks';
 import { OrganizationSwitcher } from './OrganizationSwitcher';
 import { getRoleLabel } from './session';
 import type { AppOrganization, AppUser, Navigate } from './types';
@@ -99,6 +101,11 @@ function SidebarLink({ item, path, navigate }: { item: NavItem; path: string; na
   );
 }
 
+/** Punto turquesa sobre el avatar: hay invitaciones esperando respuesta. */
+function PendingDot() {
+  return <span className="absolute -right-0.5 -top-0.5 h-3 w-3 rounded-full bg-[var(--primary)] ring-2 ring-[#141518]" aria-hidden />;
+}
+
 /** Menu de la cuenta: muestra quien eres y deja cerrar sesion sin hacerlo por accidente. */
 function AccountMenu({
   user,
@@ -113,6 +120,7 @@ function AccountMenu({
 }) {
   const [open, setOpen] = useState(false);
   const inSidebar = placement === 'sidebar';
+  const pendingInvitations = useMyInvitations().data?.length ?? 0;
 
   return (
     <div className="relative">
@@ -124,7 +132,10 @@ function AccountMenu({
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
         >
-          <span className="avatar h-9 w-9 shrink-0 text-[13px]">{getInitials(user.name)}</span>
+          <span className="avatar relative h-9 w-9 shrink-0 text-[13px]">
+            {getInitials(user.name)}
+            {pendingInvitations > 0 && <PendingDot />}
+          </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-sm font-bold text-white">{user.name}</span>
             <span className="block text-xs text-muted">{getRoleLabel(user.role)}</span>
@@ -134,13 +145,14 @@ function AccountMenu({
       ) : (
         <button
           type="button"
-          className="avatar h-11 w-11 shrink-0 text-sm"
-          aria-label="Tu cuenta"
+          className="avatar relative h-11 w-11 shrink-0 text-sm"
+          aria-label={pendingInvitations > 0 ? `Tu cuenta (${pendingInvitations} invitaciones pendientes)` : 'Tu cuenta'}
           aria-haspopup="menu"
           aria-expanded={open}
           onClick={() => setOpen((value) => !value)}
         >
           {getInitials(user.name)}
+          {pendingInvitations > 0 && <PendingDot />}
         </button>
       )}
       {open && (
@@ -167,6 +179,18 @@ function AccountMenu({
               }}
             >
               <UserRound className="h-4 w-4" /> Mi perfil
+            </button>
+            <button
+              type="button"
+              role="menuitem"
+              className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-left text-sm font-semibold text-[#D8D5CE] hover:bg-white/5"
+              onClick={() => {
+                setOpen(false);
+                navigate('/invitations');
+              }}
+            >
+              <Mail className="h-4 w-4" /> Mis invitaciones
+              {pendingInvitations > 0 && <span className="badge badge-primary ml-auto">{pendingInvitations}</span>}
             </button>
             <button
               type="button"

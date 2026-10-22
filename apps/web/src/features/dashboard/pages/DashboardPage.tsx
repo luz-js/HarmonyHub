@@ -5,6 +5,7 @@ import type { AttendanceStatus, EventAttendanceSummary, EventSummary } from '../
 import { plural } from '../../../shared/utils';
 import { AttendanceBadge, EventDateTile, EventStatusBadge } from '../../events/components';
 import { canManageEventsClientSide, formatEventDate, formatEventTime } from '../../events/utils';
+import { MyInvitationsBanner } from '../../invitations/components/MyInvitationsBanner';
 import { getCurrentUser } from '../../setlists/utils';
 import { ActivityFeed, PendingAttendancePanel } from '../components';
 import { useDashboard } from '../hooks';
@@ -37,6 +38,8 @@ export function DashboardPage({ user, navigate }: { user: User; navigate: Naviga
           </div>
         )}
       </section>
+
+      <MyInvitationsBanner onOpen={() => navigate('/invitations')} />
 
       {error && <section className="rounded-xl border border-[#F27A6E]/30 bg-[#2A1817] p-4 text-sm text-[#F7A39A]">{error}</section>}
 

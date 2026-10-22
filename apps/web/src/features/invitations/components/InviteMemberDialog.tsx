@@ -99,8 +99,8 @@ function HowToJoinNote({ email }: { email?: string }) {
     <p className="flex items-start gap-2.5 rounded-xl border border-[#8FB4FF]/20 bg-[#1C2436] px-4 py-3 text-sm text-[#C9D8FF]">
       <Info className="mt-0.5 h-4 w-4 shrink-0 text-[#8FB4FF]" />
       <span>
-        Todavía no enviamos correos: avísale tú. Cuando entre a HarmonyHub (o cree su cuenta) con {email ? <strong>{email}</strong> : 'ese correo'}, verá la invitación
-        para unirse. Vence en 7 días.
+        Todavía no enviamos correos: avísale tú. Cuando entre a HarmonyHub (o cree su cuenta) con {email ? <strong>{email}</strong> : 'ese correo'}, la verá en
+        «Mis invitaciones» para unirse. Vence en 7 días.
       </span>
     </p>
   );
