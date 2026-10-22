@@ -1,5 +1,7 @@
 import { useRef, useState } from 'react';
-import { Search } from 'lucide-react';
+import { AudioLines, Search } from 'lucide-react';
+import { StageAudioPanel } from '../audio/StageAudioPanel';
+import { useStageAudio, type StageAudioDeps } from '../audio/useStageAudio';
 import { useStageKeyboard } from '../hooks/useStageKeyboard';
 import { useStageMode } from '../hooks/useStageMode';
 import { QuickJumpDialog } from './QuickJumpDialog';
@@ -14,11 +16,25 @@ import { LiveStageBar } from '../live/LiveStageBar';
 import { useLiveStage } from '../live/useLiveStage';
 import { StageTopBar } from './StageTopBar';
 
-export function StageMode({ organizationId, setlistId, setlistName, onExit }: { organizationId: string; setlistId: string; setlistName: string; onExit: () => void }) {
+export function StageMode({
+  organizationId,
+  setlistId,
+  setlistName,
+  onExit,
+  audioDeps,
+}: {
+  organizationId: string;
+  setlistId: string;
+  setlistName: string;
+  onExit: () => void;
+  /** Solo para pruebas: AudioContext y descarga de pistas falsos. */
+  audioDeps?: StageAudioDeps;
+}) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [quickJumpOpen, setQuickJumpOpen] = useState(false);
+  const [audioOpen, setAudioOpen] = useState(false);
 
   const stage = useStageMode(organizationId, setlistId);
   useMarkStageModeOpen();
@@ -30,6 +46,9 @@ export function StageMode({ organizationId, setlistId, setlistName, onExit }: { 
     goToItem: stage.navigation.goToItem,
     canLead: canManageSetlistsClientSide(getCurrentUser().role),
   });
+  // Pistas: solo quien puede gestionar setlists opera el audio (en su propio dispositivo).
+  const canOperateAudio = canManageSetlistsClientSide(getCurrentUser().role);
+  const audio = useStageAudio({ organizationId, enabled: canOperateAudio, item: stage.navigation.currentItem, currentCue: stage.cue.currentCue, deps: audioDeps });
   const { state, update, navigation, cue, timers, currentUserId } = { ...stage, currentUserId: stage.currentUser.id };
 
   function toggleFullscreen() {
@@ -83,7 +102,12 @@ export function StageMode({ organizationId, setlistId, setlistName, onExit }: { 
       </div>
 
       <StageFooter>
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-2">
+          {canOperateAudio && (
+            <button type="button" className="btn-ghost h-8 px-3 text-xs" onClick={() => setAudioOpen(true)}>
+              <AudioLines className={`h-3.5 w-3.5 ${audio.isPlaying || audio.pad.playing || audio.click.running ? 'text-primary' : ''}`} /> Pistas
+            </button>
+          )}
           <button type="button" className="btn-ghost h-8 px-3 text-xs" onClick={() => setQuickJumpOpen(true)}>
             <Search className="h-3.5 w-3.5" /> Ir a...
           </button>
@@ -103,6 +127,12 @@ export function StageMode({ organizationId, setlistId, setlistName, onExit }: { 
       {settingsOpen && (
         <StageDrawer title="Ajustes de Stage Mode" onClose={() => setSettingsOpen(false)}>
           <StageSettings state={state} update={update} />
+        </StageDrawer>
+      )}
+
+      {audioOpen && canOperateAudio && (
+        <StageDrawer title="Pistas" onClose={() => setAudioOpen(false)}>
+          <StageAudioPanel audio={audio} currentCue={cue.currentCue} />
         </StageDrawer>
       )}
 
