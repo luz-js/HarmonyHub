@@ -4,6 +4,7 @@ import { AuthRepository } from './auth.repository';
 import { JwtService } from './jwt.service';
 import { LoginRateLimiter, TooManyLoginAttemptsError } from './login-rate-limiter';
 import { hashPassword, isLegacyDevPassword, verifyPassword } from './password';
+import { RefreshTokenService } from './refresh-token.service';
 
 const loginSchema = z.object({
   email: z.string().email().transform((value) => value.trim().toLowerCase()),
@@ -27,6 +28,7 @@ export class AuthService {
   constructor(
     @Inject(AuthRepository) private readonly authRepository: AuthRepository,
     @Inject(JwtService) private readonly jwtService: JwtService,
+    @Inject(RefreshTokenService) private readonly refreshTokens: RefreshTokenService,
   ) {}
 
   private toSessionUser(user: NonNullable<Awaited<ReturnType<AuthRepository['findUserForLogin']>>>) {
@@ -57,7 +59,8 @@ export class AuthService {
   }
 
   /** `ip` alimenta el limitador de intentos (ip + correo); sin ip se limita solo por correo. */
-  async login(input: unknown, ip?: string) {
+  /** `refresh` lo convierte el controller en cookie httpOnly; nunca viaja en el cuerpo. */
+  async login(input: unknown, ip?: string, userAgent?: string) {
     const parsed = loginSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
@@ -88,11 +91,12 @@ export class AuthService {
     return {
       user: sessionUser,
       accessToken: this.jwtService.sign({ sub: sessionUser.id, email: sessionUser.email }),
+      refresh: await this.refreshTokens.issue(sessionUser.id, userAgent),
       next: user.memberships.length > 0 ? ('app' as const) : ('onboarding' as const),
     };
   }
 
-  async register(input: unknown) {
+  async register(input: unknown, userAgent?: string) {
     const parsed = registerSchema.safeParse(input);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
@@ -110,7 +114,26 @@ export class AuthService {
     return {
       user: sessionUser,
       accessToken: this.jwtService.sign({ sub: sessionUser.id, email: sessionUser.email }),
+      refresh: await this.refreshTokens.issue(sessionUser.id, userAgent),
     };
+  }
+
+  /** Renueva la sesion: rota el refresh token y firma un access token nuevo. */
+  async refresh(token: string | null, userAgent?: string) {
+    const rotated = await this.refreshTokens.rotate(token, userAgent);
+    const user = await this.authRepository.findUserById(rotated.userId);
+    if (!user || !user.active) {
+      await this.refreshTokens.revoke(rotated.token);
+      throw new UnauthorizedException('Sesion expirada');
+    }
+    return {
+      accessToken: this.jwtService.sign({ sub: user.id, email: user.email }),
+      refresh: { token: rotated.token, expiresAt: rotated.expiresAt },
+    };
+  }
+
+  logout(token: string | null) {
+    return this.refreshTokens.revoke(token);
   }
 
   async me(userId: string) {

@@ -18,7 +18,8 @@ function decodeBase64Url(value: string) {
 @Injectable()
 export class JwtService {
   private readonly secret = process.env.JWT_SECRET || process.env.SESSION_SECRET || 'harmonyhub-dev-secret-change-me';
-  private readonly ttlSeconds = Number(process.env.JWT_TTL_SECONDS || 60 * 60 * 8);
+  /** Access token de vida corta: cuando vence, la web lo renueva con el refresh token (cookie). */
+  private readonly ttlSeconds = Number(process.env.ACCESS_TOKEN_TTL_SECONDS || 15 * 60);
 
   sign(payload: Pick<AuthTokenPayload, 'sub' | 'email'>) {
     const header = base64Url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));

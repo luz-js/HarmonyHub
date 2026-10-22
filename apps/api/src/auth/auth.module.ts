@@ -5,11 +5,12 @@ import { AuthGuard } from './auth.guard';
 import { AuthRepository } from './auth.repository';
 import { AuthService } from './auth.service';
 import { JwtService } from './jwt.service';
+import { RefreshTokenService } from './refresh-token.service';
 
 @Module({
   imports: [PrismaModule],
   controllers: [AuthController],
-  providers: [AuthRepository, AuthService, AuthGuard, JwtService],
+  providers: [AuthRepository, AuthService, AuthGuard, JwtService, RefreshTokenService],
   exports: [AuthGuard, JwtService, AuthService],
 })
 export class AuthModule {}

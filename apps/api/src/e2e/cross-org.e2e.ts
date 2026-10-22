@@ -11,8 +11,9 @@ import type { INestApplication } from '@nestjs/common';
 import { config } from 'dotenv';
 import type { PrismaService as PrismaServiceType } from '../prisma/prisma.service';
 import { listRoutes, type CatalogRoute } from '../permissions/route-catalog';
-import { getTestDatabaseUrl, MISSING_TEST_DATABASE_MESSAGE, pushSchema, truncateAll } from './test-database';
-import type { SeededOrg } from './seed';
+import { getTestDatabaseUrl, MISSING_TEST_DATABASE_MESSAGE } from './test-database';
+import { seedOrganization, snapshotOrganization, type SeededOrg } from './seed';
+import { startTestApp } from './test-app';
 
 config({ path: resolve(__dirname, '../../../../.env'), quiet: true });
 const testDatabaseUrl = getTestDatabaseUrl();
@@ -32,35 +33,15 @@ if (!testDatabaseUrl) {
     let orgB: SeededOrg;
     let outsider: Actor;
     let snapshotB: unknown;
-    let snapshot: (organizationId: string) => Promise<unknown>;
     const routes = listRoutes();
 
     before(async () => {
-      // La app y Prisma tienen que leer la base de pruebas, nunca la de desarrollo.
-      process.env.DATABASE_URL = testDatabaseUrl;
-      process.env.JWT_SECRET ||= 'e2e-secret';
-      pushSchema(testDatabaseUrl);
-      await truncateAll(testDatabaseUrl);
-
-      const { NestFactory } = await import('@nestjs/core');
-      const { AppModule } = await import('../app.module');
-      const { JwtService } = await import('../auth/jwt.service');
-      const { PrismaService } = await import('../prisma/prisma.service');
-      const seed = await import('./seed');
-
-      app = await NestFactory.create(AppModule, { logger: false });
-      await app.listen(0);
-      baseUrl = (await app.getUrl()).replace('[::1]', 'localhost');
-      prisma = app.get(PrismaService);
-      const jwt = app.get(JwtService);
-      sign = (actor) => jwt.sign({ sub: actor.userId, email: actor.email });
-
-      orgA = await seed.seedOrganization(prisma, 'A');
-      orgB = await seed.seedOrganization(prisma, 'B');
+      ({ app, prisma, baseUrl, sign } = await startTestApp(testDatabaseUrl));
+      orgA = await seedOrganization(prisma, 'A');
+      orgB = await seedOrganization(prisma, 'B');
       const user = await prisma.user.create({ data: { name: 'Persona sin organizacion', email: 'outsider@e2e.test', passwordHash: 'e2e-sin-login' } });
       outsider = { userId: user.id, email: user.email };
-      snapshot = (organizationId) => seed.snapshotOrganization(prisma, organizationId);
-      snapshotB = await snapshot(orgB.organizationId);
+      snapshotB = await snapshotOrganization(prisma, orgB.organizationId);
     });
 
     after(async () => {
@@ -235,7 +216,7 @@ if (!testDatabaseUrl) {
     });
 
     test('al final, los datos de B siguen exactamente igual', async () => {
-      assert.deepEqual(await snapshot(orgB.organizationId), snapshotB);
+      assert.deepEqual(await snapshotOrganization(prisma, orgB.organizationId), snapshotB);
     });
   });
 }

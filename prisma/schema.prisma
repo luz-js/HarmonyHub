@@ -235,10 +235,28 @@ model User {
   createdSetlistCues        SetlistCue[]         @relation("SetlistCueCreatedBy")
   completedSetlistCues      SetlistCue[]         @relation("SetlistCueCompletedBy")
   instruments               UserInstrument[]
+  refreshTokens             RefreshToken[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
   @@index([email])
+}
+
+/// Token para renovar la sesion. Solo se guarda su hash; rota en cada uso y todos los de un mismo login comparten familyId.
+model RefreshToken {
+  id           String    @id @default(cuid())
+  userId       String
+  familyId     String
+  tokenHash    String    @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?
+  userAgent    String?
+  createdAt    DateTime  @default(now())
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([familyId])
 }
 
 /// Lo que la persona sabe tocar (lo edita ella misma en "Mi perfil"). Lo que toca en cada setlist/evento va en sus asignaciones.

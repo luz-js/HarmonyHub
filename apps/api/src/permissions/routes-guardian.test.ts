@@ -11,6 +11,8 @@ export const EXEMPT_ROUTES: Record<string, string> = {
   'AuthController.login': 'Publica: todavia no hay sesion.',
   'AuthController.register': 'Publica: todavia no hay sesion.',
   'AuthController.me': 'Datos del propio usuario; no depende de una organizacion.',
+  'AuthController.refresh': 'Renueva la sesion con la cookie httpOnly; el access token ya vencio y no hay organizacion que verificar.',
+  'AuthController.logout': 'Cierra la sesion de la cookie; no depende de una organizacion.',
   'ProfileController.update': 'Mi perfil: siempre el usuario del token.',
   'ProfileController.replaceInstruments': 'Mi perfil: siempre el usuario del token.',
   'OrganizationsController.list': 'Lista las organizaciones del usuario; no hay una activa que verificar.',
