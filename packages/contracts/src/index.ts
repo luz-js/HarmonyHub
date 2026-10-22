@@ -14,3 +14,4 @@ export * from './notifications';
 export * from './dashboard';
 export * from './live-stage';
 export * from './chordpro';
+export * from './share-links';

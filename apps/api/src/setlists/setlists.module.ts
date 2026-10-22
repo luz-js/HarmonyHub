@@ -25,6 +25,10 @@ import { SetlistsService } from './setlists.service';
 import { LiveStageController } from './live/live-stage.controller';
 import { LiveStageHub } from './live/live-stage.hub';
 import { LiveStageService } from './live/live-stage.service';
+import { PublicRequestLimiter } from './share-links/public-request-limiter';
+import { PublicSharedSetlistController } from './share-links/public-shared-setlist.controller';
+import { ShareLinksController } from './share-links/share-links.controller';
+import { ShareLinksService } from './share-links/share-links.service';
 
 @Module({
   imports: [AuthModule, PrismaModule, PermissionsModule, NotificationsModule],
@@ -36,6 +40,8 @@ import { LiveStageService } from './live/live-stage.service';
     SetlistRoleRequirementsController,
     SetlistCuesController,
     LiveStageController,
+    ShareLinksController,
+    PublicSharedSetlistController,
   ],
   providers: [
     SetlistsRepository,
@@ -53,6 +59,8 @@ import { LiveStageService } from './live/live-stage.service';
     SetlistCuesService,
     LiveStageHub,
     LiveStageService,
+    ShareLinksService,
+    PublicRequestLimiter,
   ],
 })
 export class SetlistsModule {}

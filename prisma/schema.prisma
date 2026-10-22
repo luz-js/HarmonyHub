@@ -231,6 +231,7 @@ model User {
   songVersionRevisions SongVersionRevision[]
   createdSetlists     Setlist[]           @relation("SetlistCreatedBy")
   updatedSetlists     Setlist[]           @relation("SetlistUpdatedBy")
+  createdSetlistShareLinks SetlistShareLink[] @relation("SetlistShareLinkCreatedBy")
   addedSetlistParticipants  SetlistParticipant[] @relation("SetlistParticipantAddedBy")
   createdSetlistAssignments SetlistAssignment[]  @relation("SetlistAssignmentCreatedBy")
   createdSetlistCues        SetlistCue[]         @relation("SetlistCueCreatedBy")
@@ -250,6 +251,18 @@ model User {
 }
 
 /// Intentos fallidos de login por ip + correo (guardados como hash), compartidos por todas las instancias de la API.
+/// Limite de solicitudes por ip de las paginas publicas (enlaces compartidos). Igual que LoginAttempt, con la clave
+/// como hash: no quedan ips en claro.
+model PublicRequestLimit {
+  keyHash      String    @id
+  count        Int       @default(0)
+  windowStart  DateTime
+  blockedUntil DateTime?
+  updatedAt    DateTime
+
+  @@index([updatedAt])
+}
+
 model LoginAttempt {
   keyHash      String    @id
   count        Int       @default(0)
@@ -789,12 +802,32 @@ model Setlist {
   files          File[]
   participants   SetlistParticipant[]
   cues           SetlistCue[]
+  shareLinks     SetlistShareLink[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
   @@index([organizationId, status])
   @@index([organizationId, name])
   @@index([organizationId, updatedAt])
+}
+
+/// Enlace de solo lectura de un setlist para verlo sin cuenta. Solo se guarda el hash del token: el enlace completo
+/// se muestra una sola vez, al crearlo.
+model SetlistShareLink {
+  id             String    @id @default(cuid())
+  setlistId      String
+  tokenHash      String    @unique
+  /// Sin fecha: no vence (hasta que lo revoquen).
+  expiresAt      DateTime?
+  revokedAt      DateTime?
+  lastAccessedAt DateTime?
+  accessCount    Int       @default(0)
+  createdById    String?
+  setlist        Setlist   @relation(fields: [setlistId], references: [id], onDelete: Cascade)
+  createdBy      User?     @relation("SetlistShareLinkCreatedBy", fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt      DateTime  @default(now())
+
+  @@index([setlistId, revokedAt])
 }
 
 model SetlistItem {

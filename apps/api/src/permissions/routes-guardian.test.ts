@@ -10,6 +10,7 @@ import { listRoutes } from './route-catalog';
 export const EXEMPT_ROUTES: Record<string, string> = {
   'AuthController.login': 'Publica: todavia no hay sesion.',
   'AuthController.register': 'Publica: todavia no hay sesion.',
+  'PublicSharedSetlistController.shared': 'Publica: el token del enlace compartido es la llave (limite por ip, 404 generico).',
   'AuthController.me': 'Datos del propio usuario; no depende de una organizacion.',
   'AuthController.refresh': 'Renueva la sesion con la cookie httpOnly; el access token ya vencio y no hay organizacion que verificar.',
   'AuthController.logout': 'Cierra la sesion de la cookie; no depende de una organizacion.',
