@@ -1,7 +1,7 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { MembershipRole, Prisma, SongNoteVisibility } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { ARCHIVED_ORGANIZATION_MESSAGE, WRITES_ALLOWED_WHEN_ARCHIVED, Permission, PERMISSION_DENIED_MESSAGE, roleCan } from './permission-table';
+import { ARCHIVED_ORGANIZATION_MESSAGE, effectiveRoleCan, WRITES_ALLOWED_WHEN_ARCHIVED, Permission, PERMISSION_DENIED_MESSAGE, roleCan } from './permission-table';
 
 export type { Permission } from './permission-table';
 
@@ -115,10 +115,14 @@ export class PermissionsService {
     return membership;
   }
 
-  /** Lo usa PermissionsGuard; los servicios solo lo llaman cuando la organizacion sale del dato (excepciones documentadas). */
+  /**
+   * Lo usa PermissionsGuard; los servicios solo lo llaman cuando la organizacion sale del dato (excepciones documentadas).
+   * Usa la tabla por defecto con los cambios que el propietario guardo para esa organizacion (una consulta por pedido).
+   */
   async assertPermission(userId: string, organizationId: string, permission: Permission) {
     const membership = await this.assertOrganizationMember(userId, organizationId);
-    if (!this.can(membership.role, permission)) {
+    const overrides = membership.role === 'OWNER' ? [] : await this.prisma.rolePermissionOverride.findMany({ where: { organizationId, role: membership.role }, select: { role: true, permission: true, granted: true } });
+    if (!effectiveRoleCan(membership.role, permission, overrides)) {
       throw new ForbiddenException(PERMISSION_DENIED_MESSAGE);
     }
     return membership;

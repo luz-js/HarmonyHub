@@ -16,6 +16,7 @@ type UpdateArgs = { where: { id: string }; data: Record<string, unknown> };
 function makeService(memberships: FakeMembership[]) {
   const updates: { id: string; data: unknown }[] = [];
   const prisma = {
+    rolePermissionOverride: { findMany: async () => [] },
     membership: {
       async findUnique({ where }: FindUniqueArgs) {
         // Incluye la organizacion (no archivada), como la consulta real.

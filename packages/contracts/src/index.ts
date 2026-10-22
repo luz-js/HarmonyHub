@@ -16,3 +16,4 @@ export * from './live-stage';
 export * from './chordpro';
 export * from './share-links';
 export * from './stats';
+export * from './role-permissions';

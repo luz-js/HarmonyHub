@@ -360,6 +360,7 @@ model Organization {
   archivedAt   DateTime?
   archivedById String?
   archivedBy   User?            @relation("OrganizationArchiver", fields: [archivedById], references: [id], onDelete: SetNull)
+  rolePermissionOverrides RolePermissionOverride[]
   activeForUsers User[]          @relation("UserActiveOrganization")
   notifications  Notification[]
   memberships  Membership[]
@@ -376,6 +377,22 @@ model Organization {
   updatedAt    DateTime         @updatedAt
 
   @@index([slug])
+}
+
+/// Cambio de un permiso para un rol en una organizacion, sobre la tabla por defecto (permission-table.ts).
+/// Sin filas, la organizacion usa los valores por defecto.
+model RolePermissionOverride {
+  id             String         @id @default(cuid())
+  organizationId String
+  role           MembershipRole
+  permission     String
+  granted        Boolean
+  updatedById    String?
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  updatedAt      DateTime       @updatedAt
+
+  @@unique([organizationId, role, permission])
+  @@index([organizationId, role])
 }
 
 model Membership {

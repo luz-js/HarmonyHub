@@ -3,6 +3,7 @@ import { AuthModule } from './auth/auth.module';
 import { AvailabilityModule } from './availability/availability.module';
 import { DashboardModule } from './dashboard/dashboard.module';
 import { StatsModule } from './stats/stats.module';
+import { RolePermissionsModule } from './permissions/settings/role-permissions.module';
 import { EventsModule } from './events/events.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { OrganizationsModule } from './organizations/organizations.module';
@@ -13,6 +14,6 @@ import { SetlistsModule } from './setlists/setlists.module';
 import { SongsModule } from './songs/songs.module';
 
 @Module({
-  imports: [PrismaModule, PermissionsModule, AuthModule, SongsModule, SetlistsModule, EventsModule, DashboardModule, OrganizationsModule, ProfileModule, NotificationsModule, AvailabilityModule, StatsModule],
+  imports: [PrismaModule, PermissionsModule, AuthModule, SongsModule, SetlistsModule, EventsModule, DashboardModule, OrganizationsModule, ProfileModule, NotificationsModule, AvailabilityModule, StatsModule, RolePermissionsModule],
 })
 export class AppModule {}
