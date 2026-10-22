@@ -1,5 +1,4 @@
 import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { MembershipRole } from '@prisma/client';
 import { z } from 'zod';
 import { PermissionsService } from '../permissions/permissions.service';
 import { clean } from '../shared/object.utils';
@@ -14,6 +13,7 @@ import {
   isEventLocked,
 } from './event.utils';
 import { EventsRepository } from './events.repository';
+import type { OrgMember } from '../permissions/current-membership.decorator';
 
 const eventStatusSchema = z.enum(['DRAFT', 'PENDING', 'CONFIRMED', 'CANCELLED', 'FINISHED']);
 const attendanceStatusSchema = z.enum(['PENDING', 'CONFIRMED', 'DECLINED']);
@@ -69,8 +69,8 @@ export class EventsService {
     @Inject(PermissionsService) private readonly permissions: PermissionsService,
   ) {}
 
-  async list(userId: string, organizationId: string, query: Record<string, unknown>) {
-    await this.assertRole(userId, organizationId, (role) => this.permissions.canViewEvents(role), 'No tienes permisos para ver eventos');
+  async list(member: OrgMember, query: Record<string, unknown>) {
+    const { userId, organizationId } = member;
 
     const parsed = listQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Filtros invalidos');
@@ -91,13 +91,13 @@ export class EventsService {
     };
   }
 
-  async detail(userId: string, organizationId: string, id: string) {
-    await this.assertRole(userId, organizationId, (role) => this.permissions.canViewEvents(role), 'No tienes permisos para ver eventos');
+  async detail(member: OrgMember, id: string) {
+    const { userId, organizationId } = member;
     return mapEventDetail(await this.findOwnedEvent(organizationId, id), userId);
   }
 
-  async create(userId: string, organizationId: string, body: Record<string, unknown>) {
-    await this.assertManage(userId, organizationId);
+  async create(member: OrgMember, body: Record<string, unknown>) {
+    const { userId, organizationId } = member;
     const parsed = createEventSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
@@ -117,8 +117,8 @@ export class EventsService {
     return mapEventDetail(created, userId);
   }
 
-  async update(userId: string, organizationId: string, id: string, body: Record<string, unknown>) {
-    await this.assertManage(userId, organizationId);
+  async update(member: OrgMember, id: string, body: Record<string, unknown>) {
+    const { userId, organizationId } = member;
     const current = await this.findOwnedEvent(organizationId, id);
     const parsed = updateEventSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
@@ -160,15 +160,15 @@ export class EventsService {
     return mapEventDetail(updated, userId);
   }
 
-  async delete(userId: string, organizationId: string, id: string) {
-    await this.assertRole(userId, organizationId, (role) => this.permissions.canDeleteEvents(role), 'No tienes permisos para eliminar eventos');
+  async delete(member: OrgMember, id: string) {
+    const { organizationId } = member;
     await this.findOwnedEvent(organizationId, id);
     await this.eventsRepository.delete(id);
     return { ok: true };
   }
 
-  async addMusician(userId: string, organizationId: string, eventId: string, body: Record<string, unknown>) {
-    await this.assertManage(userId, organizationId);
+  async addMusician(member: OrgMember, eventId: string, body: Record<string, unknown>) {
+    const { organizationId } = member;
     const event = await this.findOwnedEvent(organizationId, eventId);
     this.assertEditableTeam(event.status as EventStatus);
 
@@ -187,11 +187,11 @@ export class EventsService {
       instrument: parsed.data.instrument || null,
       note: parsed.data.note || null,
     });
-    return this.detail(userId, organizationId, eventId);
+    return this.detail(member, eventId);
   }
 
-  async updateMusician(userId: string, organizationId: string, eventId: string, musicianId: string, body: Record<string, unknown>) {
-    const membership = await this.permissions.assertOrganizationMember(userId, organizationId);
+  async updateMusician(member: OrgMember, eventId: string, musicianId: string, body: Record<string, unknown>) {
+    const { userId, organizationId } = member;
     const event = await this.findOwnedEvent(organizationId, eventId);
     this.assertEditableTeam(event.status as EventStatus);
 
@@ -202,8 +202,8 @@ export class EventsService {
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
     const isSelf = musician.membership.userId === userId;
-    const canManage = this.permissions.canManageEvents(membership.role);
-    if (parsed.data.status && !this.permissions.canUpdateEventAttendance(membership.role, isSelf)) {
+    const canManage = this.permissions.can(member.role, 'events.manage');
+    if (parsed.data.status && !this.permissions.canUpdateEventAttendance(member.role, isSelf)) {
       throw new ForbiddenException('Solo puedes responder tu propia asistencia');
     }
     if ((parsed.data.instrument !== undefined || parsed.data.note !== undefined) && !canManage && !isSelf) {
@@ -221,11 +221,11 @@ export class EventsService {
         note: parsed.data.note === undefined ? undefined : parsed.data.note || null,
       }),
     );
-    return this.detail(userId, organizationId, eventId);
+    return this.detail(member, eventId);
   }
 
-  async removeMusician(userId: string, organizationId: string, eventId: string, musicianId: string) {
-    await this.assertManage(userId, organizationId);
+  async removeMusician(member: OrgMember, eventId: string, musicianId: string) {
+    const { organizationId } = member;
     const event = await this.findOwnedEvent(organizationId, eventId);
     this.assertEditableTeam(event.status as EventStatus);
 
@@ -233,7 +233,7 @@ export class EventsService {
     if (!musician) throw new NotFoundException('Musico no encontrado en el evento');
 
     await this.eventsRepository.removeMusician(musicianId);
-    return this.detail(userId, organizationId, eventId);
+    return this.detail(member, eventId);
   }
 
   private async findOwnedEvent(organizationId: string, id: string) {
@@ -260,15 +260,5 @@ export class EventsService {
 
   private assertEditableTeam(status: EventStatus) {
     if (isEventLocked(status)) throw new BadRequestException('El equipo de un evento cancelado o terminado no se puede modificar');
-  }
-
-  private assertManage(userId: string, organizationId: string) {
-    return this.assertRole(userId, organizationId, (role) => this.permissions.canManageEvents(role), 'No tienes permisos para gestionar eventos');
-  }
-
-  private async assertRole(userId: string, organizationId: string, canAccess: (role: MembershipRole) => boolean, message: string) {
-    const membership = await this.permissions.assertOrganizationMember(userId, organizationId);
-    if (!canAccess(membership.role)) throw new ForbiddenException(message);
-    return membership;
   }
 }

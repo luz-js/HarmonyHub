@@ -1,66 +1,73 @@
-import { Body, Controller, Delete, Get, Headers, Inject, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../auth/auth.guard';
-import { CurrentUser, CurrentUserPayload } from '../auth/current-user.decorator';
 import { EventsService } from './events.service';
+import { CurrentMembership, OrgMember } from '../permissions/current-membership.decorator';
+import { PermissionsGuard } from '../permissions/permissions.guard';
+import { RequirePermission } from '../permissions/require-permission.decorator';
 
 @Controller('api/events')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, PermissionsGuard)
 export class EventsController {
   constructor(@Inject(EventsService) private readonly eventsService: EventsService) {}
 
   @Get()
-  list(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Query() query: Record<string, unknown>) {
-    return this.eventsService.list(user.id, organizationId, query);
+  @RequirePermission('read')
+  list(@CurrentMembership() member: OrgMember, @Query() query: Record<string, unknown>) {
+    return this.eventsService.list(member, query);
   }
 
   @Get(':id')
-  detail(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string) {
-    return this.eventsService.detail(user.id, organizationId, id);
+  @RequirePermission('read')
+  detail(@CurrentMembership() member: OrgMember, @Param('id') id: string) {
+    return this.eventsService.detail(member, id);
   }
 
   @Post()
-  create(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Body() body: Record<string, unknown>) {
-    return this.eventsService.create(user.id, organizationId, body ?? {});
+  @RequirePermission('events.manage')
+  create(@CurrentMembership() member: OrgMember, @Body() body: Record<string, unknown>) {
+    return this.eventsService.create(member, body ?? {});
   }
 
   @Patch(':id')
-  update(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.eventsService.update(user.id, organizationId, id, body ?? {});
+  @RequirePermission('events.manage')
+  update(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
+    return this.eventsService.update(member, id, body ?? {});
   }
 
   @Delete(':id')
-  remove(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('id') id: string) {
-    return this.eventsService.delete(user.id, organizationId, id);
+  @RequirePermission('events.delete')
+  remove(@CurrentMembership() member: OrgMember, @Param('id') id: string) {
+    return this.eventsService.delete(member, id);
   }
 
   @Post(':id/musicians')
+  @RequirePermission('events.manage')
   addMusician(
-    @CurrentUser() user: CurrentUserPayload,
-    @Headers('x-organization-id') organizationId: string,
+    @CurrentMembership() member: OrgMember,
     @Param('id') id: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return this.eventsService.addMusician(user.id, organizationId, id, body ?? {});
+    return this.eventsService.addMusician(member, id, body ?? {});
   }
 
   @Patch(':id/musicians/:musicianId')
+  @RequirePermission('read')
   updateMusician(
-    @CurrentUser() user: CurrentUserPayload,
-    @Headers('x-organization-id') organizationId: string,
+    @CurrentMembership() member: OrgMember,
     @Param('id') id: string,
     @Param('musicianId') musicianId: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return this.eventsService.updateMusician(user.id, organizationId, id, musicianId, body ?? {});
+    return this.eventsService.updateMusician(member, id, musicianId, body ?? {});
   }
 
   @Delete(':id/musicians/:musicianId')
+  @RequirePermission('events.manage')
   removeMusician(
-    @CurrentUser() user: CurrentUserPayload,
-    @Headers('x-organization-id') organizationId: string,
+    @CurrentMembership() member: OrgMember,
     @Param('id') id: string,
     @Param('musicianId') musicianId: string,
   ) {
-    return this.eventsService.removeMusician(user.id, organizationId, id, musicianId);
+    return this.eventsService.removeMusician(member, id, musicianId);
   }
 }
