@@ -1,6 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import {
-  Bell,
+  Activity,
   CalendarDays,
   CalendarRange,
   FolderOpen,
@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { getInitials } from '../features/dashboard/utils';
 import { useMyInvitations } from '../features/invitations/hooks';
+import { NotificationBell } from '../features/notifications/components/NotificationBell';
 import { OrganizationSwitcher } from './OrganizationSwitcher';
 import { getRoleLabel } from './session';
 import type { AppOrganization, AppUser, Navigate } from './types';
@@ -33,7 +34,7 @@ const navItems: NavItem[] = [
   { href: '/calendar', label: 'Calendario', icon: CalendarRange },
   { href: '/musicians', label: 'Músicos', icon: Users },
   { href: '/archives', label: 'Archivos', icon: FolderOpen },
-  { href: '/notifications', label: 'Actividad', icon: Bell },
+  { href: '/activity', label: 'Actividad', icon: Activity },
 ];
 
 const settingsItem: NavItem = { href: '/settings', label: 'Ajustes', icon: Settings };
@@ -326,9 +327,12 @@ export function Shell({
   return (
     <div className="min-h-screen bg-background text-white">
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[256px] flex-col gap-6 border-r border-[#23252A] bg-[#0C0D0F] px-4 py-6 lg:flex">
-        <NavLink href="/" navigate={navigate} className="px-2">
-          <Logo />
-        </NavLink>
+        <div className="flex items-center justify-between gap-2 px-2">
+          <NavLink href="/" navigate={navigate}>
+            <Logo />
+          </NavLink>
+          <NotificationBell navigate={navigate} placement="sidebar" />
+        </div>
 
         <OrganizationSwitcher user={user} onSwitch={onSwitchOrganization} onCreateNew={() => navigate('/onboarding')} />
 
@@ -350,6 +354,7 @@ export function Shell({
           <span className="sr-only">Inicio</span>
         </NavLink>
         <OrganizationSwitcher user={user} onSwitch={onSwitchOrganization} onCreateNew={() => navigate('/onboarding')} variant="compact" />
+        <NotificationBell navigate={navigate} placement="topbar" />
         <AccountMenu user={user} navigate={navigate} onLogout={onLogout} placement="topbar" />
       </header>
 

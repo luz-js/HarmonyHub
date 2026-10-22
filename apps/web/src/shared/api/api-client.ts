@@ -1,5 +1,7 @@
 import type {
   AcceptedInvitation,
+  AppNotification,
+  NotificationsPage,
   CreateInvitationInput,
   MyInvitation,
   CurrentUser,
@@ -93,6 +95,27 @@ export function getCurrentUser() {
 /** Cierra la sesion en el servidor (revoca el refresh token de la cookie). Si falla, el cierre local sigue igual. */
 export function logoutRequest() {
   return http<{ ok: boolean }>('/api/auth/logout', { method: 'POST' }).catch(() => null);
+}
+
+/** Avisos de la persona: los de la organizacion activa y sus invitaciones. Paginado por cursor. */
+export function getNotifications(options: { cursor?: string | null; limit?: number } = {}) {
+  const params = new URLSearchParams();
+  if (options.cursor) params.set('cursor', options.cursor);
+  if (options.limit) params.set('limit', String(options.limit));
+  const query = params.toString();
+  return http<NotificationsPage>(`/api/notifications${query ? `?${query}` : ''}`);
+}
+
+export function getUnreadNotificationsCount() {
+  return http<{ unread: number }>('/api/notifications/unread-count');
+}
+
+export function markNotificationRead(id: string) {
+  return http<AppNotification>(`/api/notifications/${encodeURIComponent(id)}/read`, { method: 'PATCH' });
+}
+
+export function markAllNotificationsRead() {
+  return http<{ updated: number }>('/api/notifications/read-all', { method: 'POST' });
 }
 
 /** Guarda en la cuenta la organizacion activa, para abrirla en cualquier dispositivo. */

@@ -94,7 +94,7 @@ export function DashboardPage({ user, navigate }: { user: User; navigate: Naviga
         <section className="panel p-5 sm:p-6">
           <div className="mb-5 flex items-center justify-between gap-3">
             <h2 className="section-title">Actividad</h2>
-            <button className="text-[15px] font-semibold text-primary hover:text-primary-soft" onClick={() => navigate('/notifications')}>Ver todo</button>
+            <button className="text-[15px] font-semibold text-primary hover:text-primary-soft" onClick={() => navigate('/activity')}>Ver todo</button>
           </div>
           <ActivityFeed
             items={summary?.recentActivity || []}

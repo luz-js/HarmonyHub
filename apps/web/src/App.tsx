@@ -12,6 +12,7 @@ import { OnboardingPage } from './app/OnboardingPage';
 import { WelcomeHome } from './app/WelcomeHome';
 import { ArchivesPage } from './features/files';
 import { MyInvitationsPage } from './features/invitations';
+import { NotificationsPage } from './features/notifications';
 import { ArchivedOrganizationBanner } from './features/organizations/components/ArchivedOrganizationBanner';
 import { OrganizationSettings } from './features/organizations/components/OrganizationSettings';
 import { MusiciansPage } from './features/musicians';
@@ -45,7 +46,8 @@ function resolvePage(path: string, user: AppUser, navigate: Navigate, onProfileU
     '/musicians': <MusiciansPage organizationId={user.currentOrganizationId || ''} currentUserId={user.id} currentRole={user.role} />,
     '/archives': <ArchivesPage organizationId={user.currentOrganizationId || ''} navigate={navigate} />,
     '/calendar': <CalendarPage navigate={navigate} />,
-    '/notifications': <ActivityPage navigate={navigate} />,
+    '/activity': <ActivityPage navigate={navigate} />,
+    '/notifications': <NotificationsPage navigate={navigate} />,
     '/settings': <SettingsPage />,
     '/profile': <ProfilePage onUserUpdated={onProfileUpdated} />,
   };

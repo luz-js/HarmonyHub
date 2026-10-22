@@ -5,6 +5,7 @@ export const appRoutes = {
   setlists: '/setlists',
   musicians: '/musicians',
   archives: '/archives',
+  activity: '/activity',
   notifications: '/notifications',
   settings: '/settings',
 } as const;
