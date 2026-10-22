@@ -1,4 +1,4 @@
-import type { SetlistCueType } from '@prisma/client';
+import type { SetlistCuePhase, SetlistCuePriority, SetlistCueStatus, SetlistCueType, SetlistParticipantStatus } from '@prisma/client';
 import type { UserInstrumentRef } from '../../shared/user-instruments';
 import { getCueCategory } from './setlist-cue.utils';
 
@@ -6,7 +6,7 @@ type MapperUserRef = { id: string; name: string };
 
 type MapperParticipantRef = {
   id: string;
-  status: string;
+  status: SetlistParticipantStatus;
   membership: { id: string; user: { id: string; name: string; avatarUrl: string | null; instruments: UserInstrumentRef[] } };
 };
 
@@ -17,9 +17,9 @@ type MapperCue = {
   setlistId: string;
   setlistItemId: string | null;
   type: SetlistCueType;
-  phase: string;
-  status: string;
-  priority: string;
+  phase: SetlistCuePhase;
+  status: SetlistCueStatus;
+  priority: SetlistCuePriority;
   title: string;
   description: string | null;
   offsetSec: number | null;

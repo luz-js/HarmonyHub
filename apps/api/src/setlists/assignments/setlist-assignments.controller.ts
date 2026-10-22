@@ -1,4 +1,13 @@
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  copySetlistAssignmentsSchema,
+  createSetlistAssignmentSchema,
+  updateSetlistAssignmentSchema,
+  type CopySetlistAssignmentsData,
+  type CreateSetlistAssignmentData,
+  type UpdateSetlistAssignmentData,
+} from '@harmonyhub/contracts';
+import { ZodPipe } from '../../shared/zod.pipe';
 import { AuthGuard } from '../../auth/auth.guard';
 import { SetlistAssignmentsService } from './setlist-assignments.service';
 import { CurrentMembership, OrgMember } from '../../permissions/current-membership.decorator';
@@ -32,9 +41,9 @@ export class SetlistAssignmentsController {
     @CurrentMembership() member: OrgMember,
     @Param('setlistId') setlistId: string,
     @Param('itemId') itemId: string,
-    @Body() body: Record<string, unknown>,
+    @Body(new ZodPipe(createSetlistAssignmentSchema)) body: CreateSetlistAssignmentData,
   ) {
-    return this.assignmentsService.create(member, setlistId, itemId, body ?? {});
+    return this.assignmentsService.create(member, setlistId, itemId, body);
   }
 
   // POST .../assignments/copy debe registrarse antes que rutas con :assignmentId dinamico
@@ -45,9 +54,9 @@ export class SetlistAssignmentsController {
     @CurrentMembership() member: OrgMember,
     @Param('setlistId') setlistId: string,
     @Param('itemId') itemId: string,
-    @Body() body: Record<string, unknown>,
+    @Body(new ZodPipe(copySetlistAssignmentsSchema)) body: CopySetlistAssignmentsData,
   ) {
-    return this.assignmentsService.copy(member, setlistId, itemId, body ?? {});
+    return this.assignmentsService.copy(member, setlistId, itemId, body);
   }
 
   @Patch(':setlistId/items/:itemId/assignments/:assignmentId')
@@ -57,9 +66,9 @@ export class SetlistAssignmentsController {
     @Param('setlistId') setlistId: string,
     @Param('itemId') itemId: string,
     @Param('assignmentId') assignmentId: string,
-    @Body() body: Record<string, unknown>,
+    @Body(new ZodPipe(updateSetlistAssignmentSchema)) body: UpdateSetlistAssignmentData,
   ) {
-    return this.assignmentsService.update(member, setlistId, itemId, assignmentId, body ?? {});
+    return this.assignmentsService.update(member, setlistId, itemId, assignmentId, body);
   }
 
   @Patch(':setlistId/items/:itemId/assignments/:assignmentId/preparation')
@@ -69,9 +78,10 @@ export class SetlistAssignmentsController {
     @Param('setlistId') setlistId: string,
     @Param('itemId') itemId: string,
     @Param('assignmentId') assignmentId: string,
-    @Body() body: Record<string, unknown>,
+    // Sin ZodPipe: el servicio valida despues de comprobar que la asignacion es de quien la cambia (403 primero).
+    @Body() body: unknown,
   ) {
-    return this.assignmentsService.updatePreparation(member, setlistId, itemId, assignmentId, body ?? {});
+    return this.assignmentsService.updatePreparation(member, setlistId, itemId, assignmentId, body);
   }
 
   @Delete(':setlistId/items/:itemId/assignments/:assignmentId')

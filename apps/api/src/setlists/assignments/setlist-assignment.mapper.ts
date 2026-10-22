@@ -1,13 +1,14 @@
+import type { AssignmentPreparationStatus, MembershipRole, SetlistMusicalRole, SetlistParticipantStatus } from '@prisma/client';
 import type { UserInstrumentRef } from '../../shared/user-instruments';
 
 /** `instruments` = lo que la persona sabe tocar segun su perfil (principal primero). */
 type MapperUserRef = { id: string; name: string; email?: string; avatarUrl: string | null; instruments: UserInstrumentRef[] };
 
-type MapperMembership = { id: string; role: string; status?: string; user: MapperUserRef };
+type MapperMembership = { id: string; role: MembershipRole; status?: string; user: MapperUserRef };
 
 type MapperParticipant = {
   id: string;
-  status: string;
+  status: SetlistParticipantStatus;
   generalRole: string | null;
   generalNote: string | null;
   createdAt: Date;
@@ -45,19 +46,19 @@ type MapperAssignment = {
   id: string;
   setlistItemId: string;
   participantId: string;
-  role: string;
+  role: SetlistMusicalRole;
   instrument: string | null;
   label: string | null;
   isPrimary: boolean;
   isRequired: boolean;
-  preparationStatus: string;
+  preparationStatus: AssignmentPreparationStatus;
   preparationNote: string | null;
   sortOrder: number;
   createdAt: Date;
   updatedAt: Date;
   participant: {
     id: string;
-    status: string;
+    status: SetlistParticipantStatus;
     membership: { id: string; user: Omit<MapperUserRef, 'email'> };
   };
 };
@@ -91,7 +92,7 @@ export function mapSetlistAssignment(assignment: MapperAssignment) {
 type MapperRequirement = {
   id: string;
   setlistItemId: string;
-  role: string;
+  role: SetlistMusicalRole;
   label: string | null;
   minimumCount: number;
   isRequired: boolean;

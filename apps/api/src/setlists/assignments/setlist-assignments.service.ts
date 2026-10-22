@@ -1,43 +1,16 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { z } from 'zod';
+import { updateAssignmentPreparationSchema, type CopySetlistAssignmentsData, type CreateSetlistAssignmentData, type UpdateSetlistAssignmentData } from '@harmonyhub/contracts';
+import { parseOrBadRequest } from '../../shared/zod.pipe';
 import { PermissionsService } from '../../permissions/permissions.service';
 import { SetlistItemsRepository } from '../items/setlist-items.repository';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { SetlistsAccessService } from '../setlists-access.service';
 import { mapSetlistAssignment, mapSetlistParticipant, mapSetlistRoleRequirement } from './setlist-assignment.mapper';
-import { ASSIGNMENT_PREPARATION_STATUSES, computeCoverage, COPY_ASSIGNMENTS_MODES, SETLIST_MUSICAL_ROLES } from './setlist-assignment.utils';
+import { computeCoverage } from './setlist-assignment.utils';
 import { SetlistAssignmentsRepository } from './setlist-assignments.repository';
 import { SetlistParticipantsRepository } from './setlist-participants.repository';
 import { SetlistRoleRequirementsRepository } from './setlist-role-requirements.repository';
 import type { OrgMember } from '../../permissions/current-membership.decorator';
-
-const createAssignmentSchema = z.object({
-  participantId: z.string().trim().min(1),
-  role: z.enum(SETLIST_MUSICAL_ROLES),
-  instrument: z.string().trim().max(80).optional().nullable(),
-  label: z.string().trim().max(120).optional().nullable(),
-  isPrimary: z.boolean().optional(),
-  isRequired: z.boolean().optional(),
-});
-
-const updateAssignmentSchema = z.object({
-  role: z.enum(SETLIST_MUSICAL_ROLES).optional(),
-  instrument: z.string().trim().max(80).optional().nullable(),
-  label: z.string().trim().max(120).optional().nullable(),
-  isPrimary: z.boolean().optional(),
-  isRequired: z.boolean().optional(),
-});
-
-const preparationSchema = z.object({
-  preparationStatus: z.enum(ASSIGNMENT_PREPARATION_STATUSES),
-  preparationNote: z.string().trim().max(2000).optional().nullable(),
-});
-
-const copySchema = z.object({
-  sourceItemId: z.string().trim().min(1),
-  mode: z.enum(COPY_ASSIGNMENTS_MODES).optional(),
-  replaceExisting: z.boolean().optional(),
-});
 
 @Injectable()
 export class SetlistAssignmentsService {
@@ -58,26 +31,23 @@ export class SetlistAssignmentsService {
     return assignments.map(mapSetlistAssignment);
   }
 
-  async create(member: OrgMember, setlistId: string, itemId: string, body: Record<string, unknown>) {
+  async create(member: OrgMember, setlistId: string, itemId: string, data: CreateSetlistAssignmentData) {
     const { userId, organizationId } = member;
     const item = await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
     const setlist = await this.access.assertSetlistInOrg(organizationId, setlistId);
 
-    const parsed = createAssignmentSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-
-    const participant = await this.assignmentsRepository.findParticipantInSetlist(setlistId, parsed.data.participantId);
+    const participant = await this.assignmentsRepository.findParticipantInSetlist(setlistId, data.participantId);
     if (!participant) throw new BadRequestException('El participante no pertenece a este setlist');
 
     const sortOrder = await this.assignmentsRepository.countByItem(itemId);
     const created = await this.assignmentsRepository.create({
       setlistItemId: itemId,
-      participantId: parsed.data.participantId,
-      role: parsed.data.role,
-      instrument: parsed.data.instrument ?? null,
-      label: parsed.data.label ?? null,
-      isPrimary: parsed.data.isPrimary ?? false,
-      isRequired: parsed.data.isRequired ?? true,
+      participantId: data.participantId,
+      role: data.role,
+      instrument: data.instrument ?? null,
+      label: data.label ?? null,
+      isPrimary: data.isPrimary ?? false,
+      isRequired: data.isRequired ?? true,
       sortOrder,
       createdById: userId,
     });
@@ -89,15 +59,12 @@ export class SetlistAssignmentsService {
     return mapSetlistAssignment(created);
   }
 
-  async update(member: OrgMember, setlistId: string, itemId: string, assignmentId: string, body: Record<string, unknown>) {
+  async update(member: OrgMember, setlistId: string, itemId: string, assignmentId: string, data: UpdateSetlistAssignmentData) {
     const { organizationId } = member;
     await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
     const existing = await this.findAssignment(itemId, assignmentId);
 
-    const parsed = updateAssignmentSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-
-    const updated = await this.assignmentsRepository.update(assignmentId, itemId, parsed.data.role ?? existing.role, parsed.data);
+    const updated = await this.assignmentsRepository.update(assignmentId, itemId, data.role ?? existing.role, data);
     return mapSetlistAssignment(updated);
   }
 
@@ -110,7 +77,7 @@ export class SetlistAssignmentsService {
     return { ok: true };
   }
 
-  async updatePreparation(member: OrgMember, setlistId: string, itemId: string, assignmentId: string, body: Record<string, unknown>) {
+  async updatePreparation(member: OrgMember, setlistId: string, itemId: string, assignmentId: string, body: unknown) {
     const { userId, organizationId } = member;
     await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
     const existing = await this.findAssignment(itemId, assignmentId);
@@ -119,24 +86,20 @@ export class SetlistAssignmentsService {
     const allowed = this.permissions.canUpdateOwnPreparationStatus(isOwnAssignment) || this.permissions.canUpdateAnyPreparationStatus(member.role);
     if (!allowed) throw new ForbiddenException('No puedes actualizar el estado de preparacion de otro musico');
 
-    const parsed = preparationSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-
-    const updated = await this.assignmentsRepository.updatePreparation(assignmentId, parsed.data.preparationStatus, parsed.data.preparationNote);
+    // Se valida aqui y no con ZodPipe: quien no tiene permiso recibe 403 aunque el cuerpo sea invalido.
+    const data = parseOrBadRequest(updateAssignmentPreparationSchema, body);
+    const updated = await this.assignmentsRepository.updatePreparation(assignmentId, data.preparationStatus, data.preparationNote);
     return mapSetlistAssignment(updated);
   }
 
-  async copy(member: OrgMember, setlistId: string, itemId: string, body: Record<string, unknown>) {
+  async copy(member: OrgMember, setlistId: string, itemId: string, data: CopySetlistAssignmentsData) {
     const { organizationId } = member;
     await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
 
-    const parsed = copySchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-
-    const source = await this.itemsRepository.findItem(setlistId, parsed.data.sourceItemId);
+    const source = await this.itemsRepository.findItem(setlistId, data.sourceItemId);
     if (!source) throw new BadRequestException('El item de origen no pertenece a este setlist');
 
-    const copied = await this.assignmentsRepository.copy(parsed.data.sourceItemId, itemId, parsed.data.mode ?? 'ALL', parsed.data.replaceExisting ?? false);
+    const copied = await this.assignmentsRepository.copy(data.sourceItemId, itemId, data.mode ?? 'ALL', data.replaceExisting ?? false);
     return copied.map(mapSetlistAssignment);
   }
 

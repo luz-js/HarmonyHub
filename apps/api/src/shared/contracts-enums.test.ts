@@ -1,6 +1,15 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { $Enums } from '@prisma/client';
+import {
+  ASSIGNMENT_PREPARATION_STATUSES,
+  SETLIST_CUE_PHASES,
+  SETLIST_CUE_PRIORITIES,
+  SETLIST_CUE_STATUSES,
+  SETLIST_CUE_TYPES,
+  SETLIST_ITEM_TYPES,
+  SETLIST_PARTICIPANT_STATUSES,
+} from '@harmonyhub/contracts';
 import { ATTENDANCE_STATUSES, EVENT_STATUSES, SETLIST_STATUSES, INVITATION_STATUSES, MEMBERSHIP_ROLES, MEMBERSHIP_STATUSES, ORGANIZATION_TYPES, SETLIST_MUSICAL_ROLES } from '@harmonyhub/contracts';
 
 /** Los contratos copian los enums de Prisma (la web no puede importar Prisma): tienen que seguir iguales. */
@@ -12,6 +21,13 @@ const pairs: [string, readonly string[], Record<string, string>][] = [
   ['EventStatus', EVENT_STATUSES, $Enums.EventStatus],
   ['AttendanceStatus', ATTENDANCE_STATUSES, $Enums.AttendanceStatus],
   ['SetlistStatus', SETLIST_STATUSES, $Enums.SetlistStatus],
+  ['SetlistItemType', SETLIST_ITEM_TYPES, $Enums.SetlistItemType],
+  ['SetlistParticipantStatus', SETLIST_PARTICIPANT_STATUSES, $Enums.SetlistParticipantStatus],
+  ['AssignmentPreparationStatus', ASSIGNMENT_PREPARATION_STATUSES, $Enums.AssignmentPreparationStatus],
+  ['SetlistCueType', SETLIST_CUE_TYPES, $Enums.SetlistCueType],
+  ['SetlistCuePhase', SETLIST_CUE_PHASES, $Enums.SetlistCuePhase],
+  ['SetlistCueStatus', SETLIST_CUE_STATUSES, $Enums.SetlistCueStatus],
+  ['SetlistCuePriority', SETLIST_CUE_PRIORITIES, $Enums.SetlistCuePriority],
   ['SetlistMusicalRole', SETLIST_MUSICAL_ROLES, $Enums.SetlistMusicalRole],
 ];
 

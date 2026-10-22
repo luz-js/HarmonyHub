@@ -1,8 +1,9 @@
+import type { SetlistItemType, SetlistStatus } from '@prisma/client';
 import { resolveSetlistItemEffectiveValues } from './setlist.utils';
 
 type MapperSetlistItem = {
   id: string;
-  type: string;
+  type: SetlistItemType;
   title: string;
   description: string | null;
   order: number;
@@ -27,7 +28,7 @@ type MapperSetlistSummary = {
   id: string;
   name: string;
   description: string | null;
-  status: string;
+  status: SetlistStatus;
   isTemplate: boolean;
   estimatedSec: number;
   itemCount: number;
@@ -40,7 +41,7 @@ type MapperSetlistDetail = {
   id: string;
   name: string;
   description: string | null;
-  status: string;
+  status: SetlistStatus;
   isTemplate: boolean;
   estimatedSec: number;
   itemCount: number;

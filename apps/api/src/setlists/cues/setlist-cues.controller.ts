@@ -1,4 +1,15 @@
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  copySetlistCuesSchema,
+  createSetlistCueSchema,
+  reorderSetlistCuesSchema,
+  updateSetlistCueSchema,
+  type CopySetlistCuesData,
+  type CreateSetlistCueData,
+  type ReorderSetlistCuesData,
+  type UpdateSetlistCueData,
+} from '@harmonyhub/contracts';
+import { ZodPipe } from '../../shared/zod.pipe';
 import { AuthGuard } from '../../auth/auth.guard';
 import { SetlistCuesService } from './setlist-cues.service';
 import { CurrentMembership, OrgMember } from '../../permissions/current-membership.decorator';
@@ -32,9 +43,9 @@ export class SetlistCuesController {
     @CurrentMembership() member: OrgMember,
     @Param('setlistId') setlistId: string,
     @Param('itemId') itemId: string,
-    @Body() body: Record<string, unknown>,
+    @Body(new ZodPipe(copySetlistCuesSchema)) body: CopySetlistCuesData,
   ) {
-    return this.cuesService.copy(member, setlistId, itemId, body ?? {});
+    return this.cuesService.copy(member, setlistId, itemId, body);
   }
 
   @Get(':setlistId/cues')
@@ -48,9 +59,9 @@ export class SetlistCuesController {
   create(
     @CurrentMembership() member: OrgMember,
     @Param('setlistId') setlistId: string,
-    @Body() body: Record<string, unknown>,
+    @Body(new ZodPipe(createSetlistCueSchema)) body: CreateSetlistCueData,
   ) {
-    return this.cuesService.create(member, setlistId, body ?? {});
+    return this.cuesService.create(member, setlistId, body);
   }
 
   // PATCH .../cues/reorder debe registrarse antes que PATCH .../cues/:cueId
@@ -60,9 +71,9 @@ export class SetlistCuesController {
   reorder(
     @CurrentMembership() member: OrgMember,
     @Param('setlistId') setlistId: string,
-    @Body() body: Record<string, unknown>,
+    @Body(new ZodPipe(reorderSetlistCuesSchema)) body: ReorderSetlistCuesData,
   ) {
-    return this.cuesService.reorder(member, setlistId, body ?? {});
+    return this.cuesService.reorder(member, setlistId, body);
   }
 
   @Get(':setlistId/cues/:cueId')
@@ -81,9 +92,9 @@ export class SetlistCuesController {
     @CurrentMembership() member: OrgMember,
     @Param('setlistId') setlistId: string,
     @Param('cueId') cueId: string,
-    @Body() body: Record<string, unknown>,
+    @Body(new ZodPipe(updateSetlistCueSchema)) body: UpdateSetlistCueData,
   ) {
-    return this.cuesService.update(member, setlistId, cueId, body ?? {});
+    return this.cuesService.update(member, setlistId, cueId, body);
   }
 
   @Patch(':setlistId/cues/:cueId/status')

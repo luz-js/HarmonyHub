@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { z } from 'zod';
+import type { CreateSetlistData, SaveSetlistAsTemplateData, SetlistListQueryData, UpdateSetlistData } from '@harmonyhub/contracts';
 import type { OrgMember } from '../permissions/current-membership.decorator';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PermissionsService } from '../permissions/permissions.service';
@@ -11,37 +11,9 @@ import {
   assertTemplateAllowsAction,
   InvalidSetlistStatusTransitionError,
   InvalidSetlistTemplateActionError,
-  parseBooleanQueryParam,
   SetlistTemplateAction,
 } from './setlist.utils';
 import { SetlistsRepository } from './setlists.repository';
-
-const createSetlistSchema = z.object({
-  name: z.string().trim().min(1).max(150),
-  description: z.string().trim().max(2000).optional().nullable(),
-  status: z.enum(['DRAFT', 'READY', 'PUBLISHED']).optional(),
-  sourceTemplateId: z.string().trim().min(1).optional().nullable(),
-});
-
-const updateSetlistSchema = z.object({
-  name: z.string().trim().min(1).max(150).optional(),
-  description: z.string().trim().max(2000).optional().nullable(),
-  status: z.enum(['DRAFT', 'READY', 'PUBLISHED', 'ARCHIVED']).optional(),
-});
-
-const saveAsTemplateSchema = z.object({
-  name: z.string().trim().min(1).max(150),
-  description: z.string().trim().max(2000).optional().nullable(),
-});
-
-const listQuerySchema = z.object({
-  status: z.enum(['DRAFT', 'READY', 'PUBLISHED', 'ARCHIVED']).optional(),
-  search: z.string().trim().min(1).optional(),
-  includeArchived: z.preprocess(parseBooleanQueryParam, z.boolean().optional()),
-  isTemplate: z.preprocess(parseBooleanQueryParam, z.boolean().optional().default(false)),
-  page: z.coerce.number().int().min(1).optional().default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).optional().default(20),
-});
 
 type SetlistDetailForValidation = {
   isTemplate?: boolean;
@@ -57,13 +29,10 @@ export class SetlistsService {
     @Inject(NotificationsService) private readonly notifications: NotificationsService,
   ) {}
 
-  async list(member: OrgMember, query: Record<string, unknown>) {
+  async list(member: OrgMember, query: SetlistListQueryData) {
     const { organizationId } = member;
 
-    const parsed = listQuerySchema.safeParse(query);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Filtros invalidos');
-
-    const { page, pageSize, status, search, includeArchived, isTemplate } = parsed.data;
+    const { page, pageSize, status, search, includeArchived, isTemplate } = query;
     const { items, total } = await this.setlistsRepository.list(organizationId, {
       status,
       search,
@@ -87,22 +56,20 @@ export class SetlistsService {
     return mapSetlistDetail(await this.findOwnedDetail(organizationId, id));
   }
 
-  async create(member: OrgMember, body: Record<string, unknown>) {
+  async create(member: OrgMember, data: CreateSetlistData) {
     const { userId, organizationId } = member;
-    const parsed = createSetlistSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
-    if (parsed.data.sourceTemplateId) {
-      if (parsed.data.status && parsed.data.status !== 'DRAFT') {
+    if (data.sourceTemplateId) {
+      if (data.status && data.status !== 'DRAFT') {
         throw new BadRequestException('Un setlist creado desde plantilla siempre inicia en borrador');
       }
-      const template = await this.findOwnedDetail(organizationId, parsed.data.sourceTemplateId);
+      const template = await this.findOwnedDetail(organizationId, data.sourceTemplateId);
       if (!template.isTemplate) throw new BadRequestException('El setlist de origen no es una plantilla');
       const createdFromTemplate = await this.setlistsRepository.cloneSetlist({
         sourceSetlistId: template.id,
         organizationId,
-        name: parsed.data.name,
-        description: parsed.data.description ?? null,
+        name: data.name,
+        description: data.description ?? null,
         isTemplate: false,
         createdById: userId,
         updatedById: userId,
@@ -112,26 +79,24 @@ export class SetlistsService {
 
     const created = await this.setlistsRepository.create({
       organizationId,
-      name: parsed.data.name,
-      description: parsed.data.description ?? null,
-      status: parsed.data.status || 'DRAFT',
+      name: data.name,
+      description: data.description ?? null,
+      status: data.status || 'DRAFT',
       createdById: userId,
       updatedById: userId,
     });
     return mapSetlistDetail({ ...created, items: [] });
   }
 
-  async saveAsTemplate(member: OrgMember, id: string, body: Record<string, unknown>) {
+  async saveAsTemplate(member: OrgMember, id: string, data: SaveSetlistAsTemplateData) {
     const { userId, organizationId } = member;
     await this.findOwnedDetail(organizationId, id);
-    const parsed = saveAsTemplateSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
     const createdTemplate = await this.setlistsRepository.cloneSetlist({
       sourceSetlistId: id,
       organizationId,
-      name: parsed.data.name,
-      description: parsed.data.description ?? null,
+      name: data.name,
+      description: data.description ?? null,
       isTemplate: true,
       createdById: userId,
       updatedById: userId,
@@ -139,23 +104,21 @@ export class SetlistsService {
     return mapSetlistDetail(createdTemplate);
   }
 
-  async update(member: OrgMember, id: string, body: Record<string, unknown>) {
+  async update(member: OrgMember, id: string, data: UpdateSetlistData) {
     const { userId, organizationId } = member;
     const current = await this.findOwnedDetail(organizationId, id);
-    const parsed = updateSetlistSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
-    if (parsed.data.status && parsed.data.status !== current.status) {
+    if (data.status && data.status !== current.status) {
       this.assertTemplateAllows(current.isTemplate, 'status-change');
     }
 
-    if (parsed.data.status && parsed.data.status !== current.status) {
-      this.assertStatusChangeAllowed(member, current, parsed.data.status);
+    if (data.status && data.status !== current.status) {
+      this.assertStatusChangeAllowed(member, current, data.status);
     }
 
     await this.setlistsRepository.update(
       id,
-      clean({ name: parsed.data.name, description: parsed.data.description, status: parsed.data.status, updatedById: userId }),
+      clean({ name: data.name, description: data.description, status: data.status, updatedById: userId }),
     );
     return mapSetlistDetail(await this.findOwnedDetail(organizationId, id));
   }

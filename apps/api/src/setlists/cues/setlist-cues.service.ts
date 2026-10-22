@@ -1,5 +1,12 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { z } from 'zod';
+import {
+  updateSetlistCueStatusSchema,
+  type CopySetlistCuesData,
+  type CreateSetlistCueData,
+  type ReorderSetlistCuesData,
+  type UpdateSetlistCueData,
+} from '@harmonyhub/contracts';
+import { parseOrBadRequest } from '../../shared/zod.pipe';
 import { PermissionsService } from '../../permissions/permissions.service';
 import { clean } from '../../shared/object.utils';
 import { assertReorderPayloadValid } from '../setlist.utils';
@@ -11,67 +18,16 @@ import {
   buildCueWarnings,
   calculateCueTimelinePosition,
   calculateItemStartTimes,
-  CUE_CATEGORIES,
   getCueCategory,
   getCueMetadataSchema,
   isCriticalPriority,
   MAX_METADATA_JSON_LENGTH,
   normalizePhaseForItem,
-  SETLIST_CUE_PHASES,
-  SETLIST_CUE_PRIORITIES,
-  SETLIST_CUE_STATUSES,
   SETLIST_CUE_TYPES,
   type CueCategory,
 } from './setlist-cue.utils';
 import { SetlistCuesRepository, toNullableJsonInput } from './setlist-cues.repository';
 import type { OrgMember } from '../../permissions/current-membership.decorator';
-
-const createCueSchema = z.object({
-  setlistItemId: z.string().trim().min(1).optional().nullable(),
-  type: z.enum(SETLIST_CUE_TYPES),
-  phase: z.enum(SETLIST_CUE_PHASES).optional(),
-  priority: z.enum(SETLIST_CUE_PRIORITIES).optional(),
-  title: z.string().trim().min(1).max(180),
-  description: z.string().trim().max(3000).optional().nullable(),
-  offsetSec: z.coerce.number().int().min(-3600).max(86400).optional().nullable(),
-  durationSec: z.coerce.number().int().min(0).max(86400).optional().nullable(),
-  metadata: z.record(z.string(), z.unknown()).optional().nullable(),
-  isOptional: z.boolean().optional(),
-  isHidden: z.boolean().optional(),
-  responsibleParticipantId: z.string().trim().min(1).optional().nullable(),
-  responsibleAssignmentId: z.string().trim().min(1).optional().nullable(),
-});
-
-const updateCueSchema = z.object({
-  type: z.enum(SETLIST_CUE_TYPES).optional(),
-  phase: z.enum(SETLIST_CUE_PHASES).optional(),
-  priority: z.enum(SETLIST_CUE_PRIORITIES).optional(),
-  title: z.string().trim().min(1).max(180).optional(),
-  description: z.string().trim().max(3000).optional().nullable(),
-  offsetSec: z.coerce.number().int().min(-3600).max(86400).optional().nullable(),
-  durationSec: z.coerce.number().int().min(0).max(86400).optional().nullable(),
-  metadata: z.record(z.string(), z.unknown()).optional().nullable(),
-  isOptional: z.boolean().optional(),
-  isHidden: z.boolean().optional(),
-  responsibleParticipantId: z.string().trim().min(1).optional().nullable(),
-  responsibleAssignmentId: z.string().trim().min(1).optional().nullable(),
-});
-
-const updateStatusSchema = z.object({ status: z.enum(SETLIST_CUE_STATUSES) });
-
-const reorderSchema = z.object({
-  setlistItemId: z.string().trim().min(1).nullable(),
-  phase: z.enum(SETLIST_CUE_PHASES),
-  cueIds: z.array(z.string().trim().min(1)).min(1),
-});
-
-const copySchema = z.object({
-  sourceItemId: z.string().trim().min(1),
-  phases: z.array(z.enum(SETLIST_CUE_PHASES)).optional(),
-  categories: z.array(z.enum(CUE_CATEGORIES)).optional(),
-  replaceExisting: z.boolean().optional(),
-  includeResponsibles: z.boolean().optional(),
-});
 
 type TimelineItemRow = { id: string; isHidden: boolean; durationOverrideSec: number | null; estimatedSec: number | null; songVersion: { durationSec: number | null } | null };
 type CueRow = Parameters<typeof mapSetlistCue>[0];
@@ -107,13 +63,9 @@ export class SetlistCuesService {
     return this.mapSingleWithTimeline(setlistId, cue);
   }
 
-  async create(member: OrgMember, setlistId: string, body: Record<string, unknown>) {
+  async create(member: OrgMember, setlistId: string, data: CreateSetlistCueData) {
     const { userId, organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
-
-    const parsed = createCueSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const data = parsed.data;
 
     if (data.setlistItemId) {
       const item = await this.itemsRepository.findItem(setlistId, data.setlistItemId);
@@ -151,14 +103,10 @@ export class SetlistCuesService {
     return this.mapSingleWithTimeline(setlistId, created);
   }
 
-  async update(member: OrgMember, setlistId: string, cueId: string, body: Record<string, unknown>) {
+  async update(member: OrgMember, setlistId: string, cueId: string, data: UpdateSetlistCueData) {
     const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
     const existing = await this.findCue(setlistId, cueId);
-
-    const parsed = updateCueSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const data = parsed.data;
 
     const nextType = data.type ?? existing.type;
     const metadata = data.metadata !== undefined ? this.validateMetadata(nextType, data.metadata) : undefined;
@@ -188,7 +136,7 @@ export class SetlistCuesService {
     return this.mapSingleWithTimeline(setlistId, updated);
   }
 
-  async updateStatus(member: OrgMember, setlistId: string, cueId: string, body: Record<string, unknown>) {
+  async updateStatus(member: OrgMember, setlistId: string, cueId: string, body: unknown) {
     const { userId, organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
     const cue = await this.findCue(setlistId, cueId);
@@ -197,10 +145,9 @@ export class SetlistCuesService {
     const allowed = this.permissions.canUpdateOwnCueStatus(isResponsible) || this.permissions.canUpdateAnyCueStatus(member.role);
     if (!allowed) throw new ForbiddenException('No puedes actualizar el estado de este cue');
 
-    const parsed = updateStatusSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-
-    const updated = await this.cuesRepository.updateStatus(cueId, parsed.data.status, userId);
+    // Se valida aqui y no con ZodPipe: quien no tiene permiso recibe 403 aunque el cuerpo sea invalido.
+    const { status } = parseOrBadRequest(updateSetlistCueStatusSchema, body);
+    const updated = await this.cuesRepository.updateStatus(cueId, status, userId);
     return this.mapSingleWithTimeline(setlistId, updated);
   }
 
@@ -213,13 +160,11 @@ export class SetlistCuesService {
     return { ok: true };
   }
 
-  async reorder(member: OrgMember, setlistId: string, body: Record<string, unknown>) {
+  async reorder(member: OrgMember, setlistId: string, data: ReorderSetlistCuesData) {
     const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
 
-    const parsed = reorderSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const { setlistItemId, phase, cueIds } = parsed.data;
+    const { setlistItemId, phase, cueIds } = data;
 
     if (setlistItemId) await this.access.assertItemInSetlist(organizationId, setlistId, setlistItemId);
 
@@ -239,13 +184,9 @@ export class SetlistCuesService {
     return this.mapSingleWithTimeline(setlistId, created);
   }
 
-  async copy(member: OrgMember, setlistId: string, targetItemId: string, body: Record<string, unknown>) {
+  async copy(member: OrgMember, setlistId: string, targetItemId: string, data: CopySetlistCuesData) {
     const { organizationId } = member;
     await this.access.assertItemInSetlist(organizationId, setlistId, targetItemId);
-
-    const parsed = copySchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const data = parsed.data;
 
     const source = await this.itemsRepository.findItem(setlistId, data.sourceItemId);
     if (!source) throw new BadRequestException('El item de origen no pertenece a este setlist');

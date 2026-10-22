@@ -7,3 +7,4 @@ export * from './memberships';
 export * from './invitations';
 export * from './query';
 export * from './events';
+export * from './setlists';

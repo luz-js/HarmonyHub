@@ -33,3 +33,41 @@ export type AttendanceStatus = (typeof ATTENDANCE_STATUSES)[number];
 
 export const SETLIST_STATUSES = ['DRAFT', 'READY', 'PUBLISHED', 'ARCHIVED'] as const;
 export type SetlistStatus = (typeof SETLIST_STATUSES)[number];
+
+export const SETLIST_ITEM_TYPES = ['SONG', 'SPEAKING', 'PRAYER', 'VIDEO', 'ANNOUNCEMENT', 'SILENCE', 'TRANSITION', 'BREAK', 'CUSTOM'] as const;
+export type SetlistItemType = (typeof SETLIST_ITEM_TYPES)[number];
+
+export const SETLIST_PARTICIPANT_STATUSES = ['INVITED', 'CONFIRMED', 'DECLINED', 'TENTATIVE', 'NOT_REQUIRED'] as const;
+export type SetlistParticipantStatus = (typeof SETLIST_PARTICIPANT_STATUSES)[number];
+
+export const ASSIGNMENT_PREPARATION_STATUSES = ['PENDING', 'IN_PROGRESS', 'READY', 'NEEDS_REVIEW', 'BLOCKED', 'NOT_APPLICABLE'] as const;
+export type AssignmentPreparationStatus = (typeof ASSIGNMENT_PREPARATION_STATUSES)[number];
+
+export const SETLIST_CUE_TYPES = [
+  'COUNT_IN', 'CLICK_START', 'CLICK_STOP', 'PAD_START', 'PAD_STOP', 'TRACK_START', 'TRACK_STOP',
+  'MUSIC_ENTRY', 'MUSIC_STOP', 'DYNAMICS_UP', 'DYNAMICS_DOWN', 'REPEAT_SECTION', 'SKIP_SECTION', 'MODULATION', 'TEMPO_CHANGE', 'FREE_TIME', 'HOLD', 'ENDING',
+  'SPEAKING', 'PRAYER', 'ANNOUNCEMENT', 'SILENCE',
+  'VIDEO_START', 'VIDEO_STOP', 'SLIDE_CHANGE', 'LYRICS_ON', 'LYRICS_OFF',
+  'LIGHTS_SCENE', 'LIGHTS_BLACKOUT', 'LIGHTS_FADE',
+  'AUDIO_MUTE', 'AUDIO_UNMUTE', 'AUDIO_LEVEL', 'MONITOR_CHANGE',
+  'INSTRUMENT_CHANGE', 'CAPO_CHANGE', 'PATCH_CHANGE', 'TUNING_CHANGE',
+  'ENTER_STAGE', 'EXIT_STAGE', 'POSITION_CHANGE',
+  'TIMER', 'MARKER', 'CUSTOM',
+] as const;
+export type SetlistCueType = (typeof SETLIST_CUE_TYPES)[number];
+
+export const SETLIST_CUE_PHASES = ['BEFORE', 'DURING', 'AFTER', 'GLOBAL'] as const;
+export type SetlistCuePhase = (typeof SETLIST_CUE_PHASES)[number];
+
+export const SETLIST_CUE_STATUSES = ['PENDING', 'READY', 'NEEDS_REVIEW', 'BLOCKED', 'COMPLETED', 'SKIPPED'] as const;
+export type SetlistCueStatus = (typeof SETLIST_CUE_STATUSES)[number];
+
+export const SETLIST_CUE_PRIORITIES = ['LOW', 'NORMAL', 'HIGH', 'CRITICAL'] as const;
+export type SetlistCuePriority = (typeof SETLIST_CUE_PRIORITIES)[number];
+
+// Estas dos no son enums de Prisma: son opciones de la API (copiar asignaciones, agrupar cues).
+export const COPY_ASSIGNMENTS_MODES = ['ALL', 'MUSICIANS_ONLY', 'VOCALS_ONLY', 'TECH_ONLY'] as const;
+export type CopyAssignmentsMode = (typeof COPY_ASSIGNMENTS_MODES)[number];
+
+export const CUE_CATEGORIES = ['MUSICAL', 'AUDIO', 'TRACKS', 'VIDEO', 'LIGHTING', 'SPEAKING', 'LOGISTICS', 'INSTRUMENT', 'CUSTOM'] as const;
+export type CueCategory = (typeof CUE_CATEGORIES)[number];

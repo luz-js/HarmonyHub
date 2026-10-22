@@ -1,4 +1,6 @@
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { addSetlistParticipantSchema, updateSetlistParticipantSchema, type AddSetlistParticipantData, type UpdateSetlistParticipantData } from '@harmonyhub/contracts';
+import { ZodPipe } from '../../shared/zod.pipe';
 import { AuthGuard } from '../../auth/auth.guard';
 import { SetlistParticipantsService } from './setlist-participants.service';
 import { CurrentMembership, OrgMember } from '../../permissions/current-membership.decorator';
@@ -18,8 +20,8 @@ export class SetlistParticipantsController {
 
   @Post(':setlistId/participants')
   @RequirePermission('setlists.participants.manage')
-  add(@CurrentMembership() member: OrgMember, @Param('setlistId') setlistId: string, @Body() body: Record<string, unknown>) {
-    return this.participantsService.add(member, setlistId, body ?? {});
+  add(@CurrentMembership() member: OrgMember, @Param('setlistId') setlistId: string, @Body(new ZodPipe(addSetlistParticipantSchema)) body: AddSetlistParticipantData) {
+    return this.participantsService.add(member, setlistId, body);
   }
 
   @Patch(':setlistId/participants/:participantId')
@@ -28,9 +30,9 @@ export class SetlistParticipantsController {
     @CurrentMembership() member: OrgMember,
     @Param('setlistId') setlistId: string,
     @Param('participantId') participantId: string,
-    @Body() body: Record<string, unknown>,
+    @Body(new ZodPipe(updateSetlistParticipantSchema)) body: UpdateSetlistParticipantData,
   ) {
-    return this.participantsService.update(member, setlistId, participantId, body ?? {});
+    return this.participantsService.update(member, setlistId, participantId, body);
   }
 
   @Delete(':setlistId/participants/:participantId')

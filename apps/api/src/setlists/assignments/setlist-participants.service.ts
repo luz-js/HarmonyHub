@@ -1,25 +1,10 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { z } from 'zod';
+import type { AddSetlistParticipantData, UpdateSetlistParticipantData } from '@harmonyhub/contracts';
 import { NotificationsService } from '../../notifications/notifications.service';
 import { SetlistsAccessService } from '../setlists-access.service';
 import { mapSetlistParticipant } from './setlist-assignment.mapper';
 import { SetlistParticipantsRepository } from './setlist-participants.repository';
 import type { OrgMember } from '../../permissions/current-membership.decorator';
-
-const PARTICIPANT_STATUSES = ['INVITED', 'CONFIRMED', 'DECLINED', 'TENTATIVE', 'NOT_REQUIRED'] as const;
-
-const addParticipantSchema = z.object({
-  membershipId: z.string().trim().min(1),
-  status: z.enum(PARTICIPANT_STATUSES).optional(),
-  generalRole: z.string().trim().max(120).optional().nullable(),
-  generalNote: z.string().trim().max(2000).optional().nullable(),
-});
-
-const updateParticipantSchema = z.object({
-  status: z.enum(PARTICIPANT_STATUSES).optional(),
-  generalRole: z.string().trim().max(120).optional().nullable(),
-  generalNote: z.string().trim().max(2000).optional().nullable(),
-});
 
 @Injectable()
 export class SetlistParticipantsService {
@@ -44,45 +29,39 @@ export class SetlistParticipantsService {
     return this.participantsRepository.create({ setlistId, membershipId, status: 'CONFIRMED', addedById });
   }
 
-  async add(member: OrgMember, setlistId: string, body: Record<string, unknown>) {
+  async add(member: OrgMember, setlistId: string, data: AddSetlistParticipantData) {
     const { userId, organizationId } = member;
     const setlist = await this.access.assertSetlistInOrg(organizationId, setlistId);
 
-    const parsed = addParticipantSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-
-    const membership = await this.participantsRepository.findMembershipForValidation(parsed.data.membershipId, organizationId);
+    const membership = await this.participantsRepository.findMembershipForValidation(data.membershipId, organizationId);
     if (!membership) throw new BadRequestException('La membresia no existe en esta organizacion');
     if (membership.status !== 'ACTIVE') throw new BadRequestException('La membresia debe estar activa');
 
-    const existing = await this.participantsRepository.findByMembership(setlistId, parsed.data.membershipId);
+    const existing = await this.participantsRepository.findByMembership(setlistId, data.membershipId);
     if (existing) throw new BadRequestException('Este miembro ya es participante de este setlist');
 
     const created = await this.participantsRepository.create({
       setlistId,
-      membershipId: parsed.data.membershipId,
-      status: parsed.data.status || 'CONFIRMED',
-      generalRole: parsed.data.generalRole ?? null,
-      generalNote: parsed.data.generalNote ?? null,
+      membershipId: data.membershipId,
+      status: data.status || 'CONFIRMED',
+      generalRole: data.generalRole ?? null,
+      generalNote: data.generalNote ?? null,
       addedById: userId,
     });
     await this.notifications.setlistParticipantAdded({ id: setlistId, name: setlist.name, organizationId }, { id: created.id, userId: created.membership.user.id }, userId);
     return mapSetlistParticipant(created, []);
   }
 
-  async update(member: OrgMember, setlistId: string, participantId: string, body: Record<string, unknown>) {
+  async update(member: OrgMember, setlistId: string, participantId: string, data: UpdateSetlistParticipantData) {
     const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
     await this.findParticipant(setlistId, participantId);
 
-    const parsed = updateParticipantSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-
     const updated = await this.participantsRepository.update(participantId, {
-      status: parsed.data.status,
-      generalRole: parsed.data.generalRole,
-      generalNote: parsed.data.generalNote,
-      respondedAt: parsed.data.status && parsed.data.status !== 'INVITED' ? new Date() : undefined,
+      status: data.status,
+      generalRole: data.generalRole,
+      generalNote: data.generalNote,
+      respondedAt: data.status && data.status !== 'INVITED' ? new Date() : undefined,
     });
     const counts = await this.participantsRepository.assignmentCounts([participantId]);
     return mapSetlistParticipant(updated, counts);

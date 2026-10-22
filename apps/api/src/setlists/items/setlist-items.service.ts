@@ -1,5 +1,5 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { z } from 'zod';
+import type { CreateSetlistItemData, ReorderSetlistItemsData, UpdateSetlistItemData } from '@harmonyhub/contracts';
 import { clean } from '../../shared/object.utils';
 import { mapSetlistItemDetail } from '../setlist.mapper';
 import { SetlistsAccessService } from '../setlists-access.service';
@@ -7,42 +7,6 @@ import { assertReorderPayloadValid, computeInsertOrder, normalizeSetlistItemInpu
 import { SetlistsRepository } from '../setlists.repository';
 import { SetlistItemsRepository } from './setlist-items.repository';
 import type { OrgMember } from '../../permissions/current-membership.decorator';
-
-const SETLIST_ITEM_TYPES = ['SONG', 'SPEAKING', 'PRAYER', 'VIDEO', 'ANNOUNCEMENT', 'SILENCE', 'TRANSITION', 'BREAK', 'CUSTOM'] as const;
-
-const itemFieldsSchema = z.object({
-  type: z.enum(SETLIST_ITEM_TYPES).optional(),
-  songId: z.string().trim().min(1).optional().nullable(),
-  songVersionId: z.string().trim().min(1).optional().nullable(),
-  title: z.string().trim().min(1).max(200).optional(),
-  description: z.string().trim().max(2000).optional().nullable(),
-  estimatedSec: z.coerce.number().int().min(0).optional().nullable(),
-  keyOverride: z.string().trim().min(1).max(10).optional().nullable(),
-  bpmOverride: z.coerce.number().int().min(20).max(300).optional().nullable(),
-  durationOverrideSec: z.coerce.number().int().min(0).optional().nullable(),
-  capo: z.coerce.number().int().min(0).max(12).optional().nullable(),
-  transitionNote: z.string().trim().max(2000).optional().nullable(),
-  internalNote: z.string().trim().max(5000).optional().nullable(),
-  includeClick: z.boolean().optional(),
-  includePad: z.boolean().optional(),
-  isOptional: z.boolean().optional(),
-  isHidden: z.boolean().optional(),
-});
-
-const createItemSchema = itemFieldsSchema
-  .extend({ type: z.enum(SETLIST_ITEM_TYPES).default('SONG'), insertIndex: z.coerce.number().int().min(0).optional().nullable() })
-  .refine((data) => data.type !== 'SONG' || (Boolean(data.songId) && Boolean(data.songVersionId)), {
-    message: 'songId y songVersionId son requeridos para items de tipo SONG',
-    path: ['songVersionId'],
-  })
-  .refine((data) => data.type === 'SONG' || Boolean(data.title && data.title.trim()), {
-    message: 'title es requerido para items no musicales',
-    path: ['title'],
-  });
-
-const updateItemSchema = itemFieldsSchema;
-
-const reorderSchema = z.object({ itemIds: z.array(z.string().trim().min(1)).min(1) });
 
 @Injectable()
 export class SetlistItemsService {
@@ -67,13 +31,9 @@ export class SetlistItemsService {
     return mapSetlistItemDetail(item);
   }
 
-  async create(member: OrgMember, setlistId: string, body: Record<string, unknown>) {
+  async create(member: OrgMember, setlistId: string, data: CreateSetlistItemData) {
     const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
-
-    const parsed = createItemSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const data = parsed.data;
 
     let songId: string | null = null;
     let songVersionId: string | null = null;
@@ -129,16 +89,13 @@ export class SetlistItemsService {
     return mapSetlistItemDetail(created);
   }
 
-  async update(member: OrgMember, setlistId: string, itemId: string, body: Record<string, unknown>) {
+  async update(member: OrgMember, setlistId: string, itemId: string, data: UpdateSetlistItemData) {
     const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const existing = await this.itemsRepository.findItem(setlistId, itemId);
     if (!existing) throw new NotFoundException('Item no encontrado');
 
-    const parsed = updateItemSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const data = parsed.data;
     const nextType = data.type || existing.type;
 
     let songId = existing.songId;
@@ -210,17 +167,14 @@ export class SetlistItemsService {
     return mapSetlistItemDetail(created);
   }
 
-  async reorder(member: OrgMember, setlistId: string, body: Record<string, unknown>) {
+  async reorder(member: OrgMember, setlistId: string, data: ReorderSetlistItemsData) {
     const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
 
-    const parsed = reorderSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-
     const existing = await this.itemsRepository.listItems(setlistId);
-    assertReorderPayloadValid(parsed.data.itemIds, existing.map((item) => item.id));
+    assertReorderPayloadValid(data.itemIds, existing.map((item) => item.id));
 
-    await this.itemsRepository.reorder(setlistId, parsed.data.itemIds);
+    await this.itemsRepository.reorder(setlistId, data.itemIds);
     const updated = await this.itemsRepository.listItems(setlistId);
     return updated.map(mapSetlistItemDetail);
   }

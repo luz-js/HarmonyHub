@@ -1,19 +1,8 @@
+import type { CopyAssignmentsMode } from '@harmonyhub/contracts';
 import type { AssignmentPreparationStatus, SetlistItemType, SetlistMusicalRole } from '@prisma/client';
 
-/** Duplicado en forma de tupla del enum Prisma `SetlistMusicalRole`, unica forma de usarlo en `z.enum(...)`. */
-export const SETLIST_MUSICAL_ROLES = [
-  'MUSIC_DIRECTOR', 'BAND_LEADER', 'LEAD_VOCAL', 'BACKING_VOCAL', 'CHOIR',
-  'ACOUSTIC_GUITAR', 'ELECTRIC_GUITAR', 'BASS', 'DRUMS', 'PERCUSSION', 'PIANO', 'KEYS', 'ORGAN', 'SYNTH', 'STRINGS', 'BRASS', 'WOODWIND', 'VIOLIN', 'CELLO',
-  'TRACKS', 'CLICK', 'PAD',
-  'AUDIO_ENGINEER', 'MONITOR_ENGINEER', 'LIGHTING', 'VIDEO',
-  'SPEAKER', 'PRAYER_LEADER', 'ANNOUNCER',
-  'OTHER',
-] as const satisfies readonly SetlistMusicalRole[];
-
-/** Duplicado en forma de tupla del enum Prisma `AssignmentPreparationStatus`, unica forma de usarlo en `z.enum(...)`. */
-export const ASSIGNMENT_PREPARATION_STATUSES = [
-  'PENDING', 'IN_PROGRESS', 'READY', 'NEEDS_REVIEW', 'BLOCKED', 'NOT_APPLICABLE',
-] as const satisfies readonly AssignmentPreparationStatus[];
+/** Las listas de valores viven en @harmonyhub/contracts (una prueba verifica que coincidan con Prisma). */
+export { ASSIGNMENT_PREPARATION_STATUSES, COPY_ASSIGNMENTS_MODES, SETLIST_MUSICAL_ROLES, type CopyAssignmentsMode } from '@harmonyhub/contracts';
 
 /** Roles de los que solo puede existir un "principal" a la vez por item (se desmarca el anterior, nunca se rechaza). */
 export const SINGLE_PRIMARY_ROLES = new Set<SetlistMusicalRole>(['MUSIC_DIRECTOR', 'BAND_LEADER', 'LEAD_VOCAL', 'TRACKS', 'CLICK']);
@@ -91,8 +80,6 @@ export function resetPreparationForCopy(_source: AssignmentPreparationStatus): A
   return 'PENDING';
 }
 
-export const COPY_ASSIGNMENTS_MODES = ['ALL', 'MUSICIANS_ONLY', 'VOCALS_ONLY', 'TECH_ONLY'] as const;
-export type CopyAssignmentsMode = (typeof COPY_ASSIGNMENTS_MODES)[number];
 
 const VOCAL_ROLES = new Set<SetlistMusicalRole>(['LEAD_VOCAL', 'BACKING_VOCAL', 'CHOIR']);
 const TECH_ROLES = new Set<SetlistMusicalRole>(['AUDIO_ENGINEER', 'MONITOR_ENGINEER', 'LIGHTING', 'VIDEO', 'TRACKS', 'CLICK', 'PAD']);

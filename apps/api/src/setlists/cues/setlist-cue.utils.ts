@@ -1,32 +1,17 @@
 import { z } from 'zod';
 import type { SetlistCuePhase, SetlistCuePriority, SetlistCueStatus, SetlistCueType } from '@prisma/client';
+import type { CueCategory } from '@harmonyhub/contracts';
 
-/** Duplicado en forma de tupla del enum Prisma `SetlistCueType`, unica forma de usarlo en `z.enum(...)`. */
-export const SETLIST_CUE_TYPES = [
-  'COUNT_IN', 'CLICK_START', 'CLICK_STOP', 'PAD_START', 'PAD_STOP', 'TRACK_START', 'TRACK_STOP',
-  'MUSIC_ENTRY', 'MUSIC_STOP', 'DYNAMICS_UP', 'DYNAMICS_DOWN', 'REPEAT_SECTION', 'SKIP_SECTION', 'MODULATION', 'TEMPO_CHANGE', 'FREE_TIME', 'HOLD', 'ENDING',
-  'SPEAKING', 'PRAYER', 'ANNOUNCEMENT', 'SILENCE',
-  'VIDEO_START', 'VIDEO_STOP', 'SLIDE_CHANGE', 'LYRICS_ON', 'LYRICS_OFF',
-  'LIGHTS_SCENE', 'LIGHTS_BLACKOUT', 'LIGHTS_FADE',
-  'AUDIO_MUTE', 'AUDIO_UNMUTE', 'AUDIO_LEVEL', 'MONITOR_CHANGE',
-  'INSTRUMENT_CHANGE', 'CAPO_CHANGE', 'PATCH_CHANGE', 'TUNING_CHANGE',
-  'ENTER_STAGE', 'EXIT_STAGE', 'POSITION_CHANGE',
-  'TIMER', 'MARKER', 'CUSTOM',
-] as const satisfies readonly SetlistCueType[];
+/** Las listas de valores viven en @harmonyhub/contracts (una prueba verifica que coincidan con Prisma). */
+export {
+  CUE_CATEGORIES,
+  SETLIST_CUE_PHASES,
+  SETLIST_CUE_PRIORITIES,
+  SETLIST_CUE_STATUSES,
+  SETLIST_CUE_TYPES,
+  type CueCategory,
+} from '@harmonyhub/contracts';
 
-export const SETLIST_CUE_PHASES = ['BEFORE', 'DURING', 'AFTER', 'GLOBAL'] as const satisfies readonly SetlistCuePhase[];
-
-export const SETLIST_CUE_STATUSES = [
-  'PENDING', 'READY', 'NEEDS_REVIEW', 'BLOCKED', 'COMPLETED', 'SKIPPED',
-] as const satisfies readonly SetlistCueStatus[];
-
-export const SETLIST_CUE_PRIORITIES = ['LOW', 'NORMAL', 'HIGH', 'CRITICAL'] as const satisfies readonly SetlistCuePriority[];
-
-export type CueCategory = 'MUSICAL' | 'AUDIO' | 'TRACKS' | 'VIDEO' | 'LIGHTING' | 'SPEAKING' | 'LOGISTICS' | 'INSTRUMENT' | 'CUSTOM';
-
-export const CUE_CATEGORIES = [
-  'MUSICAL', 'AUDIO', 'TRACKS', 'VIDEO', 'LIGHTING', 'SPEAKING', 'LOGISTICS', 'INSTRUMENT', 'CUSTOM',
-] as const satisfies readonly CueCategory[];
 
 const CATEGORY_BY_TYPE: Record<SetlistCueType, CueCategory> = {
   COUNT_IN: 'MUSICAL',

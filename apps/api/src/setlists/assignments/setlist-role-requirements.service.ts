@@ -1,23 +1,9 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { z } from 'zod';
+import type { CreateSetlistRoleRequirementData, UpdateSetlistRoleRequirementData } from '@harmonyhub/contracts';
 import { SetlistsAccessService } from '../setlists-access.service';
 import { mapSetlistRoleRequirement } from './setlist-assignment.mapper';
-import { SETLIST_MUSICAL_ROLES } from './setlist-assignment.utils';
 import { SetlistRoleRequirementsRepository } from './setlist-role-requirements.repository';
 import type { OrgMember } from '../../permissions/current-membership.decorator';
-
-const createRequirementSchema = z.object({
-  role: z.enum(SETLIST_MUSICAL_ROLES),
-  label: z.string().trim().max(120).optional().nullable(),
-  minimumCount: z.coerce.number().int().min(1).max(20).optional(),
-  isRequired: z.boolean().optional(),
-});
-
-const updateRequirementSchema = z.object({
-  label: z.string().trim().max(120).optional().nullable(),
-  minimumCount: z.coerce.number().int().min(1).max(20).optional(),
-  isRequired: z.boolean().optional(),
-});
 
 @Injectable()
 export class SetlistRoleRequirementsService {
@@ -33,35 +19,29 @@ export class SetlistRoleRequirementsService {
     return requirements.map(mapSetlistRoleRequirement);
   }
 
-  async create(member: OrgMember, setlistId: string, itemId: string, body: Record<string, unknown>) {
+  async create(member: OrgMember, setlistId: string, itemId: string, data: CreateSetlistRoleRequirementData) {
     const { organizationId } = member;
     await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
 
-    const parsed = createRequirementSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-
-    const existing = await this.requirementsRepository.findByRole(itemId, parsed.data.role);
+    const existing = await this.requirementsRepository.findByRole(itemId, data.role);
     if (existing) throw new BadRequestException('Ya existe un requisito para este rol en este item');
 
     const created = await this.requirementsRepository.create({
       setlistItemId: itemId,
-      role: parsed.data.role,
-      label: parsed.data.label ?? null,
-      minimumCount: parsed.data.minimumCount ?? 1,
-      isRequired: parsed.data.isRequired ?? true,
+      role: data.role,
+      label: data.label ?? null,
+      minimumCount: data.minimumCount ?? 1,
+      isRequired: data.isRequired ?? true,
     });
     return mapSetlistRoleRequirement(created);
   }
 
-  async update(member: OrgMember, setlistId: string, itemId: string, requirementId: string, body: Record<string, unknown>) {
+  async update(member: OrgMember, setlistId: string, itemId: string, requirementId: string, data: UpdateSetlistRoleRequirementData) {
     const { organizationId } = member;
     await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
     await this.findRequirement(itemId, requirementId);
 
-    const parsed = updateRequirementSchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-
-    const updated = await this.requirementsRepository.update(requirementId, parsed.data);
+    const updated = await this.requirementsRepository.update(requirementId, data);
     return mapSetlistRoleRequirement(updated);
   }
 

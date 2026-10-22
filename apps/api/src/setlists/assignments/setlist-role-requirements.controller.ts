@@ -1,4 +1,11 @@
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  createSetlistRoleRequirementSchema,
+  updateSetlistRoleRequirementSchema,
+  type CreateSetlistRoleRequirementData,
+  type UpdateSetlistRoleRequirementData,
+} from '@harmonyhub/contracts';
+import { ZodPipe } from '../../shared/zod.pipe';
 import { AuthGuard } from '../../auth/auth.guard';
 import { SetlistRoleRequirementsService } from './setlist-role-requirements.service';
 import { CurrentMembership, OrgMember } from '../../permissions/current-membership.decorator';
@@ -26,9 +33,9 @@ export class SetlistRoleRequirementsController {
     @CurrentMembership() member: OrgMember,
     @Param('setlistId') setlistId: string,
     @Param('itemId') itemId: string,
-    @Body() body: Record<string, unknown>,
+    @Body(new ZodPipe(createSetlistRoleRequirementSchema)) body: CreateSetlistRoleRequirementData,
   ) {
-    return this.requirementsService.create(member, setlistId, itemId, body ?? {});
+    return this.requirementsService.create(member, setlistId, itemId, body);
   }
 
   @Patch(':setlistId/items/:itemId/requirements/:requirementId')
@@ -38,9 +45,9 @@ export class SetlistRoleRequirementsController {
     @Param('setlistId') setlistId: string,
     @Param('itemId') itemId: string,
     @Param('requirementId') requirementId: string,
-    @Body() body: Record<string, unknown>,
+    @Body(new ZodPipe(updateSetlistRoleRequirementSchema)) body: UpdateSetlistRoleRequirementData,
   ) {
-    return this.requirementsService.update(member, setlistId, itemId, requirementId, body ?? {});
+    return this.requirementsService.update(member, setlistId, itemId, requirementId, body);
   }
 
   @Delete(':setlistId/items/:itemId/requirements/:requirementId')
