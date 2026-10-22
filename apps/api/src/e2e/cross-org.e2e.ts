@@ -138,11 +138,19 @@ if (!testDatabaseUrl) {
         // Aunque llegue ?organizationId=B, manda el header (la organizacion activa).
         const path = `${route.path}?organizationId=${orgB.organizationId}`;
         const { status, text } = await call(as(orgA, 'OWNER'), 'GET', path, { organizationId: orgA.organizationId });
-        if (status !== 200 || text.includes(orgB.secret) || !text.includes(orgA.secret) && /songs|setlists|events|memberships/.test(route.path)) {
+        if (status !== 200 || text.includes(orgB.secret) || !text.includes(orgA.secret) && /songs|setlists|events|memberships|files/.test(route.path)) {
           failures.push(`${route.method} ${path} -> ${status}`);
         }
       }
       assert.deepEqual(failures, [], failures.join('\n'));
+    });
+
+    test('la pagina Archivos solo lista archivos de la propia organizacion, aunque se busque lo de B', async () => {
+      const { status, text } = await call(as(orgA, 'MUSICIAN'), 'GET', `/api/files?search=${encodeURIComponent(orgB.secret)}`, { organizationId: orgA.organizationId });
+      assert.equal(status, 200);
+      assert.deepEqual(JSON.parse(text), { items: [] });
+      const own = JSON.parse((await call(as(orgA, 'GUEST'), 'GET', '/api/files', { organizationId: orgA.organizationId })).text);
+      assert.deepEqual(own.items.map((item: { song: { id: string } }) => item.song.id), [orgA.songId]);
     });
 
     test('las referencias a datos de B dentro del cuerpo se rechazan', async () => {

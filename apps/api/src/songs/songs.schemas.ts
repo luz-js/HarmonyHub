@@ -194,6 +194,13 @@ export const reorderSongFilesSchema = z.object({
   })).min(1),
 });
 
+/** GET /api/files: busqueda por titulo, nombre de archivo, cancion o artista, y filtro por categoria. */
+export const listOrganizationFilesQuerySchema = z.object({
+  search: z.string().trim().max(120, 'La busqueda es demasiado larga').optional(),
+  category: songFileCategorySchema.optional(),
+  limit: z.coerce.number().int().min(1).max(200).optional().default(100),
+});
+
 export const listSongFileQuerySchema = z.object({
   versionId: z.string().trim().min(1).optional(),
   category: songFileCategorySchema.optional(),

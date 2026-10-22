@@ -265,6 +265,32 @@ export class SongsRepository {
     return this.prisma.songLink.count({ where: { songId, ...sameTrackContext(versionId) } });
   }
 
+  /** Archivos de todas las canciones (no archivadas) de la organizacion, los mas recientes primero. */
+  listOrganizationFiles(organizationId: string, options: { search?: string; category?: Prisma.SongFileWhereInput['category']; take: number }) {
+    const search = options.search?.trim();
+    const contains = (value: string) => ({ contains: value, mode: 'insensitive' as const });
+    return this.prisma.songFile.findMany({
+      where: {
+        song: { organizationId, status: { not: 'ARCHIVED' } },
+        ...(options.category ? { category: options.category } : {}),
+        ...(search
+          ? {
+              OR: [
+                { title: contains(search) },
+                { file: { name: contains(search) } },
+                { file: { originalName: contains(search) } },
+                { song: { title: contains(search) } },
+                { song: { artist: contains(search) } },
+              ],
+            }
+          : {}),
+      },
+      orderBy: [{ createdAt: 'desc' }, { id: 'asc' }],
+      take: options.take,
+      include: { ...songFileInclude, song: { select: { id: true, title: true, artist: true } } },
+    });
+  }
+
   listFiles(songId: string, options?: { versionId?: string | null; category?: Prisma.SongFileWhereInput['category'] }) {
     const versionId = options?.versionId;
     return this.prisma.songFile.findMany({

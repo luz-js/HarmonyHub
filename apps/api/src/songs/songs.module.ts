@@ -5,6 +5,7 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { SongActivityRepository } from './activity/song-activity.repository';
 import { SongActivityService } from './activity/song-activity.service';
 import { SongCollaborationController } from './collaboration/song-collaboration.controller';
+import { FilesController } from './files.controller';
 import { SongCollaborationRepository } from './collaboration/song-collaboration.repository';
 import { SongCollaborationService } from './collaboration/song-collaboration.service';
 import { SongHistoryController } from './history/song-history.controller';
@@ -26,7 +27,7 @@ import { TRACK_STORAGE } from './storage/track-storage.interface';
 
 @Module({
   imports: [AuthModule, PrismaModule, PermissionsModule],
-  controllers: [SongsController, SongNotesController, SongCollaborationController, SongHistoryController],
+  controllers: [SongsController, SongNotesController, SongCollaborationController, SongHistoryController, FilesController],
   providers: [
     SongsRepository,
     SongsService,

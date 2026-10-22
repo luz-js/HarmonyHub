@@ -15,6 +15,7 @@ import { normalizeSongFileResponse, sanitizeDownloadFileName } from './songs.pre
 import { SongsRepository } from './songs.repository';
 import {
   buildSongFileStorageSegments,
+  listOrganizationFilesQuerySchema,
   listSongFileQuerySchema,
   reorderSongFilesSchema,
   songFileUploadBodySchema,
@@ -38,6 +39,14 @@ export class SongsFilesService {
     @Inject(TRACK_STORAGE) private readonly trackStorage: TrackStorageProvider,
     @Inject(SongActivityService) private readonly activity: SongActivityService,
   ) {}
+
+  /** Pagina Archivos: todos los archivos de las canciones de la organizacion, con su cancion. */
+  async organizationFiles(member: OrgMember, query: Record<string, unknown> = {}) {
+    const parsed = listOrganizationFilesQuerySchema.safeParse(query);
+    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
+    const files = await this.songsRepository.listOrganizationFiles(member.organizationId, { search: parsed.data.search, category: parsed.data.category, take: parsed.data.limit });
+    return { items: files.map((file) => ({ ...normalizeSongFileResponse(file), song: file.song })) };
+  }
 
   async files(member: OrgMember, songId: string, query: Record<string, unknown> = {}) {
     const { organizationId } = member;
