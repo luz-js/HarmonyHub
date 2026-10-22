@@ -58,17 +58,70 @@ export function getCurrentOrganizationId() {
   }
 }
 
+/** Rutas de sesion: un 401 aqui es la respuesta en si (clave incorrecta, refresh vencido), no se intenta renovar. */
+const SESSION_ROUTES = ['/api/login', '/api/auth/register', '/api/auth/refresh', '/api/auth/logout'];
+
+let refreshInFlight: Promise<boolean> | null = null;
+
+/**
+ * Pide un access token nuevo con la cookie httpOnly del refresh token. Si varias peticiones reciben 401 a la vez,
+ * todas esperan la misma renovacion (una sola llamada), porque el refresh token rota y solo sirve una vez.
+ */
+export function refreshSession(): Promise<boolean> {
+  refreshInFlight ??= fetch('/api/auth/refresh', { method: 'POST', credentials: 'include' })
+    .then(async (response) => {
+      if (!response.ok) return false;
+      const data = (await response.json().catch(() => null)) as { accessToken?: string } | null;
+      if (!data?.accessToken) return false;
+      setAuthToken(data.accessToken);
+      return true;
+    })
+    .catch(() => false)
+    .finally(() => {
+      refreshInFlight = null;
+    });
+  return refreshInFlight;
+}
+
+function tokenExpiresWithin(seconds: number) {
+  const token = getAuthToken();
+  if (!token) return false;
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'))) as { exp?: number };
+    return !payload.exp || payload.exp - Date.now() / 1000 < seconds;
+  } catch {
+    return true;
+  }
+}
+
+/** Para subidas largas con XMLHttpRequest (no pasan por http()): renueva antes si el token esta por vencer. */
+export async function ensureFreshAccessToken() {
+  if (tokenExpiresWithin(60) && !(await refreshSession())) expireAuthSession();
+}
+
+/** fetch con los headers de sesion; ante un 401 renueva la sesion una vez y reintenta, o vuelve al login. */
+async function authorizedFetch(url: string, init: RequestInit | undefined, buildHeaders: () => Headers) {
+  const send = () => fetch(url, { ...init, headers: buildHeaders(), credentials: 'include' });
+  let response = await send();
+  if (response.status === 401 && !SESSION_ROUTES.includes(url)) {
+    response = (await refreshSession()) ? await send() : response;
+    if (response.status === 401) expireAuthSession();
+  }
+  return response;
+}
+
 export async function http<T>(url: string, init?: RequestInit): Promise<T> {
-  const headers = applyAuthHeaders(init?.headers);
   const isFormData = typeof FormData !== 'undefined' && init?.body instanceof FormData;
+  const buildHeaders = () => {
+    const headers = applyAuthHeaders(init?.headers);
+    if (!isFormData && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
+    return headers;
+  };
 
-  if (!isFormData && !headers.has('Content-Type')) headers.set('Content-Type', 'application/json');
-
-  const response = await fetch(url, { ...init, headers });
+  const response = await authorizedFetch(url, init, buildHeaders);
   const data = await response.json().catch(() => null);
 
   if (!response.ok) {
-    if (response.status === 401) expireAuthSession();
     const error = new Error(data?.message || (response.status === 403 ? 'No tienes permisos para esta acción' : 'No se pudo completar la solicitud'));
     Object.assign(error, { status: response.status });
     throw error;
@@ -78,10 +131,9 @@ export async function http<T>(url: string, init?: RequestInit): Promise<T> {
 }
 
 export async function requestBlob(url: string, init?: RequestInit) {
-  const response = await fetch(url, { ...init, headers: applyAuthHeaders(init?.headers) });
+  const response = await authorizedFetch(url, init, () => applyAuthHeaders(init?.headers));
   if (!response.ok) {
     const data = await response.json().catch(() => null);
-    if (response.status === 401) expireAuthSession();
     const error = new Error(data?.message || 'No se pudo completar la solicitud');
     Object.assign(error, { status: response.status });
     throw error;

@@ -66,7 +66,7 @@ import type {
   UpdateSetlistParticipantInput,
   UpdateSetlistRoleRequirementInput,
 } from '../types';
-import { buildAuthHeaders, http, requestBlob, setAuthToken, setCurrentOrganizationId } from './http';
+import { buildAuthHeaders, ensureFreshAccessToken, http, requestBlob, setAuthToken, setCurrentOrganizationId } from './http';
 
 export async function loginRequest(input: { email: string; password: string }) {
   const data = await http<{ ok: boolean; user: CurrentUser; accessToken: string }>('/api/login', { method: 'POST', body: JSON.stringify(input) });
@@ -85,6 +85,11 @@ export function registerRequest(input: { name: string; email: string; password: 
 
 export function getCurrentUser() {
   return http<{ ok: boolean; user: CurrentUser }>('/api/auth/me');
+}
+
+/** Cierra la sesion en el servidor (revoca el refresh token de la cookie). Si falla, el cierre local sigue igual. */
+export function logoutRequest() {
+  return http<{ ok: boolean }>('/api/auth/logout', { method: 'POST' }).catch(() => null);
 }
 
 /** "Mi perfil": siempre sobre el usuario de la sesion. */
@@ -200,7 +205,8 @@ export function uploadSongFile(
   },
   onProgress?: (progress: number) => void,
 ) {
-  return new Promise<SongFile>((resolve, reject) => {
+  // La subida usa XMLHttpRequest (para el progreso), que no pasa por http(): se renueva el token antes si hace falta.
+  return ensureFreshAccessToken().then(() => new Promise<SongFile>((resolve, reject) => {
     const formData = new FormData();
     formData.set('file', input.file);
     formData.set('category', input.category);
@@ -231,7 +237,7 @@ export function uploadSongFile(
     };
 
     xhr.send(formData);
-  });
+  }));
 }
 
 export function updateSongFile(songId: string, songFileId: string, input: Partial<{
@@ -436,7 +442,8 @@ export function uploadSongTrack(
   },
   onProgress?: (progress: number) => void,
 ) {
-  return new Promise<SongTrack>((resolve, reject) => {
+  // La subida usa XMLHttpRequest (para el progreso), que no pasa por http(): se renueva el token antes si hace falta.
+  return ensureFreshAccessToken().then(() => new Promise<SongTrack>((resolve, reject) => {
     const formData = new FormData();
     formData.set('file', input.file);
     formData.set('type', input.type);
@@ -468,7 +475,7 @@ export function uploadSongTrack(
     };
 
     xhr.send(formData);
-  });
+  }));
 }
 
 export function updateSongTrack(songId: string, trackId: string, input: Partial<{

@@ -15,6 +15,7 @@ import { readStoredUser, storeUser, withOrganization } from './app/session';
 import { Shell } from './app/Shell';
 import type { AppOrganization, AppUser, Navigate } from './app/types';
 import { useRoute } from './app/useRoute';
+import { logoutRequest } from './shared/api/api-client';
 import { clearAuthSession, SESSION_EXPIRED_EVENT, setCurrentOrganizationId } from './shared/api/http';
 import { queryClient } from './shared/api/query-client';
 
@@ -62,6 +63,7 @@ function App() {
   }, []);
 
   function logout() {
+    void logoutRequest();
     clearAuthSession();
     queryClient.clear();
     setUser(null);
