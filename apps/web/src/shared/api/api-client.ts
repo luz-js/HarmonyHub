@@ -1,4 +1,5 @@
 import type {
+  CreateInvitationInput,
   CurrentUser,
   InvitationSummary,
   OrganizationFile,
@@ -121,7 +122,7 @@ export function getInvitations(organizationId: string) {
   return http<InvitationSummary[]>(`/api/invitations?organizationId=${encodeURIComponent(organizationId)}`);
 }
 
-export function createInvitation(input: { organizationId: string; email: string; role: string }) {
+export function createInvitation(input: CreateInvitationInput) {
   return http<InvitationSummary>('/api/invitations', { method: 'POST', body: JSON.stringify(input) });
 }
 

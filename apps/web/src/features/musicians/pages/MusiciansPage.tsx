@@ -1,12 +1,14 @@
 import { useMemo, useState } from 'react';
-import { ChevronRight, Search, Users } from 'lucide-react';
+import { ChevronRight, Search, UserPlus, Users } from 'lucide-react';
 import type { OrganizationMember } from '../../../shared/types';
 import { getInitials } from '../../dashboard/utils';
+import { InviteMemberDialog } from '../../invitations/components/InviteMemberDialog';
+import { PendingInvitations } from '../../invitations/components/PendingInvitations';
 import { InstrumentChips } from '../components/InstrumentChips';
 import { MemberRoleBadge } from '../components/MemberRoleBadge';
 import { MusicianDrawer } from '../components/MusicianDrawer';
 import { useMemberships } from '../hooks';
-import { countByRole, countByStatus, filterMembers, formatMemberSince, ROLE_FILTERS, RoleFilter, StatusTab } from '../utils/musicians.utils';
+import { canManageMembers, countByRole, countByStatus, filterMembers, formatMemberSince, ROLE_FILTERS, RoleFilter, StatusTab } from '../utils/musicians.utils';
 
 type MusiciansPageProps = {
   organizationId: string;
@@ -21,6 +23,9 @@ export function MusiciansPage({ organizationId, currentUserId, currentRole }: Mu
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
   const [search, setSearch] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [inviting, setInviting] = useState(false);
+  // Invitar es de propietarios y administradores (permiso 'invitations.manage' en la API).
+  const canInvite = canManageMembers(currentRole);
 
   const members = useMemo(() => membershipsQuery.data || [], [membershipsQuery.data]);
   const statusCounts = useMemo(() => countByStatus(members), [members]);
@@ -33,9 +38,16 @@ export function MusiciansPage({ organizationId, currentUserId, currentRole }: Mu
 
   return (
     <div className="space-y-5">
-      <section>
-        <h1 className="page-title">Músicos</h1>
-        <p className="page-subtitle">Las personas de tu equipo y lo que tocan.</p>
+      <section className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+        <div>
+          <h1 className="page-title">Músicos</h1>
+          <p className="page-subtitle">Las personas de tu equipo y lo que tocan.</p>
+        </div>
+        {canInvite && (
+          <button type="button" className="btn-primary self-start md:self-auto" onClick={() => setInviting(true)}>
+            <UserPlus className="h-4 w-4" /> Invitar
+          </button>
+        )}
       </section>
 
       <section className="flex flex-col gap-3 md:flex-row md:items-center">
@@ -104,10 +116,19 @@ export function MusiciansPage({ organizationId, currentUserId, currentRole }: Mu
               </span>
               <h3 className="mt-4 text-lg font-bold text-white">Por ahora solo estás tú</h3>
               <p className="mx-auto mt-2 max-w-md text-sm text-muted">Cuando invites a tu equipo, aparecerán aquí con lo que tocan.</p>
+              {canInvite && (
+                <button type="button" className="btn-primary mt-5" onClick={() => setInviting(true)}>
+                  <UserPlus className="h-4 w-4" /> Invitar a tu equipo
+                </button>
+              )}
             </div>
           )}
         </>
       )}
+
+      {canInvite && tab === 'active' && <PendingInvitations organizationId={organizationId} />}
+
+      {inviting && <InviteMemberDialog organizationId={organizationId} actorRole={currentRole} onClose={() => setInviting(false)} />}
 
       {selected && (
         <MusicianDrawer

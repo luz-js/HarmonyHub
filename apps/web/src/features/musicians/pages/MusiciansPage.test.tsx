@@ -11,7 +11,15 @@ vi.mock('../api/memberships.client', () => ({
   updateMembership: vi.fn(),
 }));
 
+vi.mock('../../invitations/api/invitations.client', () => ({
+  acceptInvitation: vi.fn(),
+  cancelInvitation: vi.fn(),
+  createInvitation: vi.fn(),
+  getInvitations: vi.fn(),
+}));
+
 import { getMemberships, updateMembership } from '../api/memberships.client';
+import { getInvitations } from '../../invitations/api/invitations.client';
 
 function member(id: string, name: string, overrides: Partial<OrganizationMember> = {}, instruments: OrganizationMember['user']['instruments'] = []): OrganizationMember {
   return {
@@ -50,6 +58,7 @@ describe('MusiciansPage', () => {
     queryClient.clear();
     vi.mocked(getMemberships).mockReset().mockResolvedValue(team);
     vi.mocked(updateMembership).mockReset().mockResolvedValue({ id: 'carlos', role: 'LEADER', status: 'ACTIVE' });
+    vi.mocked(getInvitations).mockReset().mockResolvedValue([]);
   });
 
   it('lista los activos con su rol, "Tú" y lo que tocan según su perfil', async () => {
@@ -131,11 +140,18 @@ describe('MusiciansPage', () => {
     expect(await within(drawer).findByRole('alert')).toHaveTextContent('No se puede quitar el ultimo OWNER');
   });
 
-  it('cuando solo estás tú muestra el estado vacío sin botón de invitar', async () => {
+  it('cuando solo estás tú muestra el estado vacío; un propietario ve el botón para invitar', async () => {
     vi.mocked(getMemberships).mockResolvedValue([team[0]]);
     renderPage();
     expect(await screen.findByText('Por ahora solo estás tú')).toBeInTheDocument();
     expect(screen.getByText('Cuando invites a tu equipo, aparecerán aquí con lo que tocan.')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: /invitar/i })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Invitar a tu equipo/ })).toBeInTheDocument();
+  });
+
+  it('un músico o líder no ve los botones de invitar ni las invitaciones pendientes', async () => {
+    renderPage({ currentRole: 'LEADER', currentUserId: 'u-carlos' });
+    await screen.findByText('Carlos Rodríguez');
+    expect(screen.queryByRole('button', { name: /Invitar/ })).not.toBeInTheDocument();
+    expect(getInvitations).not.toHaveBeenCalled();
   });
 });
