@@ -95,6 +95,11 @@ export function logoutRequest() {
   return http<{ ok: boolean }>('/api/auth/logout', { method: 'POST' }).catch(() => null);
 }
 
+/** Guarda en la cuenta la organizacion activa, para abrirla en cualquier dispositivo. */
+export function saveActiveOrganization(organizationId: string) {
+  return http<{ ok: boolean; activeOrganizationId: string }>('/api/me/active-organization', { method: 'PUT', body: JSON.stringify({ organizationId }) });
+}
+
 /** "Mi perfil": siempre sobre el usuario de la sesion. */
 export function updateMe(input: UpdateMeInput) {
   return http<{ ok: boolean; user: Pick<CurrentUser, 'id' | 'name' | 'email' | 'phone' | 'avatarUrl'> }>('/api/me', { method: 'PATCH', body: JSON.stringify(input) });

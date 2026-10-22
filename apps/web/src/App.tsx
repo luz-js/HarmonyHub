@@ -20,7 +20,7 @@ import { readStoredUser, reconcileSession, storeUser, withOrganization } from '.
 import { Shell } from './app/Shell';
 import type { AppOrganization, AppUser, Navigate } from './app/types';
 import { useRoute } from './app/useRoute';
-import { getCurrentUser, logoutRequest } from './shared/api/api-client';
+import { getCurrentUser, logoutRequest, saveActiveOrganization } from './shared/api/api-client';
 import { clearAuthSession, clearCurrentOrganizationId, ORGANIZATION_ACCESS_LOST_EVENT, SESSION_EXPIRED_EVENT, setCurrentOrganizationId } from './shared/api/http';
 import { queryClient } from './shared/api/query-client';
 
@@ -118,6 +118,8 @@ function App() {
     queryClient.clear();
     setUser(nextUser);
     navigate('/');
+    // La eleccion se guarda en la cuenta (otros dispositivos la abren igual). Si falla, en este navegador ya quedo.
+    void saveActiveOrganization(organization.id).catch(() => null);
   }
 
   /** Mi perfil cambio el nombre: se actualiza la sesion guardada para que el menu lo muestre al instante. */

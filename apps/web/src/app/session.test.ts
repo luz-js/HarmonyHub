@@ -37,6 +37,11 @@ describe('session helpers', () => {
     expect(reconcileSession(user, server)).toMatchObject({ currentOrganizationId: 'o1', role: 'LEADER', organizations: server.organizations });
   });
 
+  it('reconcileSession: la organizacion activa guardada en la cuenta gana a la del navegador', () => {
+    const server = { ...user, currentOrganizationId: 'o2', organizations: user.organizations };
+    expect(reconcileSession(user, server)).toMatchObject({ currentOrganizationId: 'o2', currentOrganizationSlug: 'coro', role: 'LEADER' });
+  });
+
   it('reconcileSession pasa a otra organizacion si la activa ya no esta', () => {
     const server = { ...user, organizations: [{ id: 'o2', slug: 'coro', name: 'Coro', role: 'LEADER' }] };
     expect(reconcileSession(user, server)).toMatchObject({ currentOrganizationId: 'o2', currentOrganizationSlug: 'coro', role: 'LEADER' });

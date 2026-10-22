@@ -33,12 +33,14 @@ export function withOrganization(user: AppUser, organization: AppOrganization): 
 }
 
 /**
- * Ajusta la sesion guardada a lo que dice el servidor (/api/auth/me): si la organizacion activa ya no esta entre
- * las membresias activas (la desactivaron o la quitaron), pasa a la primera que quede o a ninguna (pantalla de bienvenida).
+ * Ajusta la sesion guardada a lo que dice el servidor (/api/auth/me). Manda la organizacion activa guardada en la
+ * cuenta; el navegador solo sirve de respaldo mientras carga. Si ninguna es valida (la desactivaron o la quitaron),
+ * pasa a la primera que quede o a ninguna (pantalla de bienvenida).
  */
 export function reconcileSession(stored: AppUser, server: AppUser): AppUser {
   const organizations = server.organizations || [];
-  const current = organizations.find((organization) => organization.id === stored.currentOrganizationId) ?? organizations[0];
+  const byId = (id?: string) => organizations.find((organization) => organization.id === id);
+  const current = byId(server.currentOrganizationId) ?? byId(stored.currentOrganizationId) ?? organizations[0];
   return {
     ...stored,
     name: server.name,
