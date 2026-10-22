@@ -3,6 +3,7 @@
   "private": true,
   "version": "0.1.0",
   "workspaces": [
+    "packages/contracts",
     "apps/web",
     "apps/api"
   ],
@@ -10,17 +11,19 @@
     "dev": "concurrently -k -n api,web -c cyan,green \"npm run dev -w @harmonyhub/api\" \"npm run dev -w @harmonyhub/web\"",
     "dev:web": "npm run dev -w @harmonyhub/web",
     "dev:api": "npm run dev -w @harmonyhub/api",
-    "build": "npm run build -w @harmonyhub/web && npm run build -w @harmonyhub/api",
+    "build": "npm run build -w @harmonyhub/contracts && npm run build -w @harmonyhub/web && npm run build -w @harmonyhub/api",
     "build:web": "npm run build -w @harmonyhub/web",
     "build:api": "npm run build -w @harmonyhub/api",
     "start:api": "npm run start -w @harmonyhub/api",
-    "typecheck": "npm run typecheck -w @harmonyhub/web && npm run typecheck -w @harmonyhub/api",
+    "typecheck": "npm run typecheck -w @harmonyhub/contracts && npm run typecheck -w @harmonyhub/web && npm run typecheck -w @harmonyhub/api",
     "lint": "eslint .",
     "prisma:generate": "prisma generate",
     "prisma:studio": "prisma studio",
     "prisma:migrate:dev": "prisma migrate dev",
     "prisma:migrate:deploy": "prisma migrate deploy",
-    "prisma:db:push": "prisma db push"
+    "prisma:db:push": "prisma db push",
+    "postinstall": "npm run build -w @harmonyhub/contracts",
+    "build:contracts": "npm run build -w @harmonyhub/contracts"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

@@ -3,15 +3,21 @@
   "private": true,
   "version": "0.1.0",
   "scripts": {
+    "predev": "npm run build -w @harmonyhub/contracts",
     "dev": "tsx watch --tsconfig tsconfig.json src/main.ts",
+    "prebuild": "npm run build -w @harmonyhub/contracts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/main.js",
+    "pretypecheck": "npm run build -w @harmonyhub/contracts",
     "typecheck": "tsc -p tsconfig.json --noEmit",
+    "pretest": "npm run build -w @harmonyhub/contracts",
     "test": "tsx --test \"src/**/*.test.ts\"",
     "lint": "eslint .",
+    "pretest:e2e": "npm run build -w @harmonyhub/contracts",
     "test:e2e": "tsx --test --test-concurrency=1 \"src/**/*.e2e.ts\""
   },
   "dependencies": {
+    "@harmonyhub/contracts": "0.1.0",
     "@nestjs/common": "^11.1.27",
     "@nestjs/core": "^11.1.27",
     "@nestjs/platform-express": "^11.1.27",

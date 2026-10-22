@@ -1,0 +1,19 @@
+{
+  "name": "@harmonyhub/contracts",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Contratos compartidos entre la API y la web: esquemas zod de lo que se envia y tipos de lo que se responde.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "src"],
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.2"
+  }
+}
