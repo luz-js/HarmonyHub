@@ -1,5 +1,6 @@
 import { FormEvent, useState } from 'react';
 import { ArrowRight, Check, PartyPopper, Star, X } from 'lucide-react';
+import { isProfileComplete } from '../utils/profileCompletion';
 import { useCurrentUser, useSaveMyProfile } from '../../auth/hooks';
 import { UnavailabilitySection } from '../../availability/components/UnavailabilitySection';
 import { getInitials } from '../../dashboard/utils';
@@ -11,13 +12,13 @@ type ProfilePageProps = {
   /** Avisa a App del nombre nuevo para que el menu de la cuenta lo muestre sin recargar. */
   onUserUpdated?: (user: { name: string }) => void;
   /**
-   * Para quien todavia no tiene organizacion: al guardar se muestra "Tu perfil esta completo" con el boton
-   * "Entrar", que lleva a la bienvenida. Sin esto (ya tiene organizacion) solo se ve "Cambios guardados".
+   * Para quien todavia no tiene organizacion: si al guardar el perfil queda completo (y antes no lo estaba) se muestra
+   * "Tu perfil esta completo" con "Ir al inicio". Sin esto, o si no se completo, se ve "Cambios guardados." como siempre.
    */
-  onEnter?: () => void;
+  onGoHome?: () => void;
 };
 
-export function ProfilePage({ onUserUpdated, onEnter }: ProfilePageProps) {
+export function ProfilePage({ onUserUpdated, onGoHome }: ProfilePageProps) {
   const userQuery = useCurrentUser();
   // Viven aqui y no en el formulario: al guardar, el formulario se vuelve a montar con los datos nuevos.
   const [justSaved, setJustSaved] = useState(false);
@@ -40,24 +41,24 @@ export function ProfilePage({ onUserUpdated, onEnter }: ProfilePageProps) {
           key={profileKey(userQuery.data)}
           user={userQuery.data}
           justSaved={justSaved}
-          onSavedChange={(saved) => {
+          onSavedChange={(saved, becameComplete) => {
             setJustSaved(saved);
-            if (saved && onEnter) setCompleted(true);
+            setCompleted(Boolean(saved && becameComplete && onGoHome));
           }}
           onUserUpdated={onUserUpdated}
-          showSavedMessage={!onEnter}
+          showSavedMessage={!completed}
         />
       )}
       {/* Aparte del formulario: cada fecha se guarda o se borra al momento, sin "Guardar cambios". */}
       {userQuery.data && <UnavailabilitySection />}
 
-      {completed && onEnter && <ProfileCompletedNotice onEnter={onEnter} onClose={() => setCompleted(false)} />}
+      {completed && onGoHome && <ProfileCompletedNotice onGoHome={onGoHome} onClose={() => setCompleted(false)} />}
     </div>
   );
 }
 
-/** Aviso fijo abajo (se ve sin bajar ni subir): el perfil quedo listo y "Entrar" lleva a la bienvenida. */
-function ProfileCompletedNotice({ onEnter, onClose }: { onEnter: () => void; onClose: () => void }) {
+/** Aviso fijo abajo (se ve sin bajar ni subir): el perfil quedo listo y "Ir al inicio" lleva al Inicio de la app. */
+function ProfileCompletedNotice({ onGoHome, onClose }: { onGoHome: () => void; onClose: () => void }) {
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-6 z-40 flex justify-center px-4">
       <div
@@ -72,8 +73,8 @@ function ProfileCompletedNotice({ onEnter, onClose }: { onEnter: () => void; onC
           <p className="font-bold text-white">¡Listo, tu perfil está completo!</p>
           <p className="mt-1 text-sm text-[#C9E9E1]">Ahora puedes crear tu organización o aceptar la invitación de tu equipo cuando te llegue.</p>
           <div className="mt-3 flex gap-2">
-            <button type="button" className="btn-primary h-9 px-4 text-sm" onClick={onEnter}>
-              Entrar <ArrowRight className="h-4 w-4" />
+            <button type="button" className="btn-primary h-9 px-4 text-sm" onClick={onGoHome}>
+              Ir al inicio <ArrowRight className="h-4 w-4" />
             </button>
             <button type="button" className="btn-ghost h-9 px-3 text-sm" onClick={onClose}>
               Seguir editando
@@ -96,9 +97,10 @@ function initialInstruments(user: CurrentUser): SelectedInstrument[] {
 type ProfileFormProps = {
   user: CurrentUser;
   justSaved: boolean;
-  onSavedChange: (saved: boolean) => void;
+  /** `becameComplete`: al guardar, el perfil paso de incompleto a completo (telefono y algun instrumento). */
+  onSavedChange: (saved: boolean, becameComplete?: boolean) => void;
   onUserUpdated?: ProfilePageProps['onUserUpdated'];
-  /** "Cambios guardados." debajo del formulario (sin organizacion se muestra el aviso de perfil completo). */
+  /** "Cambios guardados." debajo del formulario (no se muestra mientras esta el aviso de perfil completo). */
   showSavedMessage: boolean;
 };
 
@@ -137,8 +139,9 @@ function ProfileForm({ user, justSaved, onSavedChange, onUserUpdated, showSavedM
       return;
     }
     try {
+      const wasComplete = isProfileComplete(user);
       const result = await saveProfile.mutateAsync({ profile: { name: name.trim(), phone: phone.trim() || null }, instruments: { instruments } });
-      onSavedChange(true);
+      onSavedChange(true, !wasComplete && isProfileComplete({ phone: result.user.phone, instruments }));
       onUserUpdated?.({ name: result.user.name });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'No se pudieron guardar los cambios');

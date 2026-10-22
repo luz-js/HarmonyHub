@@ -22,6 +22,8 @@ function json(body: unknown, status = 200) {
 }
 
 let failSaving = false;
+/** Perfil guardado en la API falsa (telefono e instrumentos). */
+let profile: { phone: string | null; instruments: Array<{ id: string; instrument: string; isPrimary: boolean }> } = { phone: null, instruments: [] };
 let invitations: unknown[] = [];
 let joined = false;
 const requested: string[] = [];
@@ -31,7 +33,7 @@ const fakeApi = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   const path = new URL(String(input), 'http://localhost').pathname;
   const method = init?.method ?? 'GET';
   requested.push(`${method} ${path}`);
-  if (path === '/api/auth/me') return json({ ok: true, user: { ...user, phone: null, instruments: [] } });
+  if (path === '/api/auth/me') return json({ ok: true, user: { ...user, ...profile } });
   if (path === '/api/me/invitations') return json(invitations);
   if (path === '/api/me/unavailability') return json([]);
   if (path === '/api/organizations') {
@@ -39,9 +41,16 @@ const fakeApi = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
   }
   if (path === '/api/notifications/unread-count') return json({ unread: 0 });
   if (path === '/api/me' && method === 'PATCH') {
-    return failSaving ? json({ message: 'El nombre es demasiado largo' }, 400) : json({ ok: true, user: { ...user, phone: '555-1234', avatarUrl: null } });
+    if (failSaving) return json({ message: 'El nombre es demasiado largo' }, 400);
+    const body = JSON.parse(String(init?.body ?? '{}')) as { phone?: string | null };
+    if (body.phone !== undefined) profile.phone = body.phone;
+    return json({ ok: true, user: { ...user, phone: profile.phone, avatarUrl: null } });
   }
-  if (path === '/api/me/instruments' && method === 'PUT') return json({ ok: true, instruments: [] });
+  if (path === '/api/me/instruments' && method === 'PUT') {
+    const body = JSON.parse(String(init?.body ?? '{}')) as { instruments: Array<{ instrument: string; isPrimary?: boolean }> };
+    profile.instruments = body.instruments.map((item, index) => ({ id: `i${index}`, instrument: item.instrument, isPrimary: Boolean(item.isPrimary) || index === 0 }));
+    return json({ ok: true, instruments: profile.instruments });
+  }
   if (path === '/api/me/invitations/inv-1/accept' && method === 'POST') {
     invitations = [];
     joined = true;
@@ -60,8 +69,10 @@ function openAt(path: string) {
   );
 }
 
-async function saveProfile() {
-  fireEvent.change(await screen.findByLabelText('Teléfono'), { target: { value: '555-1234' } });
+/** Guarda el perfil: telefono y, si se pide, un instrumento (con los dos, el perfil queda completo). */
+async function saveProfile({ phone = '555-1234', withInstrument = true } = {}) {
+  fireEvent.change(await screen.findByLabelText('Teléfono'), { target: { value: phone } });
+  if (withInstrument) fireEvent.click(screen.getByRole('button', { name: 'Bajo' }));
   await act(async () => fireEvent.click(screen.getByRole('button', { name: 'Guardar cambios' })));
 }
 
@@ -70,6 +81,7 @@ const ORGANIZATION_API = /^GET \/api\/(songs|setlists|events|memberships|files|d
 describe('cuenta sin organizacion: entra a la aplicacion', () => {
   beforeEach(() => {
     failSaving = false;
+    profile = { phone: null, instruments: [] };
     invitations = [];
     joined = false;
     requested.length = 0;
@@ -96,6 +108,14 @@ describe('cuenta sin organizacion: entra a la aplicacion', () => {
     }
   });
 
+  it('con el perfil completo (telefono y algun instrumento) la tarjeta dice "Editar mi perfil"', async () => {
+    profile = { phone: '555-1234', instruments: [{ id: 'i0', instrument: 'BASS', isPrimary: true }] };
+    openAt('/');
+    const options = await screen.findByRole('region', { name: 'Otras opciones' });
+    expect(await within(options).findByRole('button', { name: /Editar mi perfil/ })).toHaveTextContent('ya están al día');
+    expect(within(options).queryByRole('button', { name: /Completar mi perfil/ })).not.toBeInTheDocument();
+  });
+
   it('las paginas de la organizacion muestran como empezar y no piden datos a la API', async () => {
     openAt('/songs');
     expect(await screen.findByRole('heading', { name: 'Canciones' })).toBeInTheDocument();
@@ -109,24 +129,40 @@ describe('cuenta sin organizacion: entra a la aplicacion', () => {
     expect(requested.filter((call) => ORGANIZATION_API.test(call))).toEqual([]);
   });
 
-  it('en Mi perfil "Entrar" (arriba y abajo) lleva al Inicio de la app', async () => {
+  it('en Mi perfil "Volver al inicio" (arriba y abajo) lleva al Inicio de la app; ya no dice "Entrar"', async () => {
     openAt('/profile');
     expect(await screen.findByRole('heading', { name: 'Mi perfil' })).toBeInTheDocument();
-    const enter = screen.getAllByRole('button', { name: /^Entrar/ });
-    expect(enter).toHaveLength(2);
-    await act(async () => fireEvent.click(enter[1]));
+    const back = screen.getAllByRole('button', { name: /Volver al inicio/ });
+    expect(back).toHaveLength(2);
+    expect(screen.queryByRole('button', { name: /Entrar/ })).not.toBeInTheDocument();
+    await act(async () => fireEvent.click(back[1]));
     expect(await screen.findByRole('heading', { name: '¡Hola, Persona!' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/');
   });
 
-  it('al guardar el perfil aparece "¡Listo, tu perfil está completo!" y su "Entrar" lleva al Inicio', async () => {
+  it('al completar el perfil aparece "¡Listo, tu perfil está completo!" y su "Ir al inicio" lleva al Inicio', async () => {
     openAt('/profile');
     await saveProfile();
     const notice = await screen.findByRole('status', { name: 'Perfil completo' });
     expect(notice).toHaveTextContent('¡Listo, tu perfil está completo!');
     expect(screen.queryByText('Cambios guardados.')).not.toBeInTheDocument();
-    await act(async () => fireEvent.click(within(notice).getByRole('button', { name: /Entrar/ })));
+    await act(async () => fireEvent.click(within(notice).getByRole('button', { name: /Ir al inicio/ })));
     expect(await screen.findByRole('heading', { name: '¡Hola, Persona!' })).toBeInTheDocument();
+  });
+
+  it('si guarda pero sigue incompleto, o si ya estaba completo, se ve "Cambios guardados." y no el aviso', async () => {
+    openAt('/profile');
+    await saveProfile({ withInstrument: false });
+    expect(await screen.findByText('Cambios guardados.')).toBeInTheDocument();
+    expect(screen.queryByRole('status', { name: 'Perfil completo' })).not.toBeInTheDocument();
+  });
+
+  it('editar un perfil que ya estaba completo muestra "Cambios guardados."', async () => {
+    profile = { phone: '555-0000', instruments: [{ id: 'i0', instrument: 'KEYS', isPrimary: true }] };
+    openAt('/profile');
+    await saveProfile({ withInstrument: false });
+    expect(await screen.findByText('Cambios guardados.')).toBeInTheDocument();
+    expect(screen.queryByRole('status', { name: 'Perfil completo' })).not.toBeInTheDocument();
   });
 
   it('si guardar falla, se ve el error y no el aviso', async () => {
@@ -140,7 +176,7 @@ describe('cuenta sin organizacion: entra a la aplicacion', () => {
   it('al aceptar una invitacion la app pasa a esa organizacion sin recargar', async () => {
     invitations = [invitation];
     openAt('/invitations');
-    expect(await screen.findAllByRole('button', { name: /^Entrar/ })).toHaveLength(2);
+    expect(await screen.findAllByRole('button', { name: /Volver al inicio/ })).toHaveLength(2);
     await act(async () => fireEvent.click(await screen.findByRole('button', { name: 'Unirme a Renacer' })));
     await waitFor(() => expect(localStorage.getItem('hh_current_organization_id')).toBe('org-renacer'));
     expect(window.location.pathname).toBe('/');

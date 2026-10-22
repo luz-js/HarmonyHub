@@ -7,7 +7,7 @@ import { AudioPlayerProvider, PersistentAudioPlayer } from './features/songs/pla
 import { SetlistDetailPage, SetlistsPage as RealSetlistsPage } from './features/setlists';
 import { SettingsPage } from './app/LegacyPages';
 import { LoginPage } from './app/LoginPage';
-import { EnterFrame, NoOrganizationNotice } from './app/NoOrganizationPages';
+import { BackHomeFrame, NoOrganizationNotice } from './app/NoOrganizationPages';
 import { organizationPageFor } from './app/noOrganizationRoutes';
 import { OnboardingPage } from './app/OnboardingPage';
 import { WelcomeHome } from './app/WelcomeHome';
@@ -37,9 +37,9 @@ function resolveNoOrganizationPage(path: string, user: AppUser, navigate: Naviga
   if (organizationPage) return <NoOrganizationNotice title={organizationPage.label} navigate={navigate} />;
   if (path === '/profile') {
     return (
-      <EnterFrame navigate={navigate}>
-        <ProfilePage onUserUpdated={onProfileUpdated} onEnter={() => navigate('/')} />
-      </EnterFrame>
+      <BackHomeFrame navigate={navigate}>
+        <ProfilePage onUserUpdated={onProfileUpdated} onGoHome={() => navigate('/')} />
+      </BackHomeFrame>
     );
   }
   if (path === '/notifications') return <NotificationsPage navigate={navigate} />;
@@ -198,9 +198,9 @@ function App() {
           user.currentOrganizationId ? (
             <MyInvitationsPage onAccepted={activateOrganization} />
           ) : (
-            <EnterFrame navigate={navigate}>
+            <BackHomeFrame navigate={navigate}>
               <MyInvitationsPage onAccepted={activateOrganization} />
-            </EnterFrame>
+            </BackHomeFrame>
           )
         ) : path === '/settings' ? (
           <div className="space-y-5">

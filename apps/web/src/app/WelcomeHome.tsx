@@ -1,7 +1,9 @@
 import type { ReactNode } from 'react';
 import { ChevronRight, Mail, Plus, UserRound } from 'lucide-react';
 import { InvitationCard } from '../features/invitations/components/InvitationCard';
+import { useCurrentUser } from '../features/auth/hooks';
 import { useMyInvitations } from '../features/invitations/hooks';
+import { isProfileComplete } from '../features/profile/utils/profileCompletion';
 import type { AcceptedInvitation } from '../shared/types';
 import type { AppUser, Navigate } from './types';
 
@@ -21,6 +23,7 @@ export function WelcomeHome({ user, navigate, onJoined }: WelcomeHomeProps) {
   const invitationsQuery = useMyInvitations();
   const invitations = invitationsQuery.data || [];
   const firstName = user.name.split(' ')[0];
+  const profileComplete = isProfileComplete(useCurrentUser().data);
 
   return (
     <div className="space-y-6">
@@ -62,8 +65,8 @@ export function WelcomeHome({ user, navigate, onJoined }: WelcomeHomeProps) {
         />
         <WelcomeOption
           icon={<UserRound className="h-5 w-5" />}
-          title="Completar mi perfil"
-          description="Agrega tu teléfono y lo que tocas para que tu equipo sepa contar contigo."
+          title={profileComplete ? 'Editar mi perfil' : 'Completar mi perfil'}
+          description={profileComplete ? 'Tu teléfono y lo que tocas ya están al día; cámbialos cuando quieras.' : 'Agrega tu teléfono y lo que tocas para que tu equipo sepa contar contigo.'}
           onClick={() => navigate('/profile')}
         />
       </section>

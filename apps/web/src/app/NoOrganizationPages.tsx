@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { ArrowRight, Mail, Plus, Users } from 'lucide-react';
+import { ArrowLeft, Mail, Plus, Users } from 'lucide-react';
 import { useMyInvitations } from '../features/invitations/hooks';
 import type { Navigate } from './types';
 
@@ -33,18 +33,18 @@ export function NoOrganizationNotice({ title, navigate }: { title: string; navig
   );
 }
 
-/** Mi perfil y Mis invitaciones sin organizacion: "Entrar" arriba y abajo lleva al Inicio de la app. */
-export function EnterFrame({ children, navigate }: { children: ReactNode; navigate: Navigate }) {
-  const enter = (
+/** Mi perfil y Mis invitaciones sin organizacion: "Volver al inicio" arriba y abajo. */
+export function BackHomeFrame({ children, navigate }: { children: ReactNode; navigate: Navigate }) {
+  const back = (
     <button type="button" className="btn-ghost" onClick={() => navigate('/')}>
-      Entrar <ArrowRight className="h-4 w-4" />
+      <ArrowLeft className="h-4 w-4" /> Volver al inicio
     </button>
   );
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">{enter}</div>
+      <div className="flex justify-end">{back}</div>
       {children}
-      <div className="flex justify-center border-t border-[#23252A] pt-6">{enter}</div>
+      <div className="flex justify-center border-t border-[#23252A] pt-6">{back}</div>
     </div>
   );
 }
