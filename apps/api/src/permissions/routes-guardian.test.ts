@@ -18,6 +18,9 @@ export const EXEMPT_ROUTES: Record<string, string> = {
   'OrganizationsController.list': 'Lista las organizaciones del usuario; no hay una activa que verificar.',
   'OrganizationsController.create': 'Crear una organizacion no requiere pertenecer a otra.',
   'InvitationsController.accept': 'Quien acepta todavia no es miembro de la organizacion.',
+  'MyInvitationsController.list': 'Mis invitaciones: se buscan por el correo de la sesion; todavia no es miembro de esas organizaciones.',
+  'MyInvitationsController.accept': 'Mis invitaciones: solo si la invitacion es de su correo (si no, 404); aun no es miembro.',
+  'MyInvitationsController.decline': 'Mis invitaciones: solo si la invitacion es de su correo (si no, 404); aun no es miembro.',
   'InvitationsController.cancel': "La organizacion sale de la invitacion; el servicio verifica 'invitations.manage'.",
   'MembershipsController.update': "La organizacion sale de la membresia editada; el servicio verifica 'members.manage' y las reglas de propietario.",
 };

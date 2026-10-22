@@ -1,5 +1,5 @@
 import { BadRequestException, ConflictException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { InvitationStatus, MembershipRole, Prisma } from '@prisma/client';
+import { Invitation, InvitationStatus, MembershipRole, Prisma } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { OrgMember } from '../permissions/current-membership.decorator';
@@ -27,7 +27,24 @@ const invitationSelect = {
   invitedBy: { select: { id: true, name: true } },
 } satisfies Prisma.InvitationSelect;
 
+/** "Mis invitaciones": lo que ve la persona invitada (con la organizacion; tampoco lleva token). */
+const myInvitationSelect = {
+  id: true,
+  email: true,
+  role: true,
+  status: true,
+  expiresAt: true,
+  createdAt: true,
+  organization: { select: { id: true, name: true, slug: true } },
+  invitedBy: { select: { id: true, name: true } },
+} satisfies Prisma.InvitationSelect;
+
 type Tx = Prisma.TransactionClient;
+type InvitedUser = { id: string; email: string };
+
+function sameEmail(a: string, b: string) {
+  return a.trim().toLowerCase() === b.trim().toLowerCase();
+}
 
 @Injectable()
 export class InvitationsService {
@@ -86,21 +103,74 @@ export class InvitationsService {
   async accept(token: string, userId: string) {
     const invitation = await this.prisma.invitation.findUnique({ where: { token } });
     if (!invitation) throw new NotFoundException('Invitacion no encontrada');
+    const user = await this.findUser(userId);
+    if (!sameEmail(user.email, invitation.email)) throw new ForbiddenException('Esta invitacion pertenece a otro correo');
+    return this.acceptFor(invitation, user);
+  }
+
+  // --- "Mis invitaciones": siempre la persona de la sesion, buscando por el correo de su cuenta ---
+
+  /** Pendientes y sin vencer, de cualquier organizacion, para el correo de quien inicio sesion. */
+  async listMine(userId: string) {
+    const user = await this.findUser(userId);
+    return this.prisma.invitation.findMany({
+      where: { email: { equals: user.email, mode: 'insensitive' }, status: 'PENDING', expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' },
+      select: myInvitationSelect,
+    });
+  }
+
+  /** Acepta una invitacion propia. Aceptar dos veces es seguro: la segunda solo confirma la membresia. */
+  async acceptMine(userId: string, id: string) {
+    const user = await this.findUser(userId);
+    const invitation = await this.findMine(user, id);
+    const result = await this.acceptFor(invitation, user);
+    const membership = await this.prisma.membership.findUniqueOrThrow({
+      where: { userId_organizationId: { userId, organizationId: invitation.organizationId } },
+      include: { organization: { select: { id: true, name: true, slug: true } } },
+    });
+    return { invitation: result, organization: { ...membership.organization, role: membership.role } };
+  }
+
+  /** Rechaza una invitacion propia: queda como DECLINED (no se borra). Rechazar dos veces tambien es seguro. */
+  async declineMine(userId: string, id: string) {
+    const user = await this.findUser(userId);
+    const invitation = await this.findMine(user, id);
+    if (invitation.status === 'DECLINED') return this.prisma.invitation.findUniqueOrThrow({ where: { id }, select: invitationSelect });
+    if (invitation.status !== 'PENDING') throw new BadRequestException('La invitacion ya no esta pendiente');
+    return this.prisma.$transaction((tx) => this.setStatus(tx, invitation, 'DECLINED'));
+  }
+
+  private async findUser(userId: string): Promise<InvitedUser> {
+    const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { id: true, email: true } });
+    if (!user) throw new NotFoundException('Usuario no encontrado');
+    return user;
+  }
+
+  /** Una invitacion de otro correo se responde igual que una que no existe: nunca se revela que existe. */
+  private async findMine(user: InvitedUser, id: string) {
+    const invitation = await this.prisma.invitation.findUnique({ where: { id } });
+    if (!invitation || !sameEmail(user.email, invitation.email)) throw new NotFoundException('Invitacion no encontrada');
+    return invitation;
+  }
+
+  private async acceptFor(invitation: Invitation, user: InvitedUser) {
+    const membership = await this.prisma.membership.findUnique({
+      where: { userId_organizationId: { userId: user.id, organizationId: invitation.organizationId } },
+    });
+    if (invitation.status === 'ACCEPTED' && membership?.status === 'ACTIVE') {
+      return this.prisma.invitation.findUniqueOrThrow({ where: { id: invitation.id }, select: invitationSelect });
+    }
     if (invitation.status !== 'PENDING') throw new BadRequestException('La invitacion ya no esta pendiente');
     if (invitation.expiresAt < new Date()) throw new BadRequestException('La invitacion expiro');
 
-    const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    if (!user) throw new NotFoundException('Usuario no encontrado');
-    if (user.email.toLowerCase() !== invitation.email.toLowerCase()) {
-      throw new ForbiddenException('Esta invitacion pertenece a otro correo');
-    }
-
     return this.prisma.$transaction(async (tx) => {
-      await tx.membership.upsert({
-        where: { userId_organizationId: { userId, organizationId: invitation.organizationId } },
-        update: { role: invitation.role, status: 'ACTIVE' },
-        create: { userId, organizationId: invitation.organizationId, role: invitation.role, status: 'ACTIVE' },
-      });
+      // Si ya es miembro activo (p. ej. entro por otra invitacion) no se le cambia el rol que tiene.
+      if (!membership) {
+        await tx.membership.create({ data: { userId: user.id, organizationId: invitation.organizationId, role: invitation.role, status: 'ACTIVE' } });
+      } else if (membership.status !== 'ACTIVE') {
+        await tx.membership.update({ where: { id: membership.id }, data: { role: invitation.role, status: 'ACTIVE' } });
+      }
       return this.setStatus(tx, invitation, 'ACCEPTED');
     });
   }

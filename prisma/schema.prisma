@@ -33,6 +33,7 @@ enum InvitationStatus {
   ACCEPTED
   CANCELLED
   EXPIRED
+  DECLINED
 }
 
 enum SongStatus {

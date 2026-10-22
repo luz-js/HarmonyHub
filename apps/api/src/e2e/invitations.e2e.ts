@@ -117,5 +117,94 @@ if (!testDatabaseUrl) {
       assert.equal(membership.role, 'LEADER');
       assert.equal((await invite('OWNER', email)).status, 409);
     });
+
+    // --- "Mis invitaciones": la persona invitada, por el correo de su cuenta ---
+
+    async function asUser(user: { id: string; email: string }, method: string, path: string, organizationId?: string): Promise<Result> {
+      const headers: Record<string, string> = { Authorization: `Bearer ${api.sign({ userId: user.id, email: user.email })}` };
+      if (organizationId) headers['x-organization-id'] = organizationId;
+      const response = await fetch(`${api.baseUrl}${path}`, { method, headers });
+      const text = await response.text();
+      return { status: response.status, body: text ? JSON.parse(text) : {} };
+    }
+
+    const newUser = (email: string) => api.prisma.user.create({ data: { name: email, email, passwordHash: 'e2e-sin-login' }, select: { id: true, email: true } });
+
+    test('mis invitaciones: ve solo las suyas, pendientes y sin vencer, con organizacion, rol y quien invito', async () => {
+      const ana = await newUser('Ana.Mis@Correo.com');
+      const mine = await invite('OWNER', 'ana.mis@correo.com', 'LEADER');
+      const expired = await invite('ADMIN', 'ana.otra@correo.com');
+      await api.prisma.invitation.update({ where: { id: String(expired.body.id) }, data: { email: 'ana.mis@correo.com', status: 'EXPIRED' } });
+      await invite('OWNER', 'alguien-mas@correo.com');
+
+      const result = await asUser(ana, 'GET', '/api/me/invitations');
+      assert.equal(result.status, 200);
+      const items = result.body as unknown as Array<Record<string, unknown>>;
+      assert.equal(items.length, 1);
+      assert.equal(items[0].id, mine.body.id);
+      assert.equal(items[0].role, 'LEADER');
+      assert.deepEqual(items[0].organization, { id: org.organizationId, name: `Org A ${org.secret}`, slug: 'org-a' });
+      assert.equal((items[0].invitedBy as { id: string }).id, org.users.OWNER.userId);
+      assert.ok(!JSON.stringify(items).includes('token'));
+    });
+
+    test('la invitacion de otra persona da 404 (no se revela que existe), aceptar o rechazar', async () => {
+      const intruder = await newUser('intruso@correo.com');
+      const theirs = await invite('OWNER', 'victima@correo.com');
+      assert.equal((await asUser(intruder, 'POST', `/api/me/invitations/${String(theirs.body.id)}/accept`)).status, 404);
+      assert.equal((await asUser(intruder, 'POST', `/api/me/invitations/${String(theirs.body.id)}/decline`)).status, 404);
+      assert.equal((await asUser(intruder, 'POST', '/api/me/invitations/no-existe/accept')).status, 404);
+      assert.equal((await api.prisma.invitation.findUniqueOrThrow({ where: { id: String(theirs.body.id) } })).status, 'PENDING');
+    });
+
+    test('una invitacion vencida no se puede aceptar', async () => {
+      const user = await newUser('tarde@correo.com');
+      const invitation = await invite('OWNER', 'tarde@correo.com');
+      await api.prisma.invitation.update({ where: { id: String(invitation.body.id) }, data: { expiresAt: new Date(Date.now() - 1000) } });
+      const result = await asUser(user, 'POST', `/api/me/invitations/${String(invitation.body.id)}/accept`);
+      assert.equal(result.status, 400);
+      assert.match(String(result.body.message), /expiro/);
+    });
+
+    test('aceptar crea la membresia con el rol invitado, es seguro repetirlo y da acceso solo a esa organizacion', async () => {
+      const otherOrg = await seedOrganization(api.prisma, 'B');
+      const user = await newUser('nuevo@correo.com');
+      const invitation = await invite('OWNER', 'nuevo@correo.com', 'LEADER');
+      const path = `/api/me/invitations/${String(invitation.body.id)}/accept`;
+
+      const first = await asUser(user, 'POST', path);
+      assert.equal(first.status, 200);
+      assert.deepEqual(first.body.organization, { id: org.organizationId, name: `Org A ${org.secret}`, slug: 'org-a', role: 'LEADER' });
+      const second = await asUser(user, 'POST', path);
+      assert.equal(second.status, 200);
+      assert.equal(await api.prisma.membership.count({ where: { userId: user.id } }), 1);
+
+      assert.equal((await asUser(user, 'GET', '/api/events', org.organizationId)).status, 200);
+      assert.equal((await asUser(user, 'GET', '/api/events', otherOrg.organizationId)).status, 403);
+      assert.equal(((await asUser(user, 'GET', '/api/me/invitations')).body as unknown as unknown[]).length, 0);
+    });
+
+    test('rechazar la deja como DECLINED (sin borrarla), es seguro repetirlo y despues no se puede aceptar', async () => {
+      const user = await newUser('no-gracias@correo.com');
+      const invitation = await invite('OWNER', 'no-gracias@correo.com');
+      const id = String(invitation.body.id);
+      assert.equal((await asUser(user, 'POST', `/api/me/invitations/${id}/decline`)).status, 200);
+      assert.equal((await asUser(user, 'POST', `/api/me/invitations/${id}/decline`)).status, 200);
+      assert.equal((await api.prisma.invitation.findUniqueOrThrow({ where: { id } })).status, 'DECLINED');
+      assert.equal((await asUser(user, 'POST', `/api/me/invitations/${id}/accept`)).status, 400);
+      assert.equal(await api.prisma.membership.count({ where: { userId: user.id } }), 0);
+      // Se puede volver a invitar a quien rechazo.
+      assert.equal((await invite('OWNER', 'no-gracias@correo.com')).status, 201);
+    });
+
+    test('si ya es miembro activo, aceptar otra invitacion no le cambia el rol', async () => {
+      const owner = org.users.OWNER;
+      const invitation = await api.prisma.invitation.create({
+        data: { organizationId: org.organizationId, email: owner.email, role: 'GUEST', token: 'token-owner', expiresAt: new Date(Date.now() + 86_400_000) },
+      });
+      const result = await asUser({ id: owner.userId, email: owner.email }, 'POST', `/api/me/invitations/${invitation.id}/accept`);
+      assert.equal(result.status, 200);
+      assert.equal((result.body.organization as { role: string }).role, 'OWNER');
+    });
   });
 }
