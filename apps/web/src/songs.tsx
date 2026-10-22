@@ -3,6 +3,7 @@ import {
   ArrowLeft,
   Copy,
   Edit3,
+  FileUp,
   Music2,
   Plus,
   Save,
@@ -26,6 +27,8 @@ import {
 } from './api';
 import { SongCollaborationPanel, SongEditor as StructuredSongEditor, SongFilesPanel, SongHistoryPanel, SongLinksPanel, SongNotesPanel, SongTracksPanel, TransposeButton, TransposeDialog } from './features/songs/components';
 import { useSongNotes } from './features/songs/hooks';
+import { SongExportButtons } from './features/songs/components/export/SongExportButtons';
+import { ImportChordProDialog } from './features/songs/components/import/ImportChordProDialog';
 import type { SongContent as StructuredSongContent } from './features/songs/types/song-content.types';
 import { legacyFieldsToSongContent, normalizeSongContent } from './features/songs/utils/song-content.utils';
 import { getCurrentOrganizationId } from './shared/api/http';
@@ -179,6 +182,7 @@ export function SongsPage({ user, navigate }: { user: User; navigate: Navigate }
   const [editing, setEditing] = useState<SongSummary | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  const [showImport, setShowImport] = useState(false);
   const activeFilterCount = [filters.key, filters.bpmMin, filters.bpmMax, filters.tag, filters.favorite].filter(Boolean).length;
 
   async function loadSongs(nextFilters = filters) {
@@ -218,10 +222,16 @@ export function SongsPage({ user, navigate }: { user: User; navigate: Navigate }
           <h1 className="page-title">Canciones</h1>
           <p className="page-subtitle">Tu repertorio con versiones, pistas, enlaces y archivos.</p>
         </div>
-        <button className="btn-primary self-start md:self-auto" onClick={() => { setEditing(null); setShowForm(true); }}>
-          <Plus className="h-4 w-4" /> Nueva canción
-        </button>
+        <div className="flex flex-wrap gap-2 self-start md:self-auto">
+          <button className="btn-ghost" onClick={() => setShowImport(true)}>
+            <FileUp className="h-4 w-4" /> Importar ChordPro
+          </button>
+          <button className="btn-primary" onClick={() => { setEditing(null); setShowForm(true); }}>
+            <Plus className="h-4 w-4" /> Nueva canción
+          </button>
+        </div>
       </section>
+      {showImport && <ImportChordProDialog songs={items} onClose={() => setShowImport(false)} onImported={(songId) => { setShowImport(false); navigate(`/songs/${songId}`); }} />}
 
       <form className="space-y-3" onSubmit={(event) => { event.preventDefault(); loadSongs(filters); }}>
         <div className="flex gap-2">
@@ -471,6 +481,18 @@ export function SongDetailPage({ id, navigate }: { id: string; navigate: Navigat
             setTemporaryKey('');
           }}>Volver al tono original</button>}
           {activeVersion && <TransposeButton onClick={() => setTransposeOpen(true)} />}
+          {activeVersion && (
+            <SongExportButtons
+              title={song.title}
+              artist={song.artist}
+              timeSignature={song.timeSignature}
+              bpm={activeVersion.bpm || song.bpm}
+              versionKey={activeVersion.key}
+              versionContent={structuredContent}
+              viewKey={temporaryKey || activeVersion.key}
+              viewContent={temporaryContent || structuredContent}
+            />
+          )}
           {canEditSong && <button className="btn-ghost" onClick={() => setShowEdit(true)}><Edit3 className="h-4 w-4" /> Editar</button>}
         </div>
       </section>

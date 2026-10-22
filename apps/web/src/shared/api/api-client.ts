@@ -1,6 +1,8 @@
 import type {
   AcceptedInvitation,
   AppNotification,
+  ImportChordProInput,
+  ImportChordProResult,
   AdvanceLiveStageInput,
   HandoverLiveStageInput,
   LiveStageState,
@@ -195,6 +197,11 @@ export function handoverLiveStage(setlistId: string, input: HandoverLiveStageInp
 
 export function endLiveStage(setlistId: string) {
   return http<LiveStageState>(`/api/setlists/${encodeURIComponent(setlistId)}/live/end`, { method: 'POST', body: '{}' });
+}
+
+/** Importar una cancion (o una version nueva) desde texto ChordPro. */
+export function importChordPro(input: ImportChordProInput) {
+  return http<ImportChordProResult>('/api/songs/import/chordpro', { method: 'POST', body: JSON.stringify(input) });
 }
 
 /** Guarda en la cuenta la organizacion activa, para abrirla en cualquier dispositivo. */

@@ -4,6 +4,7 @@ import { takeUrlFlag } from '../../../shared/utils';
 import { SetlistEditor } from '../editor';
 import { SetlistDraft, SetlistFormDialog, SetlistHeader } from '../components';
 import { StageMode } from '../stage-mode/components/StageMode';
+import { SetlistPdfButton } from '../../print/SetlistPdfButton';
 import {
   useArchiveSetlist,
   useCreateSetlist,
@@ -156,6 +157,7 @@ export function SetlistDetailPage({ id, navigate }: { id: string; navigate: Navi
         onEnterStageMode={() => setStageModeOpen(true)}
         onSaveAsTemplate={canManage ? () => setShowSaveTemplate(true) : undefined}
         onCreateFromTemplate={canManage ? () => setShowUseTemplate(true) : undefined}
+        extraActions={<SetlistPdfButton setlist={setlist} />}
       />
 
       <SetlistEditor

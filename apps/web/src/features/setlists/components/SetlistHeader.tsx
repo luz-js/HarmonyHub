@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { Archive, ArrowLeft, CopyPlus, LoaderCircle, Pencil, Presentation, Send, Trash2 } from 'lucide-react';
 import type { SetlistDetail } from '../../../shared/types';
 import { plural } from '../../../shared/utils/format';
@@ -22,6 +23,7 @@ export function SetlistHeader({
   onEnterStageMode,
   onSaveAsTemplate,
   onCreateFromTemplate,
+  extraActions,
 }: {
   setlist: SetlistDetail;
   canManage: boolean;
@@ -40,6 +42,8 @@ export function SetlistHeader({
   onEnterStageMode: () => void;
   onSaveAsTemplate?: () => void;
   onCreateFromTemplate?: () => void;
+  /** Acciones extra junto a Stage Mode (ej. exportar PDF). */
+  extraActions?: ReactNode;
 }) {
   return (
     <section className="space-y-4">
@@ -63,6 +67,7 @@ export function SetlistHeader({
 
         <div className="flex flex-wrap gap-2">
           {!setlist.isTemplate && <button className="btn-primary" onClick={onEnterStageMode}><Presentation className="h-4 w-4" /> Stage Mode</button>}
+          {extraActions}
           {setlist.isTemplate ? (
             onCreateFromTemplate && <button className="btn-primary" onClick={onCreateFromTemplate}><CopyPlus className="h-4 w-4" /> Usar plantilla</button>
           ) : (
