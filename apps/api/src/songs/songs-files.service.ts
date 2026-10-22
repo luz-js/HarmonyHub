@@ -1,6 +1,14 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { extname } from 'node:path';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  songFileUploadBodySchema,
+  type OrganizationFilesQueryData,
+  type ReorderSongFilesData,
+  type SongFileListQueryData,
+  type UpdateSongFileData,
+} from '@harmonyhub/contracts';
+import { parseOrBadRequest } from '../shared/zod.pipe';
 import { clean } from '../shared/object.utils';
 import { SongActivityService } from './activity/song-activity.service';
 import {
@@ -13,14 +21,7 @@ import {
 import { SongsAccessService } from './songs-access.service';
 import { normalizeSongFileResponse, sanitizeDownloadFileName } from './songs.presenter';
 import { SongsRepository } from './songs.repository';
-import {
-  buildSongFileStorageSegments,
-  listOrganizationFilesQuerySchema,
-  listSongFileQuerySchema,
-  reorderSongFilesSchema,
-  songFileUploadBodySchema,
-  updateSongFileSchema,
-} from './songs.schemas';
+import { buildSongFileStorageSegments } from './songs.schemas';
 import { TRACK_STORAGE, TrackStorageProvider } from './storage/track-storage.interface';
 import type { OrgMember } from '../permissions/current-membership.decorator';
 
@@ -41,21 +42,17 @@ export class SongsFilesService {
   ) {}
 
   /** Pagina Archivos: todos los archivos de las canciones de la organizacion, con su cancion. */
-  async organizationFiles(member: OrgMember, query: Record<string, unknown> = {}) {
-    const parsed = listOrganizationFilesQuerySchema.safeParse(query);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const files = await this.songsRepository.listOrganizationFiles(member.organizationId, { search: parsed.data.search, category: parsed.data.category, take: parsed.data.limit });
+  async organizationFiles(member: OrgMember, query: OrganizationFilesQueryData) {
+    const files = await this.songsRepository.listOrganizationFiles(member.organizationId, { search: query.search, category: query.category, take: query.limit });
     return { items: files.map((file) => ({ ...normalizeSongFileResponse(file), song: file.song })) };
   }
 
-  async files(member: OrgMember, songId: string, query: Record<string, unknown> = {}) {
+  async files(member: OrgMember, songId: string, query: SongFileListQueryData) {
     const { organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
-    const parsed = listSongFileQuerySchema.safeParse(query);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const versionId = parsed.data.versionId ? parsed.data.versionId : undefined;
+    const versionId = query.versionId ? query.versionId : undefined;
     if (versionId) await this.access.assertVersionInSong(songId, versionId);
-    const files = await this.songsRepository.listFiles(songId, { versionId, category: parsed.data.category });
+    const files = await this.songsRepository.listFiles(songId, { versionId, category: query.category });
     return files.map((file) => normalizeSongFileResponse(file));
   }
 
@@ -80,10 +77,10 @@ export class SongsFilesService {
       throw error;
     }
 
-    const parsed = songFileUploadBodySchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
+    // Se valida aqui y no con ZodPipe: es un formulario multipart y primero se revisa el archivo.
+    const data = parseOrBadRequest(songFileUploadBodySchema, input);
 
-    const version = await this.access.assertVersionInSong(songId, parsed.data.versionId);
+    const version = await this.access.assertVersionInSong(songId, data.versionId);
     const fileId = `file_${randomUUID().replace(/-/g, '')}`;
     const storage = await this.trackStorage.upload(
       file.buffer,
@@ -111,10 +108,10 @@ export class SongsFilesService {
         songFileData: {
           songId,
           versionId: version?.id,
-          title: parsed.data.title || file.originalname.replace(/\.[^.]+$/, ''),
-          description: parsed.data.description,
-          category: parsed.data.category,
-          isPrimary: parsed.data.isPrimary,
+          title: data.title || file.originalname.replace(/\.[^.]+$/, ''),
+          description: data.description,
+          category: data.category,
+          isPrimary: data.isPrimary,
           sortOrder,
           active: true,
         },
@@ -137,22 +134,20 @@ export class SongsFilesService {
     }
   }
 
-  async updateSongFile(member: OrgMember, songId: string, songFileId: string, input: Record<string, unknown>) {
+  async updateSongFile(member: OrgMember, songId: string, songFileId: string, data: UpdateSongFileData) {
     const { organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
     await this.access.assertSongFileInSong(songId, songFileId);
-    const parsed = updateSongFileSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const version = parsed.data.versionId === undefined ? undefined : await this.access.assertVersionInSong(songId, parsed.data.versionId);
+    const version = data.versionId === undefined ? undefined : await this.access.assertVersionInSong(songId, data.versionId);
 
     const updated = await this.songsRepository.updateSongFile(songFileId, clean({
-      versionId: parsed.data.versionId === undefined ? undefined : version?.id ?? null,
-      title: parsed.data.title,
-      description: parsed.data.description,
-      category: parsed.data.category,
-      isPrimary: parsed.data.isPrimary,
-      active: parsed.data.active,
-      sortOrder: parsed.data.sortOrder,
+      versionId: data.versionId === undefined ? undefined : version?.id ?? null,
+      title: data.title,
+      description: data.description,
+      category: data.category,
+      isPrimary: data.isPrimary,
+      active: data.active,
+      sortOrder: data.sortOrder,
     }));
     return normalizeSongFileResponse(updated);
   }
@@ -203,13 +198,11 @@ export class SongsFilesService {
     return normalizeSongFileResponse(songFile);
   }
 
-  async reorderSongFiles(member: OrgMember, songId: string, input: Record<string, unknown>) {
+  async reorderSongFiles(member: OrgMember, songId: string, data: ReorderSongFilesData) {
     const { organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
-    const parsed = reorderSongFilesSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const version = await this.access.assertVersionInSong(songId, parsed.data.versionId);
-    const files = await this.songsRepository.reorderSongFiles(songId, version?.id || null, parsed.data.items);
+    const version = await this.access.assertVersionInSong(songId, data.versionId);
+    const files = await this.songsRepository.reorderSongFiles(songId, version?.id || null, data.items);
     return files.map((file) => normalizeSongFileResponse(file));
   }
 

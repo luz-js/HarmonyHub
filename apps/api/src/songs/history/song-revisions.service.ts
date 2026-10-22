@@ -1,16 +1,12 @@
-import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
+import type { RestoreSongRevisionData } from '@harmonyhub/contracts';
 import { Prisma, RevisionSource } from '@prisma/client';
-import { z } from 'zod';
 import { assertSongAccess, assertSongVersionAccess } from '../song-access.utils';
 import { SongsRepository } from '../songs.repository';
 import { SongActivityService } from '../activity/song-activity.service';
 import { calculateSongVersionRevisionHash, diffSongVersionRevisions, SongVersionRevisionSnapshot } from './song-revision.utils';
 import { SongRevisionsRepository } from './song-revisions.repository';
 import type { OrgMember } from '../../permissions/current-membership.decorator';
-
-const restoreSchema = z.object({
-  reason: z.string().trim().max(300).optional(),
-});
 
 type VersionSnapshotRow = {
   name: string;
@@ -200,14 +196,11 @@ export class SongRevisionsService {
     };
   }
 
-  async restore(member: OrgMember, songId: string, versionId: string, revisionNumber: number, input: Record<string, unknown>) {
+  async restore(member: OrgMember, songId: string, versionId: string, revisionNumber: number, data: RestoreSongRevisionData) {
     const { userId, organizationId } = member;
     const song = await this.songsRepository.findSongSummaryInOrganization(songId, organizationId);
     if (!song) throw new NotFoundException('Cancion no encontrada');
     await assertSongVersionAccess(this.songsRepository, songId, versionId);
-
-    const parsed = restoreSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
     const target = await this.revisionsRepository.findByNumber(versionId, revisionNumber);
     if (!target) throw new NotFoundException('Revision no encontrada');
@@ -241,7 +234,7 @@ export class SongRevisionsService {
     });
 
     // 3) Registrar la restauracion como una nueva revision explicita (no se deduplica: es una accion deliberada).
-    const reason = parsed.data.reason || `Restaurado desde revision ${revisionNumber}`;
+    const reason = data.reason || `Restaurado desde revision ${revisionNumber}`;
     const restoredRevision = await this.createRevision(
       { songId, versionId, organizationId, actorId: userId, source: 'RESTORE', reason, snapshot: restoredSnapshot },
       calculateSongVersionRevisionHash(restoredSnapshot),

@@ -1,4 +1,6 @@
 import { Controller, Get, Inject, Query, UseGuards } from '@nestjs/common';
+import { organizationFilesQuerySchema, type OrganizationFilesQueryData } from '@harmonyhub/contracts';
+import { ZodPipe } from '../shared/zod.pipe';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentMembership, OrgMember } from '../permissions/current-membership.decorator';
 import { PermissionsGuard } from '../permissions/permissions.guard';
@@ -13,7 +15,7 @@ export class FilesController {
 
   @Get()
   @RequirePermission('read')
-  list(@CurrentMembership() member: OrgMember, @Query() query: Record<string, unknown>) {
+  list(@CurrentMembership() member: OrgMember, @Query(new ZodPipe(organizationFilesQuerySchema)) query: OrganizationFilesQueryData) {
     return this.filesService.organizationFiles(member, query);
   }
 }

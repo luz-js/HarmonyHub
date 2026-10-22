@@ -41,7 +41,6 @@ import type {
   SongTrackType,
   SongVersion,
   SongVersionRevision,
-  TrackProvider,
   AddEventMusicianInput,
   AddSetlistParticipantInput,
   CreateEventInput,
@@ -80,6 +79,23 @@ import type {
   UpdateSetlistRoleRequirementInput,
 } from '../types';
 import { buildAuthHeaders, ensureFreshAccessToken, http, requestBlob, setAuthToken, setCurrentOrganizationId } from './http';
+import type {
+  CopySongTracksInput,
+  CreateSongCommentInput,
+  CreateSongLinkInput,
+  CreateSongNoteInput,
+  CreateSongThreadInput,
+  CreateSongTrackInput,
+  ReorderSongFilesInput,
+  ReorderSongLinksInput,
+  ReorderSongTracksInput,
+  RestoreSongRevisionInput,
+  UpdateSongCommentInput,
+  UpdateSongLinkInput,
+  UpdateSongNoteInput,
+  UpdateSongThreadInput,
+  UpdateSongTrackInput,
+} from '@harmonyhub/contracts';
 
 export async function loginRequest(input: LoginInput) {
   const data = await http<{ ok: boolean; user: CurrentUser; accessToken: string }>('/api/login', { method: 'POST', body: JSON.stringify(input) });
@@ -360,7 +376,7 @@ export function setPrimarySongFile(songId: string, songFileId: string) {
   return http<SongFile>(`/api/songs/${songId}/files/${songFileId}/set-primary`, { method: 'POST' });
 }
 
-export function reorderSongFiles(songId: string, input: { versionId?: string | null; items: Array<{ id: string; sortOrder: number }> }) {
+export function reorderSongFiles(songId: string, input: ReorderSongFilesInput) {
   return http<SongFile[]>(`/api/songs/${songId}/files/reorder`, { method: 'PATCH', body: JSON.stringify(input) });
 }
 
@@ -413,18 +429,11 @@ export function setDefaultSongVersion(songId: string, versionId: string) {
   return http<SongVersion>(`/api/songs/${songId}/versions/${versionId}/set-default`, { method: 'POST' });
 }
 
-export function createSongLink(songId: string, input: { url: string; title: string; isPrimary?: boolean; versionId?: string | null }) {
+export function createSongLink(songId: string, input: CreateSongLinkInput) {
   return http<SongLink>(`/api/songs/${songId}/links`, { method: 'POST', body: JSON.stringify(input) });
 }
 
-export function updateSongLink(songId: string, linkId: string, input: Partial<{
-  url: string;
-  title: string;
-  isPrimary: boolean;
-  versionId: string | null;
-  active: boolean;
-  sortOrder: number;
-}>) {
+export function updateSongLink(songId: string, linkId: string, input: UpdateSongLinkInput) {
   return http<SongLink>(`/api/songs/${songId}/links/${linkId}`, { method: 'PATCH', body: JSON.stringify(input) });
 }
 
@@ -436,20 +445,15 @@ export function setPrimarySongLink(songId: string, linkId: string) {
   return http<SongLink>(`/api/songs/${songId}/links/${linkId}/set-primary`, { method: 'POST' });
 }
 
-export function reorderSongLinks(songId: string, input: { versionId?: string | null; items: Array<{ id: string; sortOrder: number }> }) {
+export function reorderSongLinks(songId: string, input: ReorderSongLinksInput) {
   return http<SongLink[]>(`/api/songs/${songId}/links/reorder`, { method: 'PATCH', body: JSON.stringify(input) });
 }
 
-export function createSongNote(songId: string, input: { title?: string; content: string; visibility: SongNoteVisibility; versionId?: string | null; isPinned?: boolean }) {
+export function createSongNote(songId: string, input: CreateSongNoteInput) {
   return http<SongNote>(`/api/songs/${songId}/notes`, { method: 'POST', body: JSON.stringify(input) });
 }
 
-export function updateSongNote(songId: string, noteId: string, input: Partial<{
-  title: string | null;
-  content: string;
-  visibility: SongNoteVisibility;
-  versionId: string | null;
-}>) {
+export function updateSongNote(songId: string, noteId: string, input: UpdateSongNoteInput) {
   return http<SongNote>(`/api/songs/${songId}/notes/${noteId}`, { method: 'PATCH', body: JSON.stringify(input) });
 }
 
@@ -479,18 +483,11 @@ export function getSongThread(songId: string, threadId: string) {
   return http<SongCommentThread>(`/api/songs/${songId}/threads/${threadId}`);
 }
 
-export function createSongThread(songId: string, input: {
-  versionId?: string | null;
-  targetType: SongCommentTarget;
-  targetRef?: string | null;
-  title?: string;
-  content: string;
-  mentionedUserIds?: string[];
-}) {
+export function createSongThread(songId: string, input: CreateSongThreadInput) {
   return http<SongCommentThread>(`/api/songs/${songId}/threads`, { method: 'POST', body: JSON.stringify(input) });
 }
 
-export function updateSongThread(songId: string, threadId: string, input: { title?: string | null }) {
+export function updateSongThread(songId: string, threadId: string, input: UpdateSongThreadInput) {
   return http<SongCommentThread>(`/api/songs/${songId}/threads/${threadId}`, { method: 'PATCH', body: JSON.stringify(input) });
 }
 
@@ -502,11 +499,11 @@ export function reopenSongThread(songId: string, threadId: string) {
   return http<SongCommentThread>(`/api/songs/${songId}/threads/${threadId}/reopen`, { method: 'POST' });
 }
 
-export function createSongComment(songId: string, threadId: string, input: { content: string; mentionedUserIds?: string[] }) {
+export function createSongComment(songId: string, threadId: string, input: CreateSongCommentInput) {
   return http<SongComment>(`/api/songs/${songId}/threads/${threadId}/comments`, { method: 'POST', body: JSON.stringify(input) });
 }
 
-export function updateSongComment(songId: string, threadId: string, commentId: string, input: { content: string }) {
+export function updateSongComment(songId: string, threadId: string, commentId: string, input: UpdateSongCommentInput) {
   return http<SongComment>(`/api/songs/${songId}/threads/${threadId}/comments/${commentId}`, { method: 'PATCH', body: JSON.stringify(input) });
 }
 
@@ -514,18 +511,7 @@ export function deleteSongComment(songId: string, threadId: string, commentId: s
   return http<{ ok: boolean }>(`/api/songs/${songId}/threads/${threadId}/comments/${commentId}`, { method: 'DELETE' });
 }
 
-export function createSongTrack(songId: string, input: {
-  name: string;
-  type: SongTrackType;
-  instrument?: string;
-  url?: string;
-  durationSec?: number;
-  isPrimary?: boolean;
-  versionId?: string | null;
-  provider?: TrackProvider;
-  volumeDefault?: number;
-  panDefault?: number;
-}) {
+export function createSongTrack(songId: string, input: CreateSongTrackInput) {
   return http<SongTrack>(`/api/songs/${songId}/tracks`, { method: 'POST', body: JSON.stringify(input) });
 }
 
@@ -578,20 +564,7 @@ export function uploadSongTrack(
   }));
 }
 
-export function updateSongTrack(songId: string, trackId: string, input: Partial<{
-  name: string;
-  type: SongTrackType;
-  instrument: string | null;
-  url: string | null;
-  durationSec: number | null;
-  isPrimary: boolean;
-  versionId: string | null;
-  sortOrder: number;
-  active: boolean;
-  provider: TrackProvider;
-  volumeDefault: number;
-  panDefault: number;
-}>) {
+export function updateSongTrack(songId: string, trackId: string, input: UpdateSongTrackInput) {
   return http<SongTrack>(`/api/songs/${songId}/tracks/${trackId}`, { method: 'PATCH', body: JSON.stringify(input) });
 }
 
@@ -603,11 +576,11 @@ export function setPrimarySongTrack(songId: string, trackId: string) {
   return http<SongTrack>(`/api/songs/${songId}/tracks/${trackId}/set-primary`, { method: 'POST' });
 }
 
-export function reorderSongTracks(songId: string, input: { versionId?: string | null; items: Array<{ id: string; sortOrder: number }> }) {
+export function reorderSongTracks(songId: string, input: ReorderSongTracksInput) {
   return http<SongTrack[]>(`/api/songs/${songId}/tracks/reorder`, { method: 'PATCH', body: JSON.stringify(input) });
 }
 
-export function copySongTrackReferences(songId: string, input: { sourceVersionId: string; targetVersionId: string }) {
+export function copySongTrackReferences(songId: string, input: CopySongTracksInput) {
   return http<{ copied: number; tracks: SongTrack[] }>(`/api/songs/${songId}/tracks/copy`, { method: 'POST', body: JSON.stringify(input) });
 }
 
@@ -653,7 +626,7 @@ export function diffSongRevision(songId: string, versionId: string, revisionNumb
   return http<SongRevisionDiffResult>(`/api/songs/${songId}/versions/${versionId}/revisions/${revisionNumber}/diff${query}`);
 }
 
-export function restoreSongRevision(songId: string, versionId: string, revisionNumber: number, input?: { reason?: string }) {
+export function restoreSongRevision(songId: string, versionId: string, revisionNumber: number, input?: RestoreSongRevisionInput) {
   return http<SongVersionRevision>(`/api/songs/${songId}/versions/${versionId}/revisions/${revisionNumber}/restore`, { method: 'POST', body: JSON.stringify(input || {}) });
 }
 

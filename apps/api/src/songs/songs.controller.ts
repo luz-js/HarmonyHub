@@ -1,4 +1,39 @@
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query, Res, StreamableFile, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  copySongTracksSchema,
+  createSongLinkSchema,
+  createSongSchema,
+  createSongTrackSchema,
+  createSongVersionSchema,
+  reorderSongFilesSchema,
+  reorderSongLinksSchema,
+  reorderSongTracksSchema,
+  songFileListQuerySchema,
+  songLinkListQuerySchema,
+  songTrackListQuerySchema,
+  updateSongFileSchema,
+  updateSongLinkSchema,
+  updateSongSchema,
+  updateSongTrackSchema,
+  updateSongVersionSchema,
+  type CopySongTracksData,
+  type CreateSongData,
+  type CreateSongLinkData,
+  type CreateSongTrackData,
+  type CreateSongVersionData,
+  type ReorderSongFilesData,
+  type ReorderSongLinksData,
+  type ReorderSongTracksData,
+  type SongFileListQueryData,
+  type SongLinkListQueryData,
+  type SongTrackListQueryData,
+  type UpdateSongData,
+  type UpdateSongFileData,
+  type UpdateSongLinkData,
+  type UpdateSongTrackData,
+  type UpdateSongVersionData,
+} from '@harmonyhub/contracts';
+import { ZodPipe } from '../shared/zod.pipe';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
 import { AuthGuard } from '../auth/auth.guard';
@@ -38,7 +73,7 @@ export class SongsController {
 
   @Get(':id/tracks')
   @RequirePermission('read')
-  tracks(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Query() query: Record<string, unknown>) {
+  tracks(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Query(new ZodPipe(songTrackListQuerySchema)) query: SongTrackListQueryData) {
     return this.songsService.tracks(member, id, query);
   }
 
@@ -92,7 +127,7 @@ export class SongsController {
 
   @Get(':id/links')
   @RequirePermission('read')
-  links(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Query() query: Record<string, unknown>) {
+  links(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Query(new ZodPipe(songLinkListQuerySchema)) query: SongLinkListQueryData) {
     return this.songsService.links(member, id, query);
   }
 
@@ -104,7 +139,7 @@ export class SongsController {
 
   @Get(':id/files')
   @RequirePermission('read')
-  files(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Query() query: Record<string, unknown>) {
+  files(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Query(new ZodPipe(songFileListQuerySchema)) query: SongFileListQueryData) {
     return this.songsService.files(member, id, query);
   }
 
@@ -146,20 +181,20 @@ export class SongsController {
 
   @Post()
   @RequirePermission('songs.manage')
-  create(@CurrentMembership() member: OrgMember, @Body() body: Record<string, unknown>) {
-    return this.songsService.create(member, body ?? {});
+  create(@CurrentMembership() member: OrgMember, @Body(new ZodPipe(createSongSchema)) body: CreateSongData) {
+    return this.songsService.create(member, body);
   }
 
   @Post(':id/versions')
   @RequirePermission('songs.manage')
-  createVersion(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.createVersion(member, id, body ?? {});
+  createVersion(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body(new ZodPipe(createSongVersionSchema)) body: CreateSongVersionData) {
+    return this.songsService.createVersion(member, id, body);
   }
 
   @Patch(':id/versions/:versionId')
   @RequirePermission('songs.manage')
-  updateVersion(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('versionId') versionId: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.updateVersion(member, id, versionId, body ?? {});
+  updateVersion(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('versionId') versionId: string, @Body(new ZodPipe(updateSongVersionSchema)) body: UpdateSongVersionData) {
+    return this.songsService.updateVersion(member, id, versionId, body);
   }
 
   @Post(':id/versions/:versionId/set-default')
@@ -176,22 +211,22 @@ export class SongsController {
 
   @Post(':id/links')
   @RequirePermission('songs.manage')
-  createLink(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.createLink(member, id, body ?? {});
+  createLink(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body(new ZodPipe(createSongLinkSchema)) body: CreateSongLinkData) {
+    return this.songsService.createLink(member, id, body);
   }
 
   // PATCH .../links/reorder debe registrarse antes que PATCH .../links/:linkId:
   // Express resuelve rutas en orden de registro y ":linkId" capturaria "reorder".
   @Patch(':id/links/reorder')
   @RequirePermission('songs.manage')
-  reorderLinks(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.reorderLinks(member, id, body ?? {});
+  reorderLinks(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body(new ZodPipe(reorderSongLinksSchema)) body: ReorderSongLinksData) {
+    return this.songsService.reorderLinks(member, id, body);
   }
 
   @Patch(':id/links/:linkId')
   @RequirePermission('songs.manage')
-  updateLink(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('linkId') linkId: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.updateLink(member, id, linkId, body ?? {});
+  updateLink(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('linkId') linkId: string, @Body(new ZodPipe(updateSongLinkSchema)) body: UpdateSongLinkData) {
+    return this.songsService.updateLink(member, id, linkId, body);
   }
 
   @Delete(':id/links/:linkId')
@@ -208,8 +243,8 @@ export class SongsController {
 
   @Post(':id/tracks')
   @RequirePermission('songs.manage')
-  createTrack(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.createTrack(member, id, body ?? {});
+  createTrack(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body(new ZodPipe(createSongTrackSchema)) body: CreateSongTrackData) {
+    return this.songsService.createTrack(member, id, body);
   }
 
   @Post(':id/tracks/upload')
@@ -223,14 +258,14 @@ export class SongsController {
   // (mismo motivo que en links/reorder mas arriba).
   @Patch(':id/tracks/reorder')
   @RequirePermission('songs.manage')
-  reorderTracks(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.reorderTracks(member, id, body ?? {});
+  reorderTracks(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body(new ZodPipe(reorderSongTracksSchema)) body: ReorderSongTracksData) {
+    return this.songsService.reorderTracks(member, id, body);
   }
 
   @Patch(':id/tracks/:trackId')
   @RequirePermission('songs.manage')
-  updateTrack(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('trackId') trackId: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.updateTrack(member, id, trackId, body ?? {});
+  updateTrack(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('trackId') trackId: string, @Body(new ZodPipe(updateSongTrackSchema)) body: UpdateSongTrackData) {
+    return this.songsService.updateTrack(member, id, trackId, body);
   }
 
   @Delete(':id/tracks/:trackId')
@@ -247,8 +282,8 @@ export class SongsController {
 
   @Post(':id/tracks/copy')
   @RequirePermission('songs.manage')
-  copyTracks(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.copyTrackReferences(member, id, body ?? {});
+  copyTracks(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body(new ZodPipe(copySongTracksSchema)) body: CopySongTracksData) {
+    return this.songsService.copyTrackReferences(member, id, body);
   }
 
   @Post(':id/files/upload')
@@ -262,14 +297,14 @@ export class SongsController {
   // (mismo motivo que en links/reorder y tracks/reorder mas arriba).
   @Patch(':id/files/reorder')
   @RequirePermission('songs.manage')
-  reorderSongFiles(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.reorderSongFiles(member, id, body ?? {});
+  reorderSongFiles(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body(new ZodPipe(reorderSongFilesSchema)) body: ReorderSongFilesData) {
+    return this.songsService.reorderSongFiles(member, id, body);
   }
 
   @Patch(':id/files/:songFileId')
   @RequirePermission('songs.manage')
-  updateSongFile(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('songFileId') songFileId: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.updateSongFile(member, id, songFileId, body ?? {});
+  updateSongFile(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('songFileId') songFileId: string, @Body(new ZodPipe(updateSongFileSchema)) body: UpdateSongFileData) {
+    return this.songsService.updateSongFile(member, id, songFileId, body);
   }
 
   @Delete(':id/files/:songFileId')
@@ -286,8 +321,8 @@ export class SongsController {
 
   @Patch(':id')
   @RequirePermission('songs.manage')
-  update(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.songsService.update(member, id, body ?? {});
+  update(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body(new ZodPipe(updateSongSchema)) body: UpdateSongData) {
+    return this.songsService.update(member, id, body);
   }
 
   @Delete(':id')

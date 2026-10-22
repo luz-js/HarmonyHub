@@ -1,6 +1,13 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  updateSongCommentSchema,
+  updateSongThreadSchema,
+  type CreateSongCommentData,
+  type CreateSongThreadData,
+  type SongThreadListQueryData,
+} from '@harmonyhub/contracts';
+import { parseOrBadRequest } from '../../shared/zod.pipe';
 import { Prisma, SongCommentTarget, SongThreadStatus } from '@prisma/client';
-import { z } from 'zod';
 import { PermissionsService } from '../../permissions/permissions.service';
 import { clean } from '../../shared/object.utils';
 import { SongActivityService } from '../activity/song-activity.service';
@@ -9,37 +16,6 @@ import { SongsRepository } from '../songs.repository';
 import { SongCollaborationRepository } from './song-collaboration.repository';
 import { assertValidThreadTarget, InvalidThreadTargetError, normalizeMentionedUserIds, sectionExistsInContent } from './song-collaboration.utils';
 import type { OrgMember } from '../../permissions/current-membership.decorator';
-
-const MAX_COMMENT_LENGTH = 5000;
-
-const createThreadSchema = z.object({
-  versionId: z.string().trim().min(1).optional().nullable(),
-  targetType: z.nativeEnum(SongCommentTarget).default('SONG'),
-  targetRef: z.string().trim().max(200).optional().nullable(),
-  title: z.string().trim().max(200, 'Titulo demasiado largo').optional(),
-  content: z.string().trim().min(1, 'El comentario inicial es requerido').max(MAX_COMMENT_LENGTH, 'Comentario demasiado largo'),
-  mentionedUserIds: z.array(z.string()).max(50).optional(),
-});
-
-const updateThreadSchema = z.object({
-  title: z.string().trim().max(200, 'Titulo demasiado largo').optional().nullable(),
-});
-
-const listThreadQuerySchema = z.object({
-  versionId: z.string().trim().min(1).optional(),
-  status: z.nativeEnum(SongThreadStatus).optional(),
-  targetType: z.nativeEnum(SongCommentTarget).optional(),
-  targetRef: z.string().trim().min(1).optional(),
-});
-
-const createCommentSchema = z.object({
-  content: z.string().trim().min(1, 'Contenido requerido').max(MAX_COMMENT_LENGTH, 'Comentario demasiado largo'),
-  mentionedUserIds: z.array(z.string()).max(50).optional(),
-});
-
-const updateCommentSchema = z.object({
-  content: z.string().trim().min(1, 'Contenido requerido').max(MAX_COMMENT_LENGTH, 'Comentario demasiado largo'),
-});
 
 @Injectable()
 export class SongCollaborationService {
@@ -128,19 +104,17 @@ export class SongCollaborationService {
     return validIds;
   }
 
-  async listThreads(member: OrgMember, songId: string, query: Record<string, unknown> = {}) {
+  async listThreads(member: OrgMember, songId: string, query: SongThreadListQueryData) {
     const { organizationId } = member;
     await assertSongAccess(this.songsRepository, organizationId, songId);
-    const parsed = listThreadQuerySchema.safeParse(query);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
-    const versionId = parsed.data.versionId ? parsed.data.versionId : undefined;
+    const versionId = query.versionId ? query.versionId : undefined;
     if (versionId) await assertSongVersionAccess(this.songsRepository, songId, versionId);
 
     const andConditions: Prisma.SongCommentThreadWhereInput[] = [];
-    if (parsed.data.status) andConditions.push({ status: parsed.data.status });
-    if (parsed.data.targetType) andConditions.push({ targetType: parsed.data.targetType });
-    if (parsed.data.targetRef) andConditions.push({ targetRef: parsed.data.targetRef });
+    if (query.status) andConditions.push({ status: query.status });
+    if (query.targetType) andConditions.push({ targetType: query.targetType });
+    if (query.targetRef) andConditions.push({ targetRef: query.targetRef });
     if (versionId !== undefined) andConditions.push(versionId === null ? { versionId: null } : { OR: [{ versionId: null }, { versionId }] });
 
     const where: Prisma.SongCommentThreadWhereInput = andConditions.length > 0 ? { AND: andConditions } : {};
@@ -172,42 +146,40 @@ export class SongCollaborationService {
     };
   }
 
-  async createThread(member: OrgMember, songId: string, input: Record<string, unknown>) {
+  async createThread(member: OrgMember, songId: string, data: CreateSongThreadData) {
     const { userId, organizationId } = member;
     await assertSongAccess(this.songsRepository, organizationId, songId);
-    const parsed = createThreadSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
     try {
-      assertValidThreadTarget(parsed.data.targetType, parsed.data.versionId, parsed.data.targetRef);
+      assertValidThreadTarget(data.targetType, data.versionId, data.targetRef);
     } catch (error) {
       if (error instanceof InvalidThreadTargetError) throw new BadRequestException(error.message);
       throw error;
     }
 
-    const version = await assertSongVersionAccess(this.songsRepository, songId, parsed.data.versionId);
+    const version = await assertSongVersionAccess(this.songsRepository, songId, data.versionId);
 
-    if (parsed.data.targetType === 'SECTION' && version && parsed.data.targetRef) {
+    if (data.targetType === 'SECTION' && version && data.targetRef) {
       const versionContent = await this.collabRepository.findVersionContent(version.id);
-      if (versionContent?.contentJson && !sectionExistsInContent(versionContent.contentJson, parsed.data.targetRef)) {
+      if (versionContent?.contentJson && !sectionExistsInContent(versionContent.contentJson, data.targetRef)) {
         throw new BadRequestException('La seccion indicada no existe en el contenido actual de la version');
       }
     }
 
-    const mentionedUserIds = await this.resolveMentions(organizationId, parsed.data.mentionedUserIds);
+    const mentionedUserIds = await this.resolveMentions(organizationId, data.mentionedUserIds);
 
     const thread = await this.collabRepository.createThread({
       songId,
       versionId: version?.id,
       organizationId,
       createdById: userId,
-      targetType: parsed.data.targetType,
-      targetRef: parsed.data.targetRef,
-      title: parsed.data.title,
+      targetType: data.targetType,
+      targetRef: data.targetRef,
+      title: data.title,
       comments: {
         create: {
           authorId: userId,
-          content: parsed.data.content,
+          content: data.content,
           mentions: mentionedUserIds.length > 0 ? { create: mentionedUserIds.map((mentionedUserId) => ({ userId: mentionedUserId })) } : undefined,
         },
       },
@@ -233,10 +205,10 @@ export class SongCollaborationService {
       throw new ForbiddenException('No tienes permiso para editar esta conversacion');
     }
 
-    const parsed = updateThreadSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
+    // Se valida aqui y no con ZodPipe: quien no tiene permiso recibe 403 aunque el cuerpo sea invalido.
+    const data = parseOrBadRequest(updateSongThreadSchema, input);
 
-    const updated = await this.collabRepository.updateThread(threadId, clean({ title: parsed.data.title }));
+    const updated = await this.collabRepository.updateThread(threadId, clean({ title: data.title }));
     return this.normalizeThread(updated);
   }
 
@@ -282,15 +254,13 @@ export class SongCollaborationService {
     return this.normalizeThread(updated);
   }
 
-  async createComment(member: OrgMember, songId: string, threadId: string, input: Record<string, unknown>) {
+  async createComment(member: OrgMember, songId: string, threadId: string, data: CreateSongCommentData) {
     const { userId, organizationId } = member;
     await assertSongAccess(this.songsRepository, organizationId, songId);
     const thread = await this.assertThreadInSong(songId, threadId);
-    const parsed = createCommentSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
-    const mentionedUserIds = await this.resolveMentions(organizationId, parsed.data.mentionedUserIds);
-    const comment = await this.collabRepository.createComment({ threadId: thread.id, authorId: userId, content: parsed.data.content }, mentionedUserIds);
+    const mentionedUserIds = await this.resolveMentions(organizationId, data.mentionedUserIds);
+    const comment = await this.collabRepository.createComment({ threadId: thread.id, authorId: userId, content: data.content }, mentionedUserIds);
     await this.activity.recordBestEffort({
       songId,
       versionId: thread.versionId,
@@ -312,10 +282,10 @@ export class SongCollaborationService {
     if (!comment || comment.deletedAt) throw new NotFoundException('Comentario no encontrado');
     if (comment.authorId !== userId) throw new ForbiddenException('Solo el autor puede editar su comentario');
 
-    const parsed = updateCommentSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
+    // Se valida aqui y no con ZodPipe: quien no tiene permiso recibe 403 aunque el cuerpo sea invalido.
+    const data = parseOrBadRequest(updateSongCommentSchema, input);
 
-    const updated = await this.collabRepository.updateComment(commentId, parsed.data.content);
+    const updated = await this.collabRepository.updateComment(commentId, data.content);
     return this.normalizeComment(updated);
   }
 

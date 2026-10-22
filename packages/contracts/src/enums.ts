@@ -71,3 +71,47 @@ export type CopyAssignmentsMode = (typeof COPY_ASSIGNMENTS_MODES)[number];
 
 export const CUE_CATEGORIES = ['MUSICAL', 'AUDIO', 'TRACKS', 'VIDEO', 'LIGHTING', 'SPEAKING', 'LOGISTICS', 'INSTRUMENT', 'CUSTOM'] as const;
 export type CueCategory = (typeof CUE_CATEGORIES)[number];
+
+export const SONG_TRACK_TYPES = ['FULL_TRACK', 'BACKING_TRACK', 'CLICK', 'PAD', 'DRUMS', 'BASS', 'GUITAR', 'KEYS', 'VOCALS', 'CHOIR', 'GUIDE', 'REFERENCE', 'OTHER'] as const;
+export type SongTrackType = (typeof SONG_TRACK_TYPES)[number];
+
+export const TRACK_PROVIDERS = ['UPLOAD', 'EXTERNAL_URL', 'LOCAL', 'S3', 'R2', 'SUPABASE', 'OTHER'] as const;
+export type TrackProvider = (typeof TRACK_PROVIDERS)[number];
+
+export const SONG_COMMENT_TARGETS = ['SONG', 'VERSION', 'SECTION', 'TRACK', 'FILE', 'LINK'] as const;
+export type SongCommentTarget = (typeof SONG_COMMENT_TARGETS)[number];
+
+export const SONG_THREAD_STATUSES = ['OPEN', 'RESOLVED'] as const;
+export type SongThreadStatus = (typeof SONG_THREAD_STATUSES)[number];
+
+export const SONG_NOTE_VISIBILITIES = ['PRIVATE', 'ORGANIZATION', 'LEADERS_ONLY'] as const;
+export type SongNoteVisibility = (typeof SONG_NOTE_VISIBILITIES)[number];
+
+export const SONG_ACTIVITY_TYPES = [
+  'SONG_CREATED', 'SONG_UPDATED', 'SONG_ARCHIVED', 'FAVORITE_CHANGED',
+  'VERSION_CREATED', 'VERSION_UPDATED', 'VERSION_DELETED', 'VERSION_SET_DEFAULT', 'VERSION_TRANSPOSED', 'VERSION_RESTORED',
+  'TRACK_ADDED', 'TRACK_UPDATED', 'TRACK_DELETED', 'TRACK_SET_PRIMARY',
+  'LINK_ADDED', 'LINK_UPDATED', 'LINK_DELETED', 'LINK_SET_PRIMARY',
+  'FILE_ADDED', 'FILE_UPDATED', 'FILE_DELETED', 'FILE_SET_PRIMARY',
+  'NOTE_CREATED', 'NOTE_UPDATED', 'NOTE_ARCHIVED', 'NOTE_DELETED', 'NOTE_PINNED',
+  'THREAD_CREATED', 'THREAD_RESOLVED', 'THREAD_REOPENED', 'COMMENT_ADDED',
+] as const;
+export type SongActivityType = (typeof SONG_ACTIVITY_TYPES)[number];
+
+export const SONG_ENTITY_TYPES = ['SONG', 'VERSION', 'TRACK', 'LINK', 'FILE', 'NOTE', 'THREAD', 'COMMENT'] as const;
+export type SongEntityType = (typeof SONG_ENTITY_TYPES)[number];
+
+/** Categorias que se pueden elegir al subir un archivo (Prisma tiene ademas AUDIO, STEM y BACKING_TRACK, solo de filas viejas). */
+export const SELECTABLE_SONG_FILE_CATEGORIES = [
+  'LYRIC_PDF', 'CHORD_CHART', 'SHEET_MUSIC', 'LEAD_SHEET', 'PIANO_SCORE', 'GUITAR_SCORE',
+  'BASS_SCORE', 'DRUM_SCORE', 'VOCAL_SCORE', 'IMAGE', 'DOCUMENT', 'PRESENTATION', 'MIDI',
+  'MUSIC_XML', 'VIDEO', 'OTHER',
+] as const;
+export const SONG_FILE_CATEGORIES = [...SELECTABLE_SONG_FILE_CATEGORIES, 'AUDIO', 'STEM', 'BACKING_TRACK'] as const;
+export type SongFileCategory = (typeof SONG_FILE_CATEGORIES)[number];
+
+export const SONG_LINK_PROVIDERS = ['YOUTUBE', 'SPOTIFY', 'APPLE_MUSIC', 'SOUNDCLOUD', 'VIMEO', 'BANDCAMP', 'WEBSITE', 'OTHER'] as const;
+export type SongLinkProvider = (typeof SONG_LINK_PROVIDERS)[number];
+
+export const REVISION_SOURCES = ['MANUAL_SAVE', 'TRANSPOSE', 'RESTORE', 'IMPORT', 'MIGRATION'] as const;
+export type RevisionSource = (typeof REVISION_SOURCES)[number];

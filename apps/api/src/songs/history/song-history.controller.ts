@@ -1,4 +1,6 @@
 import { BadRequestException, Body, Controller, Get, Inject, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { restoreSongRevisionSchema, songActivityListQuerySchema, type RestoreSongRevisionData, type SongActivityListQueryData } from '@harmonyhub/contracts';
+import { ZodPipe } from '../../shared/zod.pipe';
 import { AuthGuard } from '../../auth/auth.guard';
 import { SongActivityService } from '../activity/song-activity.service';
 import { SongRevisionsService } from './song-revisions.service';
@@ -22,7 +24,7 @@ export class SongHistoryController {
 
   @Get(':id/activity')
   @RequirePermission('read')
-  activity(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Query() query: Record<string, unknown>) {
+  activity(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Query(new ZodPipe(songActivityListQuerySchema)) query: SongActivityListQueryData) {
     return this.activityService.list(member, id, query);
   }
 
@@ -57,8 +59,8 @@ export class SongHistoryController {
     @Param('id') id: string,
     @Param('versionId') versionId: string,
     @Param('revisionNumber') revisionNumber: string,
-    @Body() body: Record<string, unknown>,
+    @Body(new ZodPipe(restoreSongRevisionSchema)) body: RestoreSongRevisionData,
   ) {
-    return this.revisionsService.restore(member, id, versionId, parseRevisionNumber(revisionNumber), body ?? {});
+    return this.revisionsService.restore(member, id, versionId, parseRevisionNumber(revisionNumber), body);
   }
 }

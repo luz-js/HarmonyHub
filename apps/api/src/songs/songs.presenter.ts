@@ -1,4 +1,4 @@
-import { SongFileCategory, SongTrackType, TrackProvider } from '@prisma/client';
+import { SongFileCategory, SongLinkProvider, SongTrackType, TrackProvider } from '@prisma/client';
 
 export type TrackResponseShape = {
   id: string;
@@ -51,14 +51,13 @@ type SongFileResponseShape = {
 type SongSummaryShape = {
   versions: Array<{ id: string; name: string; key: string; bpm: number | null; durationSec: number | null }>;
   _count: { versions: number; tracks: number; songFiles: number };
-  [key: string]: unknown;
 };
 
 type SongLinkResponseShape = {
   id: string;
   songId: string;
   versionId: string | null;
-  provider: string;
+  provider: SongLinkProvider;
   title: string | null;
   url: string;
   externalId: string | null;
@@ -139,7 +138,7 @@ export function normalizeSongFileResponse(songFile: SongFileResponseShape) {
   };
 }
 
-export function normalizeSongSummary(song: SongSummaryShape) {
+export function normalizeSongSummary<Song extends SongSummaryShape>(song: Song) {
   const { versions, _count, ...rest } = song;
   const defaultVersion = versions[0];
   return {

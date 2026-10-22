@@ -1,11 +1,12 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import type { CreateSongVersionData, UpdateSongVersionData } from '@harmonyhub/contracts';
 import { Prisma } from '@prisma/client';
 import { clean } from '../shared/object.utils';
 import { SongActivityService } from './activity/song-activity.service';
 import { SongRevisionsService } from './history/song-revisions.service';
 import { SongsAccessService } from './songs-access.service';
 import { SongsRepository } from './songs.repository';
-import { buildContentJson, versionSchema } from './songs.schemas';
+import { buildContentJson } from './songs.schemas';
 import type { OrgMember } from '../permissions/current-membership.decorator';
 
 @Injectable()
@@ -31,12 +32,9 @@ export class SongsVersionsService {
     return version;
   }
 
-  async createVersion(member: OrgMember, songId: string, input: Record<string, unknown>) {
+  async createVersion(member: OrgMember, songId: string, version: CreateSongVersionData) {
     const { userId, organizationId } = member;
     await this.access.assertSongDetailInOrganization(organizationId, songId);
-    const parsed = versionSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const version = parsed.data;
     const created = await this.songsRepository.createVersion({
       songId,
       name: version.name,
@@ -84,18 +82,16 @@ export class SongsVersionsService {
     return created;
   }
 
-  async updateVersion(member: OrgMember, songId: string, versionId: string, input: Record<string, unknown>) {
+  async updateVersion(member: OrgMember, songId: string, versionId: string, data: UpdateSongVersionData) {
     const { userId, organizationId } = member;
     const before = await this.version(member, songId, versionId);
-    const parsed = versionSchema.partial().safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
     const updated = await this.songsRepository.updateVersion(versionId, clean({
-      ...parsed.data,
-      contentJson: parsed.data.contentJson as Prisma.InputJsonValue | undefined,
-      structureJson: parsed.data.structureJson as Prisma.InputJsonValue | undefined,
+      ...data,
+      contentJson: data.contentJson as Prisma.InputJsonValue | undefined,
+      structureJson: data.structureJson as Prisma.InputJsonValue | undefined,
     }));
 
-    const keyChanged = parsed.data.key !== undefined && parsed.data.key !== before.key;
+    const keyChanged = data.key !== undefined && data.key !== before.key;
     await this.activity.recordBestEffort({
       songId,
       versionId,

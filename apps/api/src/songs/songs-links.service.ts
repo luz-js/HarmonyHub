@@ -1,9 +1,9 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import type { CreateSongLinkData, ReorderSongLinksData, SongLinkListQueryData, UpdateSongLinkData } from '@harmonyhub/contracts';
 import { clean } from '../shared/object.utils';
 import { SongActivityService } from './activity/song-activity.service';
 import { resolveLinkUrlOrThrow } from './songs-links.helpers';
 import { normalizeLinkResponse } from './songs.presenter';
-import { createLinkSchema, listLinkQuerySchema, reorderLinksSchema, updateLinkSchema } from './songs.schemas';
 import { SongsAccessService } from './songs-access.service';
 import { SongsRepository } from './songs.repository';
 import type { OrgMember } from '../permissions/current-membership.decorator';
@@ -16,12 +16,10 @@ export class SongsLinksService {
     @Inject(SongActivityService) private readonly activity: SongActivityService,
   ) {}
 
-  async links(member: OrgMember, songId: string, query: Record<string, unknown> = {}) {
+  async links(member: OrgMember, songId: string, query: SongLinkListQueryData) {
     const { organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
-    const parsed = listLinkQuerySchema.safeParse(query);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const versionId = parsed.data.versionId ? parsed.data.versionId : undefined;
+    const versionId = query.versionId ? query.versionId : undefined;
     if (versionId) await this.access.assertVersionInSong(songId, versionId);
     const links = await this.songsRepository.listLinks(songId, { versionId });
     return links.map((link) => normalizeLinkResponse(link));
@@ -34,13 +32,11 @@ export class SongsLinksService {
     return normalizeLinkResponse(link);
   }
 
-  async createLink(member: OrgMember, songId: string, input: Record<string, unknown>) {
+  async createLink(member: OrgMember, songId: string, data: CreateSongLinkData) {
     const { userId, organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
-    const parsed = createLinkSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const version = await this.access.assertVersionInSong(songId, parsed.data.versionId);
-    const resolved = resolveLinkUrlOrThrow(parsed.data.url);
+    const version = await this.access.assertVersionInSong(songId, data.versionId);
+    const resolved = resolveLinkUrlOrThrow(data.url);
     const sortOrder = await this.songsRepository.nextLinkSortOrder(songId, version?.id || null);
 
     const created = await this.songsRepository.createLink({
@@ -49,11 +45,11 @@ export class SongsLinksService {
       createdById: userId,
       provider: resolved.provider,
       url: resolved.url,
-      title: parsed.data.title,
+      title: data.title,
       externalId: resolved.externalId,
       embedUrl: resolved.embedUrl,
       thumbnailUrl: resolved.thumbnailUrl,
-      isPrimary: parsed.data.isPrimary,
+      isPrimary: data.isPrimary,
       sortOrder,
       active: true,
     });
@@ -71,22 +67,20 @@ export class SongsLinksService {
     return normalizeLinkResponse(created);
   }
 
-  async updateLink(member: OrgMember, songId: string, linkId: string, input: Record<string, unknown>) {
+  async updateLink(member: OrgMember, songId: string, linkId: string, data: UpdateSongLinkData) {
     const { organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
     await this.access.assertLinkInSong(songId, linkId);
-    const parsed = updateLinkSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
-    const version = parsed.data.versionId === undefined ? undefined : await this.access.assertVersionInSong(songId, parsed.data.versionId);
-    const resolved = parsed.data.url === undefined ? null : resolveLinkUrlOrThrow(parsed.data.url);
+    const version = data.versionId === undefined ? undefined : await this.access.assertVersionInSong(songId, data.versionId);
+    const resolved = data.url === undefined ? null : resolveLinkUrlOrThrow(data.url);
 
     const updated = await this.songsRepository.updateLink(linkId, clean({
-      versionId: parsed.data.versionId === undefined ? undefined : version?.id ?? null,
-      title: parsed.data.title,
-      isPrimary: parsed.data.isPrimary,
-      active: parsed.data.active,
-      sortOrder: parsed.data.sortOrder,
+      versionId: data.versionId === undefined ? undefined : version?.id ?? null,
+      title: data.title,
+      isPrimary: data.isPrimary,
+      active: data.active,
+      sortOrder: data.sortOrder,
       provider: resolved?.provider,
       url: resolved?.url,
       externalId: resolved?.externalId,
@@ -132,13 +126,11 @@ export class SongsLinksService {
     return normalizeLinkResponse(link);
   }
 
-  async reorderLinks(member: OrgMember, songId: string, input: Record<string, unknown>) {
+  async reorderLinks(member: OrgMember, songId: string, data: ReorderSongLinksData) {
     const { organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
-    const parsed = reorderLinksSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const version = await this.access.assertVersionInSong(songId, parsed.data.versionId);
-    const links = await this.songsRepository.reorderLinks(songId, version?.id || null, parsed.data.items);
+    const version = await this.access.assertVersionInSong(songId, data.versionId);
+    const links = await this.songsRepository.reorderLinks(songId, version?.id || null, data.items);
     return links.map((link) => normalizeLinkResponse(link));
   }
 }

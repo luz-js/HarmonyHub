@@ -1,4 +1,13 @@
 import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  createSongCommentSchema,
+  createSongThreadSchema,
+  songThreadListQuerySchema,
+  type CreateSongCommentData,
+  type CreateSongThreadData,
+  type SongThreadListQueryData,
+} from '@harmonyhub/contracts';
+import { ZodPipe } from '../../shared/zod.pipe';
 import { AuthGuard } from '../../auth/auth.guard';
 import { SongCollaborationService } from './song-collaboration.service';
 import { CurrentMembership, OrgMember } from '../../permissions/current-membership.decorator';
@@ -12,7 +21,7 @@ export class SongCollaborationController {
   constructor(@Inject(SongCollaborationService) private readonly collaborationService: SongCollaborationService) {}
 
   @Get(':id/threads')
-  listThreads(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Query() query: Record<string, unknown>) {
+  listThreads(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Query(new ZodPipe(songThreadListQuerySchema)) query: SongThreadListQueryData) {
     return this.collaborationService.listThreads(member, id, query);
   }
 
@@ -22,8 +31,8 @@ export class SongCollaborationController {
   }
 
   @Post(':id/threads')
-  createThread(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body() body: Record<string, unknown>) {
-    return this.collaborationService.createThread(member, id, body ?? {});
+  createThread(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Body(new ZodPipe(createSongThreadSchema)) body: CreateSongThreadData) {
+    return this.collaborationService.createThread(member, id, body);
   }
 
   @Patch(':id/threads/:threadId')
@@ -42,8 +51,8 @@ export class SongCollaborationController {
   }
 
   @Post(':id/threads/:threadId/comments')
-  createComment(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('threadId') threadId: string, @Body() body: Record<string, unknown>) {
-    return this.collaborationService.createComment(member, id, threadId, body ?? {});
+  createComment(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('threadId') threadId: string, @Body(new ZodPipe(createSongCommentSchema)) body: CreateSongCommentData) {
+    return this.collaborationService.createComment(member, id, threadId, body);
   }
 
   @Patch(':id/threads/:threadId/comments/:commentId')

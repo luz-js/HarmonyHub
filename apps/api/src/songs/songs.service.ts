@@ -1,4 +1,22 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
+import type {
+  CopySongTracksData,
+  CreateSongData,
+  CreateSongLinkData,
+  CreateSongTrackData,
+  CreateSongVersionData,
+  ReorderSongFilesData,
+  ReorderSongLinksData,
+  ReorderSongTracksData,
+  SongFileListQueryData,
+  SongLinkListQueryData,
+  SongTrackListQueryData,
+  UpdateSongData,
+  UpdateSongFileData,
+  UpdateSongLinkData,
+  UpdateSongTrackData,
+  UpdateSongVersionData,
+} from '@harmonyhub/contracts';
 import { clean } from '../shared/object.utils';
 import { SongActivityService } from './activity/song-activity.service';
 import { SongRevisionsService } from './history/song-revisions.service';
@@ -8,7 +26,7 @@ import { buildYoutubeLinkCreateInput } from './songs-links.helpers';
 import { SongsLinksService } from './songs-links.service';
 import { normalizeSongSummary, normalizeTrackResponse } from './songs.presenter';
 import { SongsRepository } from './songs.repository';
-import { buildContentJson, parseTags, songSchema, updateSongSchema } from './songs.schemas';
+import { buildContentJson, parseTags } from './songs.schemas';
 import { SongsTracksService } from './songs-tracks.service';
 import { SongsVersionsService } from './songs-versions.service';
 import type { OrgMember } from '../permissions/current-membership.decorator';
@@ -66,7 +84,7 @@ export class SongsService {
     return this.versionsService.version(member, songId, versionId);
   }
 
-  async tracks(member: OrgMember, songId: string, query: Record<string, unknown>) {
+  async tracks(member: OrgMember, songId: string, query: SongTrackListQueryData) {
     return this.tracksService.tracks(member, songId, query);
   }
 
@@ -74,7 +92,7 @@ export class SongsService {
     return this.tracksService.track(member, songId, trackId);
   }
 
-  async files(member: OrgMember, songId: string, query: Record<string, unknown> = {}) {
+  async files(member: OrgMember, songId: string, query: SongFileListQueryData) {
     return this.filesService.files(member, songId, query);
   }
 
@@ -86,7 +104,7 @@ export class SongsService {
     return this.filesService.uploadSongFile(member, songId, input, file);
   }
 
-  async updateSongFile(member: OrgMember, songId: string, songFileId: string, input: Record<string, unknown>) {
+  async updateSongFile(member: OrgMember, songId: string, songFileId: string, input: UpdateSongFileData) {
     return this.filesService.updateSongFile(member, songId, songFileId, input);
   }
 
@@ -98,7 +116,7 @@ export class SongsService {
     return this.filesService.setPrimarySongFile(member, songId, songFileId);
   }
 
-  async reorderSongFiles(member: OrgMember, songId: string, input: Record<string, unknown>) {
+  async reorderSongFiles(member: OrgMember, songId: string, input: ReorderSongFilesData) {
     return this.filesService.reorderSongFiles(member, songId, input);
   }
 
@@ -114,11 +132,8 @@ export class SongsService {
     return this.filesService.songFileStream(storageKey);
   }
 
-  async create(member: OrgMember, input: Record<string, unknown>) {
+  async create(member: OrgMember, song: CreateSongData) {
     const { userId, organizationId } = member;
-    const parsed = songSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const song = parsed.data;
     const youtubeLinkInput = song.youtubeUrl ? buildYoutubeLinkCreateInput(song.youtubeUrl, userId) : undefined;
 
     const created = await this.songsRepository.createWithDefaultVersion(
@@ -193,12 +208,9 @@ export class SongsService {
     return created;
   }
 
-  async update(member: OrgMember, id: string, input: Record<string, unknown>) {
+  async update(member: OrgMember, id: string, song: UpdateSongData) {
     const { userId, organizationId } = member;
     const existing = await this.detail(member, id);
-    const parsed = updateSongSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const song = parsed.data;
     const patch = clean({
       title: song.title,
       artist: song.artist,
@@ -265,11 +277,11 @@ export class SongsService {
     return archived;
   }
 
-  async createVersion(member: OrgMember, songId: string, input: Record<string, unknown>) {
+  async createVersion(member: OrgMember, songId: string, input: CreateSongVersionData) {
     return this.versionsService.createVersion(member, songId, input);
   }
 
-  async updateVersion(member: OrgMember, songId: string, versionId: string, input: Record<string, unknown>) {
+  async updateVersion(member: OrgMember, songId: string, versionId: string, input: UpdateSongVersionData) {
     return this.versionsService.updateVersion(member, songId, versionId, input);
   }
 
@@ -281,7 +293,7 @@ export class SongsService {
     return this.versionsService.deleteVersion(member, songId, versionId);
   }
 
-  async links(member: OrgMember, songId: string, query: Record<string, unknown> = {}) {
+  async links(member: OrgMember, songId: string, query: SongLinkListQueryData) {
     return this.linksService.links(member, songId, query);
   }
 
@@ -289,11 +301,11 @@ export class SongsService {
     return this.linksService.link(member, songId, linkId);
   }
 
-  async createLink(member: OrgMember, songId: string, input: Record<string, unknown>) {
+  async createLink(member: OrgMember, songId: string, input: CreateSongLinkData) {
     return this.linksService.createLink(member, songId, input);
   }
 
-  async updateLink(member: OrgMember, songId: string, linkId: string, input: Record<string, unknown>) {
+  async updateLink(member: OrgMember, songId: string, linkId: string, input: UpdateSongLinkData) {
     return this.linksService.updateLink(member, songId, linkId, input);
   }
 
@@ -305,11 +317,11 @@ export class SongsService {
     return this.linksService.setPrimaryLink(member, songId, linkId);
   }
 
-  async reorderLinks(member: OrgMember, songId: string, input: Record<string, unknown>) {
+  async reorderLinks(member: OrgMember, songId: string, input: ReorderSongLinksData) {
     return this.linksService.reorderLinks(member, songId, input);
   }
 
-  async createTrack(member: OrgMember, songId: string, input: Record<string, unknown>) {
+  async createTrack(member: OrgMember, songId: string, input: CreateSongTrackData) {
     return this.tracksService.createTrack(member, songId, input);
   }
 
@@ -317,7 +329,7 @@ export class SongsService {
     return this.tracksService.uploadTrack(member, songId, input, file);
   }
 
-  async updateTrack(member: OrgMember, songId: string, trackId: string, input: Record<string, unknown>) {
+  async updateTrack(member: OrgMember, songId: string, trackId: string, input: UpdateSongTrackData) {
     return this.tracksService.updateTrack(member, songId, trackId, input);
   }
 
@@ -329,11 +341,11 @@ export class SongsService {
     return this.tracksService.setPrimaryTrack(member, songId, trackId);
   }
 
-  async reorderTracks(member: OrgMember, songId: string, input: Record<string, unknown>) {
+  async reorderTracks(member: OrgMember, songId: string, input: ReorderSongTracksData) {
     return this.tracksService.reorderTracks(member, songId, input);
   }
 
-  async copyTrackReferences(member: OrgMember, songId: string, input: Record<string, unknown>) {
+  async copyTrackReferences(member: OrgMember, songId: string, input: CopySongTracksData) {
     return this.tracksService.copyTrackReferences(member, songId, input);
   }
 

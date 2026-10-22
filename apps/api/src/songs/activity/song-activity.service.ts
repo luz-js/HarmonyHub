@@ -1,21 +1,11 @@
-import { BadRequestException, Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
+import type { SongActivityListQueryData } from '@harmonyhub/contracts';
 import { Prisma, SongActivityType, SongEntityType } from '@prisma/client';
-import { z } from 'zod';
 import { clean } from '../../shared/object.utils';
 import { assertSongAccess } from '../song-access.utils';
 import { SongsRepository } from '../songs.repository';
 import { SongActivityRepository } from './song-activity.repository';
 import type { OrgMember } from '../../permissions/current-membership.decorator';
-
-const listActivityQuerySchema = z.object({
-  action: z.nativeEnum(SongActivityType).optional(),
-  entityType: z.nativeEnum(SongEntityType).optional(),
-  versionId: z.string().trim().min(1).optional(),
-  from: z.string().trim().optional(),
-  to: z.string().trim().optional(),
-  page: z.coerce.number().int().positive().default(1),
-  pageSize: z.coerce.number().int().positive().max(100).default(20),
-});
 
 export type RecordSongActivityParams = {
   songId: string;
@@ -62,26 +52,24 @@ export class SongActivityService {
     }
   }
 
-  async list(member: OrgMember, songId: string, query: Record<string, unknown> = {}) {
+  async list(member: OrgMember, songId: string, query: SongActivityListQueryData) {
     const { organizationId } = member;
     await assertSongAccess(this.songsRepository, organizationId, songId);
-    const parsed = listActivityQuerySchema.safeParse(query);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
     const createdAtFilter = clean({
-      gte: parsed.data.from ? new Date(parsed.data.from) : undefined,
-      lte: parsed.data.to ? new Date(parsed.data.to) : undefined,
+      gte: query.from ? new Date(query.from) : undefined,
+      lte: query.to ? new Date(query.to) : undefined,
     });
 
     const where: Prisma.SongActivityWhereInput = clean({
-      action: parsed.data.action,
-      entityType: parsed.data.entityType,
-      versionId: parsed.data.versionId,
+      action: query.action,
+      entityType: query.entityType,
+      versionId: query.versionId,
       createdAt: Object.keys(createdAtFilter).length > 0 ? createdAtFilter : undefined,
     });
 
-    const skip = (parsed.data.page - 1) * parsed.data.pageSize;
-    const { items, total } = await this.activityRepository.list(songId, where, skip, parsed.data.pageSize);
+    const skip = (query.page - 1) * query.pageSize;
+    const { items, total } = await this.activityRepository.list(songId, where, skip, query.pageSize);
 
     return {
       items: items.map((item) => ({
@@ -97,10 +85,10 @@ export class SongActivityService {
         version: item.version ?? null,
         createdAt: item.createdAt,
       })),
-      page: parsed.data.page,
-      pageSize: parsed.data.pageSize,
+      page: query.page,
+      pageSize: query.pageSize,
       total,
-      totalPages: Math.max(1, Math.ceil(total / parsed.data.pageSize)),
+      totalPages: Math.max(1, Math.ceil(total / query.pageSize)),
     };
   }
 }

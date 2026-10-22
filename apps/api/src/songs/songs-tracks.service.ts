@@ -1,6 +1,15 @@
 import { randomUUID } from 'node:crypto';
 import { extname } from 'node:path';
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  trackUploadBodySchema,
+  type CopySongTracksData,
+  type CreateSongTrackData,
+  type ReorderSongTracksData,
+  type SongTrackListQueryData,
+  type UpdateSongTrackData,
+} from '@harmonyhub/contracts';
+import { parseOrBadRequest } from '../shared/zod.pipe';
 import { clean } from '../shared/object.utils';
 import { SongActivityService } from './activity/song-activity.service';
 import { SongsAccessService } from './songs-access.service';
@@ -10,16 +19,7 @@ import {
   sanitizeDownloadFileName,
 } from './songs.presenter';
 import { SongsRepository } from './songs.repository';
-import {
-  buildTrackStorageSegments,
-  copyTracksSchema,
-  createTrackSchema,
-  listTrackQuerySchema,
-  reorderTrackSchema,
-  trackUploadBodySchema,
-  updateTrackSchema,
-  validateAudioUploadFile,
-} from './songs.schemas';
+import { buildTrackStorageSegments, validateAudioUploadFile } from './songs.schemas';
 import { TRACK_STORAGE, TrackStorageProvider } from './storage/track-storage.interface';
 import type { OrgMember } from '../permissions/current-membership.decorator';
 
@@ -39,14 +39,12 @@ export class SongsTracksService {
     @Inject(SongActivityService) private readonly activity: SongActivityService,
   ) {}
 
-  async tracks(member: OrgMember, songId: string, query: Record<string, unknown>) {
+  async tracks(member: OrgMember, songId: string, query: SongTrackListQueryData) {
     const { organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
-    const parsed = listTrackQuerySchema.safeParse(query);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const versionId = parsed.data.versionId ? parsed.data.versionId : undefined;
+    const versionId = query.versionId ? query.versionId : undefined;
     if (versionId) await this.access.assertVersionInSong(songId, versionId);
-    const tracks = await this.songsRepository.listTracks(songId, { versionId, includeGeneral: parsed.data.includeGeneral });
+    const tracks = await this.songsRepository.listTracks(songId, { versionId, includeGeneral: query.includeGeneral });
     return tracks.map((track) => normalizeTrackResponse(track));
   }
 
@@ -57,28 +55,26 @@ export class SongsTracksService {
     return normalizeTrackResponse(track);
   }
 
-  async createTrack(member: OrgMember, songId: string, input: Record<string, unknown>) {
+  async createTrack(member: OrgMember, songId: string, data: CreateSongTrackData) {
     const { userId, organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
-    const parsed = createTrackSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const version = await this.access.assertVersionInSong(songId, parsed.data.versionId);
-    const sortOrder = parsed.data.sortOrder ?? await this.songsRepository.nextTrackSortOrder(songId, version?.id || null);
-    const provider = parsed.data.provider ?? 'EXTERNAL_URL';
+    const version = await this.access.assertVersionInSong(songId, data.versionId);
+    const sortOrder = data.sortOrder ?? await this.songsRepository.nextTrackSortOrder(songId, version?.id || null);
+    const provider = data.provider ?? 'EXTERNAL_URL';
     const created = await this.songsRepository.createTrack({
       songId,
       versionId: version?.id,
-      name: parsed.data.name,
-      type: parsed.data.type,
-      instrument: parsed.data.instrument,
-      durationSec: parsed.data.durationSec,
-      url: parsed.data.url,
+      name: data.name,
+      type: data.type,
+      instrument: data.instrument,
+      durationSec: data.durationSec,
+      url: data.url,
       provider,
-      volumeDefault: parsed.data.volumeDefault ?? 1,
-      panDefault: parsed.data.panDefault ?? 0,
-      isPrimary: parsed.data.isPrimary,
+      volumeDefault: data.volumeDefault ?? 1,
+      panDefault: data.panDefault ?? 0,
+      isPrimary: data.isPrimary,
       sortOrder,
-      active: parsed.data.active ?? true,
+      active: data.active ?? true,
     });
     await this.activity.recordBestEffort({
       songId,
@@ -100,10 +96,10 @@ export class SongsTracksService {
     if (!file) throw new BadRequestException('Archivo requerido');
     validateAudioUploadFile(file);
 
-    const parsed = trackUploadBodySchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
+    // Se valida aqui y no con ZodPipe: es un formulario multipart y primero se revisa el archivo.
+    const data = parseOrBadRequest(trackUploadBodySchema, input);
 
-    const version = await this.access.assertVersionInSong(songId, parsed.data.versionId);
+    const version = await this.access.assertVersionInSong(songId, data.versionId);
     const trackId = `track_${randomUUID().replace(/-/g, '')}`;
     const storage = await this.trackStorage.upload(
       file.buffer,
@@ -119,19 +115,19 @@ export class SongsTracksService {
         songId,
         versionId: version?.id,
         uploadedById: userId,
-        name: parsed.data.name || file.originalname.replace(/\.[^.]+$/, ''),
-        type: parsed.data.type,
-        instrument: parsed.data.instrument,
+        name: data.name || file.originalname.replace(/\.[^.]+$/, ''),
+        type: data.type,
+        instrument: data.instrument,
         mimeType: file.mimetype,
         sizeBytes: file.size,
-        durationSec: parsed.data.durationSec,
+        durationSec: data.durationSec,
         originalFileName: file.originalname,
         storageKey: storage.storageKey,
         url: buildInternalTrackUrl(songId, trackId),
         provider: 'UPLOAD',
         volumeDefault: 1,
         panDefault: 0,
-        isPrimary: parsed.data.isPrimary ?? sortOrder === 0,
+        isPrimary: data.isPrimary ?? sortOrder === 0,
         sortOrder,
         active: true,
       });
@@ -153,34 +149,32 @@ export class SongsTracksService {
     }
   }
 
-  async updateTrack(member: OrgMember, songId: string, trackId: string, input: Record<string, unknown>) {
+  async updateTrack(member: OrgMember, songId: string, trackId: string, data: UpdateSongTrackData) {
     const { organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
     const existing = await this.access.assertTrackInSong(songId, trackId);
-    const parsed = updateTrackSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const version = parsed.data.versionId === undefined
+    const version = data.versionId === undefined
       ? await this.access.assertVersionInSong(songId, existing.versionId)
-      : await this.access.assertVersionInSong(songId, parsed.data.versionId);
-    const provider = parsed.data.provider ?? existing.provider;
+      : await this.access.assertVersionInSong(songId, data.versionId);
+    const provider = data.provider ?? existing.provider;
 
-    if ((provider === 'EXTERNAL_URL' || provider === 'OTHER') && parsed.data.url !== undefined && parsed.data.url === null) {
+    if ((provider === 'EXTERNAL_URL' || provider === 'OTHER') && data.url !== undefined && data.url === null) {
       throw new BadRequestException('La URL externa no puede quedar vacia');
     }
 
     const updated = await this.songsRepository.updateTrack(trackId, clean({
-      versionId: parsed.data.versionId === undefined ? undefined : version?.id ?? null,
-      name: parsed.data.name,
-      type: parsed.data.type,
-      instrument: parsed.data.instrument,
-      durationSec: parsed.data.durationSec,
-      url: parsed.data.url,
-      provider: parsed.data.provider,
-      volumeDefault: parsed.data.volumeDefault,
-      panDefault: parsed.data.panDefault,
-      isPrimary: parsed.data.isPrimary,
-      sortOrder: parsed.data.sortOrder,
-      active: parsed.data.active,
+      versionId: data.versionId === undefined ? undefined : version?.id ?? null,
+      name: data.name,
+      type: data.type,
+      instrument: data.instrument,
+      durationSec: data.durationSec,
+      url: data.url,
+      provider: data.provider,
+      volumeDefault: data.volumeDefault,
+      panDefault: data.panDefault,
+      isPrimary: data.isPrimary,
+      sortOrder: data.sortOrder,
+      active: data.active,
     }));
     return normalizeTrackResponse(updated);
   }
@@ -227,28 +221,24 @@ export class SongsTracksService {
     return normalizeTrackResponse(track);
   }
 
-  async reorderTracks(member: OrgMember, songId: string, input: Record<string, unknown>) {
+  async reorderTracks(member: OrgMember, songId: string, data: ReorderSongTracksData) {
     const { organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
-    const parsed = reorderTrackSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const version = await this.access.assertVersionInSong(songId, parsed.data.versionId);
-    const tracks = await this.songsRepository.reorderTracks(songId, version?.id || null, parsed.data.items);
+    const version = await this.access.assertVersionInSong(songId, data.versionId);
+    const tracks = await this.songsRepository.reorderTracks(songId, version?.id || null, data.items);
     return tracks.map((track) => normalizeTrackResponse(track));
   }
 
-  async copyTrackReferences(member: OrgMember, songId: string, input: Record<string, unknown>) {
+  async copyTrackReferences(member: OrgMember, songId: string, data: CopySongTracksData) {
     const { userId, organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
-    const parsed = copyTracksSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
-    if (parsed.data.sourceVersionId === parsed.data.targetVersionId) {
+    if (data.sourceVersionId === data.targetVersionId) {
       throw new BadRequestException('El origen y el destino deben ser versiones distintas');
     }
 
-    const source = await this.access.assertVersionInSong(songId, parsed.data.sourceVersionId);
-    const target = await this.access.assertVersionInSong(songId, parsed.data.targetVersionId);
+    const source = await this.access.assertVersionInSong(songId, data.sourceVersionId);
+    const target = await this.access.assertVersionInSong(songId, data.targetVersionId);
     if (!source || !target) throw new BadRequestException('Version invalida');
 
     const created = await this.songsRepository.copyTrackReferences({

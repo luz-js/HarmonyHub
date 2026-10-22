@@ -9,6 +9,16 @@ import {
   SETLIST_CUE_TYPES,
   SETLIST_ITEM_TYPES,
   SETLIST_PARTICIPANT_STATUSES,
+  REVISION_SOURCES,
+  SONG_ACTIVITY_TYPES,
+  SONG_COMMENT_TARGETS,
+  SONG_ENTITY_TYPES,
+  SONG_FILE_CATEGORIES,
+  SONG_LINK_PROVIDERS,
+  SONG_NOTE_VISIBILITIES,
+  SONG_THREAD_STATUSES,
+  SONG_TRACK_TYPES,
+  TRACK_PROVIDERS,
 } from '@harmonyhub/contracts';
 import { ATTENDANCE_STATUSES, EVENT_STATUSES, SETLIST_STATUSES, INVITATION_STATUSES, MEMBERSHIP_ROLES, MEMBERSHIP_STATUSES, ORGANIZATION_TYPES, SETLIST_MUSICAL_ROLES } from '@harmonyhub/contracts';
 
@@ -28,6 +38,16 @@ const pairs: [string, readonly string[], Record<string, string>][] = [
   ['SetlistCuePhase', SETLIST_CUE_PHASES, $Enums.SetlistCuePhase],
   ['SetlistCueStatus', SETLIST_CUE_STATUSES, $Enums.SetlistCueStatus],
   ['SetlistCuePriority', SETLIST_CUE_PRIORITIES, $Enums.SetlistCuePriority],
+  ['SongTrackType', SONG_TRACK_TYPES, $Enums.SongTrackType],
+  ['TrackProvider', TRACK_PROVIDERS, $Enums.TrackProvider],
+  ['SongCommentTarget', SONG_COMMENT_TARGETS, $Enums.SongCommentTarget],
+  ['SongThreadStatus', SONG_THREAD_STATUSES, $Enums.SongThreadStatus],
+  ['SongNoteVisibility', SONG_NOTE_VISIBILITIES, $Enums.SongNoteVisibility],
+  ['SongActivityType', SONG_ACTIVITY_TYPES, $Enums.SongActivityType],
+  ['SongEntityType', SONG_ENTITY_TYPES, $Enums.SongEntityType],
+  ['SongFileCategory', SONG_FILE_CATEGORIES, $Enums.SongFileCategory],
+  ['SongLinkProvider', SONG_LINK_PROVIDERS, $Enums.SongLinkProvider],
+  ['RevisionSource', REVISION_SOURCES, $Enums.RevisionSource],
   ['SetlistMusicalRole', SETLIST_MUSICAL_ROLES, $Enums.SetlistMusicalRole],
 ];
 

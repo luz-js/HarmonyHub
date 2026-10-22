@@ -1,6 +1,7 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { updateSongNoteSchema, type CreateSongNoteData, type SongNoteListQueryData } from '@harmonyhub/contracts';
+import { parseOrBadRequest } from '../../shared/zod.pipe';
 import { MembershipRole, Prisma, SongNoteVisibility } from '@prisma/client';
-import { z } from 'zod';
 import { PermissionsService } from '../../permissions/permissions.service';
 import { clean } from '../../shared/object.utils';
 import { SongActivityService } from '../activity/song-activity.service';
@@ -8,29 +9,6 @@ import { assertSongAccess, assertSongVersionAccess } from '../song-access.utils'
 import { SongsRepository } from '../songs.repository';
 import { SongNotesRepository } from './song-notes.repository';
 import type { OrgMember } from '../../permissions/current-membership.decorator';
-
-const MAX_NOTE_CONTENT_LENGTH = 10000;
-
-const createNoteSchema = z.object({
-  versionId: z.string().trim().min(1).optional().nullable(),
-  title: z.string().trim().max(150, 'Titulo demasiado largo').optional(),
-  content: z.string().trim().min(1, 'Contenido requerido').max(MAX_NOTE_CONTENT_LENGTH, 'Contenido demasiado largo'),
-  visibility: z.nativeEnum(SongNoteVisibility).default('ORGANIZATION'),
-  isPinned: z.boolean().optional(),
-});
-
-const updateNoteSchema = z.object({
-  versionId: z.string().trim().min(1).optional().nullable(),
-  title: z.string().trim().max(150, 'Titulo demasiado largo').optional().nullable(),
-  content: z.string().trim().min(1, 'Contenido requerido').max(MAX_NOTE_CONTENT_LENGTH, 'Contenido demasiado largo').optional(),
-  visibility: z.nativeEnum(SongNoteVisibility).optional(),
-});
-
-const listNoteQuerySchema = z.object({
-  versionId: z.string().trim().min(1).optional(),
-  visibility: z.nativeEnum(SongNoteVisibility).optional(),
-  includeArchived: z.union([z.boolean(), z.string()]).optional().transform((value) => value === true || value === 'true'),
-});
 
 type NoteRecord = {
   id: string;
@@ -101,18 +79,16 @@ export class SongNotesService {
     if (note.visibility === 'LEADERS_ONLY' && !this.permissions.isLeadershipRole(role)) throw new NotFoundException('Nota no encontrada');
   }
 
-  async list(member: OrgMember, songId: string, query: Record<string, unknown> = {}) {
+  async list(member: OrgMember, songId: string, query: SongNoteListQueryData) {
     const { userId, organizationId } = member;
     await assertSongAccess(this.songsRepository, organizationId, songId);
-    const parsed = listNoteQuerySchema.safeParse(query);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
-    const versionId = parsed.data.versionId ? parsed.data.versionId : undefined;
+    const versionId = query.versionId ? query.versionId : undefined;
     if (versionId) await assertSongVersionAccess(this.songsRepository, songId, versionId);
 
     const andConditions: Prisma.SongNoteWhereInput[] = [this.permissions.buildVisibleSongNoteWhere(userId, member.role)];
-    if (parsed.data.visibility) andConditions.push({ visibility: parsed.data.visibility });
-    if (!parsed.data.includeArchived) andConditions.push({ isArchived: false });
+    if (query.visibility) andConditions.push({ visibility: query.visibility });
+    if (!query.includeArchived) andConditions.push({ isArchived: false });
     if (versionId !== undefined) {
       andConditions.push(versionId === null ? { versionId: null } : { OR: [{ versionId: null }, { versionId }] });
     }
@@ -129,27 +105,25 @@ export class SongNotesService {
     return normalizeNote(note);
   }
 
-  async create(member: OrgMember, songId: string, input: Record<string, unknown>) {
+  async create(member: OrgMember, songId: string, data: CreateSongNoteData) {
     const { userId, organizationId } = member;
     await assertSongAccess(this.songsRepository, organizationId, songId);
-    const parsed = createNoteSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
-    if (!this.permissions.canCreateSongNoteVisibility(member.role, parsed.data.visibility)) {
+    if (!this.permissions.canCreateSongNoteVisibility(member.role, data.visibility)) {
       throw new ForbiddenException('No tienes permiso para crear notas con esta visibilidad');
     }
 
-    const version = await assertSongVersionAccess(this.songsRepository, songId, parsed.data.versionId);
+    const version = await assertSongVersionAccess(this.songsRepository, songId, data.versionId);
 
     const created = await this.notesRepository.create({
       songId,
       versionId: version?.id,
       organizationId,
       authorId: userId,
-      title: parsed.data.title,
-      content: parsed.data.content,
-      visibility: parsed.data.visibility,
-      isPinned: parsed.data.isPinned ?? false,
+      title: data.title,
+      content: data.content,
+      visibility: data.visibility,
+      isPinned: data.isPinned ?? false,
     });
     const createdTitleSuffix = created.title ? ` "${created.title}"` : '';
     await this.recordNoteActivityBestEffort(created as NoteRecord, {
@@ -171,20 +145,20 @@ export class SongNotesService {
       throw new ForbiddenException('No tienes permiso para editar esta nota');
     }
 
-    const parsed = updateNoteSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
+    // Se valida aqui y no con ZodPipe: quien no tiene permiso recibe 403 aunque el cuerpo sea invalido.
+    const data = parseOrBadRequest(updateSongNoteSchema, input);
 
-    if (parsed.data.visibility && !this.permissions.canCreateSongNoteVisibility(member.role, parsed.data.visibility)) {
+    if (data.visibility && !this.permissions.canCreateSongNoteVisibility(member.role, data.visibility)) {
       throw new ForbiddenException('No tienes permiso para usar esta visibilidad');
     }
 
-    const version = parsed.data.versionId === undefined ? undefined : await assertSongVersionAccess(this.songsRepository, songId, parsed.data.versionId);
+    const version = data.versionId === undefined ? undefined : await assertSongVersionAccess(this.songsRepository, songId, data.versionId);
 
     const updated = await this.notesRepository.update(noteId, clean({
-      versionId: parsed.data.versionId === undefined ? undefined : (version?.id ?? null),
-      title: parsed.data.title,
-      content: parsed.data.content,
-      visibility: parsed.data.visibility,
+      versionId: data.versionId === undefined ? undefined : (version?.id ?? null),
+      title: data.title,
+      content: data.content,
+      visibility: data.visibility,
     }));
     await this.recordNoteActivityBestEffort(updated as NoteRecord, {
       organizationId,
