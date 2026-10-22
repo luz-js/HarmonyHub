@@ -1,6 +1,7 @@
 import type { UserInstrumentRef } from './auth.types';
 
-export type MembershipRole = 'OWNER' | 'ADMIN' | 'LEADER' | 'MUSICIAN' | 'GUEST';
+export type { MembershipRole } from '@harmonyhub/contracts';
+import type { MembershipRole } from '@harmonyhub/contracts';
 
 export type MembershipStatus = 'ACTIVE' | 'INACTIVE' | 'INVITED';
 

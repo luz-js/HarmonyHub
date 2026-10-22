@@ -1,6 +1,8 @@
 import type {
   AcceptedInvitation,
   AppNotification,
+  LoginInput,
+  RegisterInput,
   CreateUnavailabilityInput,
   SetlistMusicalRole,
   TeamAvailability,
@@ -77,14 +79,14 @@ import type {
 } from '../types';
 import { buildAuthHeaders, ensureFreshAccessToken, http, requestBlob, setAuthToken, setCurrentOrganizationId } from './http';
 
-export async function loginRequest(input: { email: string; password: string }) {
+export async function loginRequest(input: LoginInput) {
   const data = await http<{ ok: boolean; user: CurrentUser; accessToken: string }>('/api/login', { method: 'POST', body: JSON.stringify(input) });
   setAuthToken(data.accessToken);
   if (data.user.currentOrganizationId) setCurrentOrganizationId(data.user.currentOrganizationId);
   return data.user;
 }
 
-export function registerRequest(input: { name: string; email: string; password: string; confirmPassword: string }) {
+export function registerRequest(input: RegisterInput) {
   return http<{ ok: boolean; user: CurrentUser; accessToken: string; next: string }>('/api/auth/register', { method: 'POST', body: JSON.stringify(input) }).then((data) => {
     setAuthToken(data.accessToken);
     if (data.user.currentOrganizationId) setCurrentOrganizationId(data.user.currentOrganizationId);

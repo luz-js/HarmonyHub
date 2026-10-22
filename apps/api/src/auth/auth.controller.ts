@@ -1,4 +1,6 @@
 import { Body, Controller, Get, HttpCode, Inject, Ip, Post, Req, Res, UseGuards } from '@nestjs/common';
+import { loginSchema, registerSchema, type LoginData, type RegisterData } from '@harmonyhub/contracts';
+import { ZodPipe } from '../shared/zod.pipe';
 import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
 import { CurrentUser, CurrentUserPayload } from './current-user.decorator';
@@ -9,15 +11,15 @@ export class AuthController {
   constructor(@Inject(AuthService) private readonly authService: AuthService) {}
 
   @Post('login')
-  async login(@Body() body: unknown, @Ip() ip: string, @Req() request: CookieRequest, @Res({ passthrough: true }) response: CookieResponse) {
-    const { refresh, ...session } = await this.authService.login(body ?? {}, ip, request.headers['user-agent']);
+  async login(@Body(new ZodPipe(loginSchema)) body: LoginData, @Ip() ip: string, @Req() request: CookieRequest, @Res({ passthrough: true }) response: CookieResponse) {
+    const { refresh, ...session } = await this.authService.login(body, ip, request.headers['user-agent']);
     setRefreshCookie(response, refresh);
     return { ok: true, ...session };
   }
 
   @Post('auth/register')
-  async register(@Body() body: Record<string, unknown>, @Req() request: CookieRequest, @Res({ passthrough: true }) response: CookieResponse) {
-    const { refresh, ...session } = await this.authService.register(body ?? {}, request.headers['user-agent']);
+  async register(@Body(new ZodPipe(registerSchema)) body: RegisterData, @Req() request: CookieRequest, @Res({ passthrough: true }) response: CookieResponse) {
+    const { refresh, ...session } = await this.authService.register(body, request.headers['user-agent']);
     setRefreshCookie(response, refresh);
     return { ok: true, ...session, next: 'onboarding' };
   }

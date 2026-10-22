@@ -1,25 +1,10 @@
-import { BadRequestException, ConflictException, HttpException, HttpStatus, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
-import { z } from 'zod';
+import { ConflictException, HttpException, HttpStatus, Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import type { LoginData, RegisterData } from '@harmonyhub/contracts';
 import { AuthRepository } from './auth.repository';
 import { JwtService } from './jwt.service';
 import { LoginRateLimiter, TooManyLoginAttemptsError } from './login-rate-limiter';
 import { hashPassword, isLegacyDevPassword, verifyPassword } from './password';
 import { RefreshTokenService } from './refresh-token.service';
-
-const loginSchema = z.object({
-  email: z.string().email().transform((value) => value.trim().toLowerCase()),
-  password: z.string().min(1),
-});
-
-const registerSchema = z.object({
-  name: z.string().min(1).transform((value) => value.trim()),
-  email: z.string().email().transform((value) => value.trim().toLowerCase()),
-  password: z.string().min(8),
-  confirmPassword: z.string().min(8),
-}).refine((value) => value.password === value.confirmPassword, {
-  message: 'Las contrasenas no coinciden',
-  path: ['confirmPassword'],
-});
 
 @Injectable()
 export class AuthService {
@@ -63,11 +48,8 @@ export class AuthService {
    * `ip` alimenta el limitador de intentos (ip + correo); sin ip se limita solo por correo.
    * `refresh` lo convierte el controller en cookie httpOnly; nunca viaja en el cuerpo.
    */
-  async login(input: unknown, ip?: string, userAgent?: string) {
-    const parsed = loginSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-
-    const { email, password } = parsed.data;
+  async login(input: LoginData, ip?: string, userAgent?: string) {
+    const { email, password } = input;
     const limiterKey = LoginRateLimiter.key(ip, email);
     try {
       await this.loginLimiter.assertAllowed(limiterKey);
@@ -99,11 +81,8 @@ export class AuthService {
     };
   }
 
-  async register(input: unknown, userAgent?: string) {
-    const parsed = registerSchema.safeParse(input);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-
-    const { name, email, password } = parsed.data;
+  async register(input: RegisterData, userAgent?: string) {
+    const { name, email, password } = input;
     if (await this.authRepository.findUserForLogin(email)) {
       throw new ConflictException('Ya existe una cuenta con ese correo');
     }

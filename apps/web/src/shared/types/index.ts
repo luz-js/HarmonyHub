@@ -8,3 +8,4 @@ export * from './notification.types';
 export * from './organization.types';
 export * from './setlist.types';
 export * from './song.types';
+export type { LoginInput, RegisterInput } from '@harmonyhub/contracts';

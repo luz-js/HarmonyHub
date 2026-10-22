@@ -15,12 +15,14 @@ export const updateMeSchema = z.object({
     .transform((value) => (value === '' ? null : value)),
 });
 export type UpdateMeInput = z.input<typeof updateMeSchema>;
+export type UpdateMeData = z.output<typeof updateMeSchema>;
 
 /** PUT /api/me/active-organization: la organizacion que se abre al entrar, en cualquier dispositivo. */
 export const activeOrganizationSchema = z.object({
   organizationId: z.string().trim().min(1, 'Indica la organizacion'),
 });
 export type ActiveOrganizationInput = z.input<typeof activeOrganizationSchema>;
+export type ActiveOrganizationData = z.output<typeof activeOrganizationSchema>;
 
 /** PUT /api/me/instruments: reemplaza la lista completa de lo que la persona sabe tocar. */
 export const replaceInstrumentsSchema = z
@@ -43,3 +45,4 @@ export const replaceInstrumentsSchema = z
     }
   });
 export type ReplaceMyInstrumentsInput = z.input<typeof replaceInstrumentsSchema>;
+export type ReplaceMyInstrumentsData = z.output<typeof replaceInstrumentsSchema>;

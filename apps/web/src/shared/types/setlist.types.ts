@@ -111,13 +111,8 @@ export type UpdateSetlistItemInput = Partial<CreateSetlistItemInput>;
 
 export type SetlistParticipantStatus = 'INVITED' | 'CONFIRMED' | 'DECLINED' | 'TENTATIVE' | 'NOT_REQUIRED';
 
-export type SetlistMusicalRole =
-  | 'MUSIC_DIRECTOR' | 'BAND_LEADER' | 'LEAD_VOCAL' | 'BACKING_VOCAL' | 'CHOIR'
-  | 'ACOUSTIC_GUITAR' | 'ELECTRIC_GUITAR' | 'BASS' | 'DRUMS' | 'PERCUSSION' | 'PIANO' | 'KEYS' | 'ORGAN' | 'SYNTH' | 'STRINGS' | 'BRASS' | 'WOODWIND' | 'VIOLIN' | 'CELLO'
-  | 'TRACKS' | 'CLICK' | 'PAD'
-  | 'AUDIO_ENGINEER' | 'MONITOR_ENGINEER' | 'LIGHTING' | 'VIDEO'
-  | 'SPEAKER' | 'PRAYER_LEADER' | 'ANNOUNCER'
-  | 'OTHER';
+export type { SetlistMusicalRole } from '@harmonyhub/contracts';
+import type { SetlistMusicalRole } from '@harmonyhub/contracts';
 
 export type AssignmentPreparationStatus = 'PENDING' | 'IN_PROGRESS' | 'READY' | 'NEEDS_REVIEW' | 'BLOCKED' | 'NOT_APPLICABLE';
 

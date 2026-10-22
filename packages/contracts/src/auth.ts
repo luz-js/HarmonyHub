@@ -10,6 +10,7 @@ export const loginSchema = z.object({
   password: z.string().min(1),
 });
 export type LoginInput = z.input<typeof loginSchema>;
+export type LoginData = z.output<typeof loginSchema>;
 
 /** POST /api/auth/register */
 export const registerSchema = z.object({
@@ -22,6 +23,7 @@ export const registerSchema = z.object({
   path: ['confirmPassword'],
 });
 export type RegisterInput = z.input<typeof registerSchema>;
+export type RegisterData = z.output<typeof registerSchema>;
 
 // ---- Respuestas ----
 

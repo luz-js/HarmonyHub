@@ -1,6 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { BadRequestException } from '@nestjs/common';
+import { activeOrganizationSchema, replaceInstrumentsSchema, updateMeSchema } from '@harmonyhub/contracts';
+import { viaPipe } from '../shared/zod-pipe.test-utils';
 import type { ProfileRepository } from './profile.repository';
 import { ProfileService } from './profile.service';
 import { normalizeInstruments, sortInstruments } from './profile.utils';
@@ -26,7 +28,14 @@ function makeService() {
       return { activeOrganizationId: organizationId };
     },
   };
-  return { service: new ProfileService(repository as unknown as ProfileRepository), calls };
+  const service = new ProfileService(repository as unknown as ProfileRepository);
+  // Como en la API: el cuerpo pasa por ZodPipe con el esquema del contrato antes de llegar al servicio.
+  const api = {
+    updateMe: (userId: string, raw: unknown) => viaPipe(updateMeSchema, raw, (data) => service.updateMe(userId, data)),
+    setActiveOrganization: (userId: string, raw: unknown) => viaPipe(activeOrganizationSchema, raw, (data) => service.setActiveOrganization(userId, data)),
+    replaceInstruments: (userId: string, raw: unknown) => viaPipe(replaceInstrumentsSchema, raw, (data) => service.replaceInstruments(userId, data)),
+  };
+  return { service: api, calls };
 }
 
 test('PATCH /api/me: actualiza nombre (recortado) y telefono del usuario del token', async () => {
