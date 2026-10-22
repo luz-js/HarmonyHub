@@ -6,4 +6,5 @@ export type OrganizationSummary = {
   description?: string | null;
   primaryColor?: string;
   role?: string;
+  archivedAt?: string | null;
 };

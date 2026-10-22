@@ -26,10 +26,39 @@ export function OrganizationSwitcher({
   const organizations = useMemo<AppOrganization[]>(() => {
     const rows = organizationsQuery.data;
     if (!rows) return user.organizations || [];
-    return rows.map((row) => ({ id: row.organization.id, slug: row.organization.slug, name: row.organization.name, role: row.role }));
+    return rows.map((row) => ({ id: row.organization.id, slug: row.organization.slug, name: row.organization.name, role: row.role, archivedAt: row.organization.archivedAt ?? null }));
   }, [organizationsQuery.data, user.organizations]);
 
   const current = organizations.find((organization) => organization.id === user.currentOrganizationId);
+  const activeOrganizations = organizations.filter((organization) => !organization.archivedAt);
+  const archivedOrganizations = organizations.filter((organization) => organization.archivedAt);
+
+  function renderOption(organization: AppOrganization) {
+    const active = organization.id === user.currentOrganizationId;
+    return (
+      <button
+        key={organization.id}
+        type="button"
+        role="option"
+        aria-selected={active}
+        className={`flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm hover:bg-white/5 ${organization.archivedAt ? 'opacity-70' : ''}`}
+        onClick={() => {
+          setOpen(false);
+          if (!active) onSwitch(organization);
+        }}
+      >
+        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#23252A] text-xs font-bold text-[#D8D5CE]">{getInitials(organization.name)}</span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate font-semibold text-white">{organization.name}</span>
+          <span className="block text-xs text-muted">
+            {organization.archivedAt ? 'Archivada · ' : ''}
+            {getRoleLabel(organization.role)}
+          </span>
+        </span>
+        {active && <Check className="h-4 w-4 text-primary" />}
+      </button>
+    );
+  }
   const name = current?.name || 'Organización';
   const compact = variant === 'compact';
 
@@ -56,29 +85,14 @@ export function OrganizationSwitcher({
             className={`absolute z-50 mt-2 rounded-xl border border-[#30333A] bg-[#1A1B1F] p-1.5 shadow-[0_20px_60px_rgba(0,0,0,0.55)] ${compact ? 'left-0 w-72 max-w-[calc(100vw-32px)]' : 'left-0 right-0'}`}
             role="listbox"
           >
-            {organizations.map((organization) => {
-              const active = organization.id === user.currentOrganizationId;
-              return (
-                <button
-                  key={organization.id}
-                  type="button"
-                  role="option"
-                  aria-selected={active}
-                  className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left text-sm hover:bg-white/5"
-                  onClick={() => {
-                    setOpen(false);
-                    if (!active) onSwitch(organization);
-                  }}
-                >
-                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[#23252A] text-xs font-bold text-[#D8D5CE]">{getInitials(organization.name)}</span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-semibold text-white">{organization.name}</span>
-                    <span className="block text-xs text-muted">{getRoleLabel(organization.role)}</span>
-                  </span>
-                  {active && <Check className="h-4 w-4 text-primary" />}
-                </button>
-              );
-            })}
+            {activeOrganizations.map(renderOption)}
+            {/* Las archivadas no estorban: van aparte y se abren en solo lectura (desde ahi un propietario las restaura). */}
+            {archivedOrganizations.length > 0 && (
+              <>
+                <p className="px-2.5 pb-1 pt-2.5 text-[11px] font-bold uppercase tracking-[0.16em] text-muted">Archivadas</p>
+                {archivedOrganizations.map(renderOption)}
+              </>
+            )}
             <div className="my-1 border-t border-[#30333A]" />
             <button
               type="button"

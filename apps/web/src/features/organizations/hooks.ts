@@ -6,7 +6,7 @@ import {
   getCurrentOrganizationId as getPersistedCurrentOrganizationId,
   setCurrentOrganizationId as persistCurrentOrganizationId,
 } from '../../shared/api/http';
-import { createOrganization, getOrganizations } from './api/organizations.client';
+import { archiveOrganization, createOrganization, getOrganizations, leaveOrganization, restoreOrganization, transferOrganization } from './api/organizations.client';
 
 export function getStoredCurrentOrganizationId() {
   return getPersistedCurrentOrganizationId();
@@ -34,6 +34,20 @@ export function useCreateOrganization() {
     mutationFn: (input: { name: string; type: string; description?: string; primaryColor?: string }) => createOrganization(input),
   });
 }
+
+/** Salir, transferir, archivar o restaurar: refresca la lista de organizaciones (el selector) al terminar. */
+function useOrganizationAction<TInput>(action: (input: TInput) => Promise<unknown>) {
+  return useMutation({
+    mutationFn: action,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['organizations'] }),
+  });
+}
+
+export const useLeaveOrganization = () => useOrganizationAction((id: string) => leaveOrganization(id));
+export const useTransferOrganization = () =>
+  useOrganizationAction((input: { id: string; membershipId: string; stepDown: boolean }) => transferOrganization(input.id, input));
+export const useArchiveOrganization = () => useOrganizationAction((input: { id: string; confirmName: string }) => archiveOrganization(input.id, input.confirmName));
+export const useRestoreOrganization = () => useOrganizationAction((id: string) => restoreOrganization(id));
 
 export function useCurrentOrganization(organizations: Array<{ organization: { id: string } }> = []) {
   const currentOrganizationId = getStoredCurrentOrganizationId();

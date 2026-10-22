@@ -3,6 +3,8 @@ export type AppOrganization = {
   slug: string;
   name: string;
   role?: string;
+  /** Archivada: de solo lectura hasta que un propietario la restaure. */
+  archivedAt?: string | null;
 };
 
 export type AppUser = {

@@ -112,6 +112,23 @@ export function createOrganization(input: { name: string; type: string; descript
   return http<OrganizationSummary>('/api/organizations', { method: 'POST', body: JSON.stringify(input) });
 }
 
+/** Salir de una organizacion: la membresia queda inactiva. El ultimo propietario no puede. */
+export function leaveOrganization(id: string) {
+  return http<{ ok: boolean }>(`/api/organizations/${encodeURIComponent(id)}/leave`, { method: 'POST' });
+}
+
+export function transferOrganization(id: string, input: { membershipId: string; stepDown: boolean }) {
+  return http<{ ok: boolean }>(`/api/organizations/${encodeURIComponent(id)}/transfer`, { method: 'POST', body: JSON.stringify(input) });
+}
+
+export function archiveOrganization(id: string, confirmName: string) {
+  return http<OrganizationSummary>(`/api/organizations/${encodeURIComponent(id)}/archive`, { method: 'POST', body: JSON.stringify({ confirmName }) });
+}
+
+export function restoreOrganization(id: string) {
+  return http<OrganizationSummary>(`/api/organizations/${encodeURIComponent(id)}/restore`, { method: 'POST' });
+}
+
 export function getMemberships(organizationId: string) {
   return http<OrganizationMember[]>(`/api/memberships?organizationId=${encodeURIComponent(organizationId)}`);
 }

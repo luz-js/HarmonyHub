@@ -12,6 +12,8 @@ import { OnboardingPage } from './app/OnboardingPage';
 import { WelcomeHome } from './app/WelcomeHome';
 import { ArchivesPage } from './features/files';
 import { MyInvitationsPage } from './features/invitations';
+import { ArchivedOrganizationBanner } from './features/organizations/components/ArchivedOrganizationBanner';
+import { OrganizationSettings } from './features/organizations/components/OrganizationSettings';
 import { MusiciansPage } from './features/musicians';
 import { ProfilePage } from './features/profile';
 import { readStoredUser, reconcileSession, storeUser, withOrganization } from './app/session';
@@ -157,6 +159,8 @@ function App() {
     return <WelcomeHome user={user} navigate={navigate} onJoined={activateOrganization} onLogout={logout} />;
   }
 
+  const currentOrganization = user.organizations?.find((organization) => organization.id === user.currentOrganizationId);
+
   return (
     <AudioPlayerProvider>
       <Shell
@@ -166,7 +170,17 @@ function App() {
         onLogout={logout}
         onSwitchOrganization={activateOrganization}
       >
-        {path === '/invitations' ? <MyInvitationsPage onAccepted={activateOrganization} /> : page}
+        {currentOrganization?.archivedAt && <ArchivedOrganizationBanner organization={currentOrganization} onRestored={() => void syncSession()} />}
+        {path === '/invitations' ? (
+          <MyInvitationsPage onAccepted={activateOrganization} />
+        ) : path === '/settings' ? (
+          <div className="space-y-5">
+            {page}
+            {currentOrganization && <OrganizationSettings organization={currentOrganization} currentUserId={user.id} onChanged={() => void syncSession()} />}
+          </div>
+        ) : (
+          page
+        )}
       </Shell>
       <PersistentAudioPlayer />
     </AudioPlayerProvider>

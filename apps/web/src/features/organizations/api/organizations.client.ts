@@ -1,1 +1,8 @@
-export { createOrganization, getOrganizations } from '../../../shared/api/api-client';
+export {
+  archiveOrganization,
+  createOrganization,
+  getOrganizations,
+  leaveOrganization,
+  restoreOrganization,
+  transferOrganization,
+} from '../../../shared/api/api-client';
