@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { LocalTrackStorageService } from '../local-track-storage.service';
+import { LocalTrackStorageService } from './local-track-storage.service';
 import { S3StorageConfig, S3TrackStorageService } from './s3-track-storage.service';
 import type { TrackStorageProvider } from './track-storage.interface';
 

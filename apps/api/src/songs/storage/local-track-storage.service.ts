@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { createReadStream } from 'node:fs';
 import { access, mkdir, rm, unlink, writeFile } from 'node:fs/promises';
 import { dirname, isAbsolute, resolve } from 'node:path';
-import type { StoredTrackFile, TrackStorageProvider } from './storage/track-storage.interface';
-import { buildStorageKey, resolveWithinRoot } from './storage/storage-path';
+import type { StoredTrackFile, TrackStorageProvider } from './track-storage.interface';
+import { buildStorageKey, resolveWithinRoot } from './storage-path';
 
 /**
  * Proveedor de almacenamiento local en filesystem. Es el fallback por defecto
