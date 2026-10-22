@@ -262,7 +262,8 @@ export type SetlistItemEffectiveValues = {
   capo: number | null;
 };
 
-export type SetlistItemSongRef = { id: string; title: string; artist: string; coverUrl: string | null };
+/** `timeSignature` ("4/4", "6/8"...) lo usa el metronomo de Stage Mode; puede faltar en respuestas viejas. */
+export type SetlistItemSongRef = { id: string; title: string; artist: string; coverUrl: string | null; timeSignature?: string | null };
 
 export type SetlistItemVersionRef = { id: string; name: string; key: string; bpm: number | null; durationSec: number | null; isDefault: boolean };
 

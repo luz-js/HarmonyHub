@@ -4,7 +4,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { copyCuesForItemDuplication } from '../cues/setlist-cues.repository';
 
 const itemDetailInclude = {
-  song: { select: { id: true, title: true, artist: true, coverUrl: true } },
+  song: { select: { id: true, title: true, artist: true, coverUrl: true, timeSignature: true } },
   songVersion: { select: { id: true, name: true, key: true, bpm: true, durationSec: true, isDefault: true } },
 } satisfies Prisma.SetlistItemInclude;
 
