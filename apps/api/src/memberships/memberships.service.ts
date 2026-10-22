@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { MembershipRole, MembershipStatus } from '@prisma/client';
 import { z } from 'zod';
+import type { OrgMember } from '../permissions/current-membership.decorator';
 import { PermissionsService } from '../permissions/permissions.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { userInstrumentsSelect } from '../shared/user-instruments';
@@ -18,8 +19,7 @@ export class MembershipsService {
     @Inject(PermissionsService) private readonly permissions: PermissionsService,
   ) {}
 
-  async list(userId: string, organizationId: string) {
-    await this.permissions.assertOrganizationMember(userId, organizationId);
+  async list({ organizationId }: OrgMember) {
     return this.prisma.membership.findMany({
       where: { organizationId },
       include: {

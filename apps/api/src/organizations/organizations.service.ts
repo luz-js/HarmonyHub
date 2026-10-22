@@ -1,7 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { OrganizationType } from '@prisma/client';
 import { z } from 'zod';
-import { PermissionsService } from '../permissions/permissions.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 const organizationCreateSchema = z.object({
@@ -23,10 +22,7 @@ function slugify(value: string) {
 
 @Injectable()
 export class OrganizationsService {
-  constructor(
-    @Inject(PrismaService) private readonly prisma: PrismaService,
-    @Inject(PermissionsService) private readonly permissions: PermissionsService,
-  ) {}
+  constructor(@Inject(PrismaService) private readonly prisma: PrismaService) {}
 
   listForUser(userId: string) {
     return this.prisma.membership.findMany({
@@ -67,9 +63,7 @@ export class OrganizationsService {
     return `${base}-${suffix}`;
   }
 
-  async detail(userId: string, id: string) {
-    await this.permissions.assertOrganizationMember(userId, id);
-
+  async detail(id: string) {
     const organization = await this.prisma.organization.findUnique({
       where: { id },
       include: {
@@ -86,8 +80,7 @@ export class OrganizationsService {
     return organization;
   }
 
-  async update(userId: string, id: string, body: unknown) {
-    await this.permissions.assertRole(userId, id, ['OWNER', 'ADMIN']);
+  async update(id: string, body: unknown) {
     const parsed = organizationUpdateSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 

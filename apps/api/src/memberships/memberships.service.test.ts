@@ -65,7 +65,7 @@ test('se mantienen las reglas: ADMIN no toca a un OWNER y nunca queda la organiz
   const { service, updates } = makeService(team.map((m) => ({ ...m })));
   await assert.rejects(service.update('admin', 'm-owner', { status: 'INACTIVE' }), /no puede modificar un OWNER/);
   await assert.rejects(service.update('owner', 'm-owner', { role: 'ADMIN' }), /ultimo OWNER/);
-  await assert.rejects(service.update('musician', 'm-admin', { role: 'MUSICIAN' }), /Permisos insuficientes/);
+  await assert.rejects(service.update('musician', 'm-admin', { role: 'MUSICIAN' }), /No tienes permiso para hacer esto/);
   assert.equal(updates.length, 0);
 });
 

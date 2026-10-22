@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundEx
 import { MembershipRole } from '@prisma/client';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
+import type { OrgMember } from '../permissions/current-membership.decorator';
 import { PermissionsService } from '../permissions/permissions.service';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -18,20 +19,18 @@ export class InvitationsService {
     @Inject(PermissionsService) private readonly permissions: PermissionsService,
   ) {}
 
-  async list(userId: string, organizationId: string) {
-    await this.permissions.assertPermission(userId, organizationId, 'invitations.manage');
+  async list({ organizationId }: OrgMember) {
     return this.prisma.invitation.findMany({
       where: { organizationId },
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async create(userId: string, body: unknown) {
+  /** La organizacion viene en el cuerpo; PermissionsGuard ya verifico 'invitations.manage' sobre ella. */
+  async create({ userId, organizationId }: OrgMember, body: unknown) {
     const parsed = invitationCreateSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const { organizationId, email, role } = parsed.data;
-
-    await this.permissions.assertPermission(userId, organizationId, 'invitations.manage');
+    const { email, role } = parsed.data;
 
     return this.prisma.invitation.create({
       data: {
@@ -45,6 +44,7 @@ export class InvitationsService {
     });
   }
 
+  /** Excepcion documentada: la organizacion sale de la invitacion, asi que el permiso se verifica aqui. */
   async cancel(userId: string, id: string) {
     const invitation = await this.prisma.invitation.findUnique({ where: { id } });
     if (!invitation) throw new NotFoundException('Invitacion no encontrada');

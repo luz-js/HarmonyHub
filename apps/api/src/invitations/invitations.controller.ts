@@ -1,28 +1,35 @@
-import { Body, Controller, Get, Headers, Inject, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser, CurrentUserPayload } from '../auth/current-user.decorator';
+import { CurrentMembership, OrgMember } from '../permissions/current-membership.decorator';
+import { PermissionsGuard } from '../permissions/permissions.guard';
+import { RequirePermission } from '../permissions/require-permission.decorator';
 import { InvitationsService } from './invitations.service';
 
 @Controller('api/invitations')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, PermissionsGuard)
 export class InvitationsController {
   constructor(@Inject(InvitationsService) private readonly invitationsService: InvitationsService) {}
 
   @Get()
-  list(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') headerOrganizationId: string | undefined, @Query('organizationId') queryOrganizationId: string | undefined) {
-    return this.invitationsService.list(user.id, headerOrganizationId || queryOrganizationId || '');
+  @RequirePermission('invitations.manage', { organizationFrom: 'headerOrQuery' })
+  list(@CurrentMembership() member: OrgMember) {
+    return this.invitationsService.list(member);
   }
 
   @Post()
-  create(@CurrentUser() user: CurrentUserPayload, @Body() body: Record<string, unknown>) {
-    return this.invitationsService.create(user.id, body ?? {});
+  @RequirePermission('invitations.manage', { organizationFrom: { body: 'organizationId' } })
+  create(@CurrentMembership() member: OrgMember, @Body() body: Record<string, unknown>) {
+    return this.invitationsService.create(member, body ?? {});
   }
 
+  /** Excepcion: la organizacion sale de la invitacion; el servicio verifica 'invitations.manage'. */
   @Patch(':id/cancel')
   cancel(@CurrentUser() user: CurrentUserPayload, @Param('id') id: string) {
     return this.invitationsService.cancel(user.id, id);
   }
 
+  /** Sin etiqueta: quien acepta todavia no es miembro de la organizacion. */
   @Post(':token/accept')
   accept(@CurrentUser() user: CurrentUserPayload, @Param('token') token: string) {
     return this.invitationsService.accept(token, user.id);

@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { z } from 'zod';
 import { mapEventSummary } from '../events/event.mapper';
-import { PermissionsService } from '../permissions/permissions.service';
+import type { OrgMember } from '../permissions/current-membership.decorator';
 import { DashboardRepository } from './dashboard.repository';
 
 const activityQuerySchema = z.object({
@@ -10,14 +10,10 @@ const activityQuerySchema = z.object({
 
 @Injectable()
 export class DashboardService {
-  constructor(
-    @Inject(DashboardRepository) private readonly dashboardRepository: DashboardRepository,
-    @Inject(PermissionsService) private readonly permissions: PermissionsService,
-  ) {}
+  constructor(@Inject(DashboardRepository) private readonly dashboardRepository: DashboardRepository) {}
 
   /** Resumen de la organizacion activa: contadores, proximos eventos, asistencia pendiente propia y actividad reciente. */
-  async summary(userId: string, organizationId: string) {
-    await this.permissions.assertPermission(userId, organizationId, 'read');
+  async summary({ userId, organizationId }: OrgMember) {
     const now = new Date();
 
     const [counts, upcoming, pending, activity] = await Promise.all([
@@ -40,8 +36,7 @@ export class DashboardService {
     };
   }
 
-  async activity(userId: string, organizationId: string, query: Record<string, unknown>) {
-    await this.permissions.assertPermission(userId, organizationId, 'read');
+  async activity({ organizationId }: OrgMember, query: Record<string, unknown>) {
     const parsed = activityQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Filtros invalidos');
     const items = await this.dashboardRepository.recentActivity(organizationId, parsed.data.limit);
