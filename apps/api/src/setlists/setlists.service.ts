@@ -1,6 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { z } from 'zod';
 import type { OrgMember } from '../permissions/current-membership.decorator';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PermissionsService } from '../permissions/permissions.service';
 import { clean } from '../shared/object.utils';
 import { mapSetlistDetail, mapSetlistSummary } from './setlist.mapper';
@@ -53,6 +54,7 @@ export class SetlistsService {
     @Inject(SetlistsRepository) private readonly setlistsRepository: SetlistsRepository,
     @Inject(SetlistsAccessService) private readonly access: SetlistsAccessService,
     @Inject(PermissionsService) private readonly permissions: PermissionsService,
+    @Inject(NotificationsService) private readonly notifications: NotificationsService,
   ) {}
 
   async list(member: OrgMember, query: Record<string, unknown>) {
@@ -174,6 +176,7 @@ export class SetlistsService {
     this.assertTransition(current.status, 'PUBLISHED');
     this.assertPublishable(current);
     await this.setlistsRepository.update(id, { status: 'PUBLISHED', updatedById: userId });
+    await this.notifications.setlistPublished({ id, name: current.name, organizationId }, new Date(), userId);
     return mapSetlistDetail(await this.findOwnedDetail(organizationId, id));
   }
 

@@ -12,6 +12,7 @@ import {
   InvalidEventStatusTransitionError,
   isEventLocked,
 } from './event.utils';
+import { NotificationsService } from '../notifications/notifications.service';
 import { EventsRepository } from './events.repository';
 import type { OrgMember } from '../permissions/current-membership.decorator';
 
@@ -67,6 +68,7 @@ export class EventsService {
   constructor(
     @Inject(EventsRepository) private readonly eventsRepository: EventsRepository,
     @Inject(PermissionsService) private readonly permissions: PermissionsService,
+    @Inject(NotificationsService) private readonly notifications: NotificationsService,
   ) {}
 
   async list(member: OrgMember, query: Record<string, unknown>) {
@@ -157,6 +159,11 @@ export class EventsService {
         status,
       }),
     );
+    if (status === 'CANCELLED' && current.status !== 'CANCELLED') {
+      await this.notifications.eventChanged(updated, 'CANCELLED', userId);
+    } else if (fields.startsAt && fields.startsAt.getTime() !== current.startsAt.getTime() && updated.status !== 'CANCELLED') {
+      await this.notifications.eventChanged(updated, 'RESCHEDULED', userId);
+    }
     return mapEventDetail(updated, userId);
   }
 
@@ -181,12 +188,13 @@ export class EventsService {
     const existing = await this.eventsRepository.findMusicianByMembership(eventId, membership.id);
     if (existing) throw new ConflictException('Ese miembro ya esta en el equipo del evento');
 
-    await this.eventsRepository.addMusician({
+    const added = await this.eventsRepository.addMusician({
       eventId,
       membershipId: membership.id,
       instrument: parsed.data.instrument || null,
       note: parsed.data.note || null,
     });
+    await this.notifications.eventTeamAdded(event, { id: added.id, userId: membership.userId }, member.userId);
     return this.detail(member, eventId);
   }
 

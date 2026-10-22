@@ -1,5 +1,6 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { z } from 'zod';
+import { NotificationsService } from '../../notifications/notifications.service';
 import { SetlistsAccessService } from '../setlists-access.service';
 import { mapSetlistParticipant } from './setlist-assignment.mapper';
 import { SetlistParticipantsRepository } from './setlist-participants.repository';
@@ -25,6 +26,7 @@ export class SetlistParticipantsService {
   constructor(
     @Inject(SetlistParticipantsRepository) private readonly participantsRepository: SetlistParticipantsRepository,
     @Inject(SetlistsAccessService) private readonly access: SetlistsAccessService,
+    @Inject(NotificationsService) private readonly notifications: NotificationsService,
   ) {}
 
   async list(member: OrgMember, setlistId: string) {
@@ -44,7 +46,7 @@ export class SetlistParticipantsService {
 
   async add(member: OrgMember, setlistId: string, body: Record<string, unknown>) {
     const { userId, organizationId } = member;
-    await this.access.assertSetlistInOrg(organizationId, setlistId);
+    const setlist = await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const parsed = addParticipantSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
@@ -64,6 +66,7 @@ export class SetlistParticipantsService {
       generalNote: parsed.data.generalNote ?? null,
       addedById: userId,
     });
+    await this.notifications.setlistParticipantAdded({ id: setlistId, name: setlist.name, organizationId }, { id: created.id, userId: created.membership.user.id }, userId);
     return mapSetlistParticipant(created, []);
   }
 

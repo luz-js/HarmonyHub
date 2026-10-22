@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { PermissionsModule } from '../permissions/permissions.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { InvitationsController } from '../invitations/invitations.controller';
@@ -11,7 +12,7 @@ import { OrganizationsController } from './organizations.controller';
 import { OrganizationsService } from './organizations.service';
 
 @Module({
-  imports: [AuthModule, PrismaModule, PermissionsModule],
+  imports: [AuthModule, PrismaModule, PermissionsModule, NotificationsModule],
   controllers: [OrganizationsController, MembershipsController, InvitationsController, MyInvitationsController],
   providers: [OrganizationsService, MembershipsService, InvitationsService],
 })

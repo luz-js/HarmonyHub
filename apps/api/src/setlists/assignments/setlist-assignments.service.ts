@@ -2,6 +2,7 @@ import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundEx
 import { z } from 'zod';
 import { PermissionsService } from '../../permissions/permissions.service';
 import { SetlistItemsRepository } from '../items/setlist-items.repository';
+import { NotificationsService } from '../../notifications/notifications.service';
 import { SetlistsAccessService } from '../setlists-access.service';
 import { mapSetlistAssignment, mapSetlistParticipant, mapSetlistRoleRequirement } from './setlist-assignment.mapper';
 import { ASSIGNMENT_PREPARATION_STATUSES, computeCoverage, COPY_ASSIGNMENTS_MODES, SETLIST_MUSICAL_ROLES } from './setlist-assignment.utils';
@@ -47,6 +48,7 @@ export class SetlistAssignmentsService {
     @Inject(SetlistItemsRepository) private readonly itemsRepository: SetlistItemsRepository,
     @Inject(PermissionsService) private readonly permissions: PermissionsService,
     @Inject(SetlistsAccessService) private readonly access: SetlistsAccessService,
+    @Inject(NotificationsService) private readonly notifications: NotificationsService,
   ) {}
 
   async list(member: OrgMember, setlistId: string, itemId: string) {
@@ -58,7 +60,8 @@ export class SetlistAssignmentsService {
 
   async create(member: OrgMember, setlistId: string, itemId: string, body: Record<string, unknown>) {
     const { userId, organizationId } = member;
-    await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
+    const item = await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
+    const setlist = await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const parsed = createAssignmentSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
@@ -78,6 +81,11 @@ export class SetlistAssignmentsService {
       sortOrder,
       createdById: userId,
     });
+    await this.notifications.setlistAssignmentAdded(
+      { id: setlistId, name: setlist.name, organizationId },
+      { id: created.id, userId: created.participant.membership.user.id, itemTitle: item.title },
+      userId,
+    );
     return mapSetlistAssignment(created);
   }
 

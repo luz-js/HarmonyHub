@@ -4,6 +4,7 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import type { OrgMember } from '../permissions/current-membership.decorator';
 import { PermissionsService } from '../permissions/permissions.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 const INVITATION_TTL_MS = 1000 * 60 * 60 * 24 * 7;
@@ -51,6 +52,7 @@ export class InvitationsService {
   constructor(
     @Inject(PrismaService) private readonly prisma: PrismaService,
     @Inject(PermissionsService) private readonly permissions: PermissionsService,
+    @Inject(NotificationsService) private readonly notifications: NotificationsService,
   ) {}
 
   async list({ organizationId }: OrgMember) {
@@ -74,7 +76,7 @@ export class InvitationsService {
 
     const duplicated = new ConflictException('Ya hay una invitacion pendiente para ese correo');
     try {
-      return await this.prisma.$transaction(async (tx) => {
+      const created = await this.prisma.$transaction(async (tx) => {
         const pending = await tx.invitation.findFirst({ where: { organizationId, email, status: 'PENDING' } });
         if (pending && pending.expiresAt > new Date()) throw duplicated;
         if (pending) await this.setStatus(tx, pending, 'EXPIRED');
@@ -84,6 +86,8 @@ export class InvitationsService {
           select: invitationSelect,
         });
       });
+      await this.notifications.invitationReceived(created, member.userId);
+      return created;
     } catch (error) {
       // Dos invitaciones al mismo correo a la vez: la base rechaza la segunda por el unico (org, correo, PENDING).
       if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') throw duplicated;
@@ -139,7 +143,9 @@ export class InvitationsService {
     const invitation = await this.findMine(user, id);
     if (invitation.status === 'DECLINED') return this.prisma.invitation.findUniqueOrThrow({ where: { id }, select: invitationSelect });
     if (invitation.status !== 'PENDING') throw new BadRequestException('La invitacion ya no esta pendiente');
-    return this.prisma.$transaction((tx) => this.setStatus(tx, invitation, 'DECLINED'));
+    const declined = await this.prisma.$transaction((tx) => this.setStatus(tx, invitation, 'DECLINED'));
+    await this.notifications.markInvitationHandled(user.id, invitation.id);
+    return declined;
   }
 
   private async findUser(userId: string): Promise<InvitedUser> {
@@ -167,7 +173,7 @@ export class InvitationsService {
     const organization = await this.prisma.organization.findUniqueOrThrow({ where: { id: invitation.organizationId }, select: { archivedAt: true } });
     if (organization.archivedAt) throw new BadRequestException('Esa organizacion esta archivada; pide que la restauren para unirte');
 
-    return this.prisma.$transaction(async (tx) => {
+    const accepted = await this.prisma.$transaction(async (tx) => {
       // Si ya es miembro activo (p. ej. entro por otra invitacion) no se le cambia el rol que tiene.
       if (!membership) {
         await tx.membership.create({ data: { userId: user.id, organizationId: invitation.organizationId, role: invitation.role, status: 'ACTIVE' } });
@@ -176,6 +182,8 @@ export class InvitationsService {
       }
       return this.setStatus(tx, invitation, 'ACCEPTED');
     });
+    await this.notifications.markInvitationHandled(user.id, invitation.id);
+    return accepted;
   }
 
   /**

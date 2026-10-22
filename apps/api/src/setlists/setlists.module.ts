@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../auth/auth.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { PermissionsModule } from '../permissions/permissions.module';
 import { PrismaModule } from '../prisma/prisma.module';
 import { SetlistAssignmentsController } from './assignments/setlist-assignments.controller';
@@ -23,7 +24,7 @@ import { SetlistsRepository } from './setlists.repository';
 import { SetlistsService } from './setlists.service';
 
 @Module({
-  imports: [AuthModule, PrismaModule, PermissionsModule],
+  imports: [AuthModule, PrismaModule, PermissionsModule, NotificationsModule],
   controllers: [
     SetlistsController,
     SetlistItemsController,

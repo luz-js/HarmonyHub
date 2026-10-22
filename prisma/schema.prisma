@@ -241,6 +241,7 @@ model User {
   /// Organizacion activa guardada en la cuenta (sirve en cualquier dispositivo). Si se borra la organizacion queda vacia.
   activeOrganizationId      String?
   activeOrganization        Organization?        @relation("UserActiveOrganization", fields: [activeOrganizationId], references: [id], onDelete: SetNull)
+  notifications             Notification[]
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 
@@ -256,6 +257,38 @@ model LoginAttempt {
   updatedAt    DateTime
 
   @@index([updatedAt])
+}
+
+enum NotificationType {
+  EVENT_TEAM_ADDED
+  EVENT_CANCELLED
+  EVENT_RESCHEDULED
+  EVENT_REMINDER
+  SETLIST_PARTICIPANT_ADDED
+  SETLIST_ASSIGNMENT_ADDED
+  SETLIST_PUBLISHED
+  INVITATION_RECEIVED
+}
+
+/// Aviso dentro de la app para una persona. dedupeKey (unico por persona) hace idempotente cada aviso: aunque varias
+/// instancias de la API intenten crearlo (p. ej. un recordatorio), queda uno solo.
+model Notification {
+  id             String           @id @default(cuid())
+  userId         String
+  organizationId String
+  type           NotificationType
+  title          String
+  body           String?
+  link           String?
+  dedupeKey      String
+  readAt         DateTime?
+  createdAt      DateTime         @default(now())
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, readAt])
+  @@index([userId, organizationId, createdAt])
 }
 
 /// Token para renovar la sesion. Solo se guarda su hash; rota en cada uso y todos los de un mismo login comparten familyId.
@@ -300,6 +333,7 @@ model Organization {
   archivedById String?
   archivedBy   User?            @relation("OrganizationArchiver", fields: [archivedById], references: [id], onDelete: SetNull)
   activeForUsers User[]          @relation("UserActiveOrganization")
+  notifications  Notification[]
   memberships  Membership[]
   invitations  Invitation[]
   songs        Song[]
