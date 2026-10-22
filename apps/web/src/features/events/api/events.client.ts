@@ -2,6 +2,8 @@ export {
   addEventMusician,
   createEvent,
   deleteEvent,
+  downloadEventIcs,
+  downloadMyEventsIcs,
   getEvent,
   getEvents,
   removeEventMusician,

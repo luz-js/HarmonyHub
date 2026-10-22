@@ -853,6 +853,16 @@ export function getEvent(id: string) {
   return http<EventDetail>(`/api/events/${id}`);
 }
 
+/** Un evento como calendario (.ics). */
+export function downloadEventIcs(id: string) {
+  return requestBlob(`/api/events/${encodeURIComponent(id)}/ical`);
+}
+
+/** Mis proximos eventos de la organizacion activa (donde estoy en el equipo) como calendario (.ics). */
+export function downloadMyEventsIcs() {
+  return requestBlob('/api/calendar/my-events.ics');
+}
+
 export function createEvent(input: CreateEventInput) {
   return http<EventDetail>('/api/events', { method: 'POST', body: JSON.stringify(input) });
 }

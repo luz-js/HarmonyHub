@@ -3,8 +3,9 @@ import { CalendarDays, CalendarPlus, History, Plus, Search } from 'lucide-react'
 import { getCurrentOrganizationId } from '../../../shared/api/http';
 import type { EventStatus } from '../../../shared/types';
 import { takeUrlFlag } from '../../../shared/utils';
+import { downloadMyEventsIcs } from '../api/events.client';
 import { getCurrentUser } from '../../setlists/utils';
-import { EventCard, EventFormDialog } from '../components';
+import { CalendarDownloadButton, EventCard, EventFormDialog } from '../components';
 import { useCreateEvent, useEvents } from '../hooks';
 import { buildEventInput, canManageEventsClientSide, emptyEventDraft, EventDraft, eventStatusLabels } from '../utils';
 import { useEventSetlistOptions } from './useEventSetlistOptions';
@@ -71,7 +72,8 @@ export function EventsPage({ navigate }: { navigate: Navigate }) {
           <h1 className="page-title">Eventos</h1>
           <p className="page-subtitle">Servicios, ensayos y conciertos con su setlist y la asistencia del equipo.</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-start gap-2">
+          <CalendarDownloadButton label="Exportar mis eventos (.ics)" fileName="mis-eventos.ics" download={downloadMyEventsIcs} />
           <button className="btn-ghost" onClick={() => navigate('/calendar')}><CalendarDays className="h-4 w-4" /> Calendario</button>
           {canManage && <button className="btn-primary" onClick={() => setShowCreate(true)}><Plus className="h-4 w-4" /> Nuevo evento</button>}
         </div>

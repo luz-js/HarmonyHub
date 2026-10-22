@@ -3,9 +3,11 @@ import { ArrowLeft, CalendarDays, ChevronRight, ListMusic, MapPin, Pencil, Trash
 import { getCurrentOrganizationId } from '../../../shared/api/http';
 import type { AttendanceStatus, EventStatus } from '../../../shared/types';
 import { plural } from '../../../shared/utils';
+import { fileSlug } from '../../../shared/utils/download';
+import { downloadEventIcs } from '../api/events.client';
 import { SetlistStatusBadge } from '../../setlists/components/SetlistStatusBadge';
 import { formatSetlistDuration, getCurrentUser } from '../../setlists/utils';
-import { AttendanceActions, EventFormDialog, EventStatusBadge, EventTeamPanel } from '../components';
+import { AttendanceActions, CalendarDownloadButton, EventFormDialog, EventStatusBadge, EventTeamPanel } from '../components';
 import { useDeleteEvent, useEvent, useUpdateEvent, useUpdateEventMusician } from '../hooks';
 import {
   buildEventInput,
@@ -122,28 +124,31 @@ export function EventDetailPage({ id, navigate }: { id: string; navigate: Naviga
           </div>
         </div>
 
-        {canManage && (
-          <div className="flex flex-wrap gap-2">
-            {event.allowedStatusTransitions.map((status) => (
-              <button
-                key={status}
-                className={status === 'CANCELLED' ? 'btn-danger' : status === 'CONFIRMED' || status === 'FINISHED' ? 'btn-primary' : 'btn-ghost'}
-                disabled={updateMutation.isPending}
-                onClick={() => void handleStatus(status)}
-              >
-                {eventStatusActionLabels[status]}
-              </button>
-            ))}
-            {event.status !== 'FINISHED' && (
-              <button className="btn-ghost" onClick={() => setShowEdit(true)}><Pencil className="h-4 w-4" /> Editar</button>
-            )}
-            {canDelete && (
-              <button className="btn-ghost w-10 px-0" aria-label="Eliminar evento" disabled={deleteMutation.isPending} onClick={() => void handleDelete()}>
-                <Trash2 className="h-4 w-4" />
-              </button>
-            )}
-          </div>
-        )}
+        <div className="flex flex-wrap items-start gap-2">
+          <CalendarDownloadButton label="Agregar a mi calendario" fileName={`${fileSlug(event.name, 'evento')}.ics`} download={() => downloadEventIcs(event.id)} />
+          {canManage && (
+            <>
+              {event.allowedStatusTransitions.map((status) => (
+                <button
+                  key={status}
+                  className={status === 'CANCELLED' ? 'btn-danger' : status === 'CONFIRMED' || status === 'FINISHED' ? 'btn-primary' : 'btn-ghost'}
+                  disabled={updateMutation.isPending}
+                  onClick={() => void handleStatus(status)}
+                >
+                  {eventStatusActionLabels[status]}
+                </button>
+              ))}
+              {event.status !== 'FINISHED' && (
+                <button className="btn-ghost" onClick={() => setShowEdit(true)}><Pencil className="h-4 w-4" /> Editar</button>
+              )}
+              {canDelete && (
+                <button className="btn-ghost w-10 px-0" aria-label="Eliminar evento" disabled={deleteMutation.isPending} onClick={() => void handleDelete()}>
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              )}
+            </>
+          )}
+        </div>
       </section>
       {actionError && <p className="text-sm text-[#F7A39A]">{actionError}</p>}
 
