@@ -17,11 +17,6 @@ export const setlists = [
   { id: 'setlist-ensayo', name: 'Ensayo Adoración', date: '2026-06-24', songs: songs.slice(0, 3), duration: '15:17' },
 ];
 
-export const files = [
-  { id: 'file-1', name: 'Gratitud - Letra.pdf', type: 'PDF', size: '130 KB', author: 'María González' },
-  { id: 'file-2', name: 'Como en el Cielo.mp3', type: 'Audio', size: '5.2 MB', author: 'Carlos Rodríguez' },
-];
-
 export const notifications = [
   { id: 'n1', title: 'Nuevo mensaje', description: 'María González envió notas para el ensayo general.', time: 'Hace 3 min' },
   { id: 'n2', title: 'Archivo cargado', description: 'Carlos subió Como en el Cielo.mp3.', time: 'Hace 2 horas' },

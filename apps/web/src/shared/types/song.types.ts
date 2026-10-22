@@ -147,6 +147,9 @@ export type SongFile = {
   updatedAt: string;
 };
 
+/** Fila de GET /api/files: un archivo de cancion con la cancion a la que pertenece (pagina Archivos). */
+export type OrganizationFile = SongFile & { song: { id: string; title: string; artist: string } };
+
 export type SongSummary = {
   id: string;
   organizationId: string;

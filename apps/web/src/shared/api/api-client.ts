@@ -1,6 +1,7 @@
 import type {
   CurrentUser,
   InvitationSummary,
+  OrganizationFile,
   OrganizationMember,
   OrganizationSummary,
   ReplaceMyInstrumentsInput,
@@ -168,6 +169,11 @@ export function getSongLinks(songId: string, filters?: { versionId?: string | nu
 
 export function getSongLink(songId: string, linkId: string) {
   return http<SongLink>(`/api/songs/${songId}/links/${linkId}`);
+}
+
+/** Archivos de todas las canciones de la organizacion activa (pagina Archivos). */
+export function listOrganizationFiles() {
+  return http<{ items: OrganizationFile[] }>('/api/files?limit=200');
 }
 
 export function getSongFiles(songId: string, filters?: { versionId?: string | null; category?: SongFileCategory }) {

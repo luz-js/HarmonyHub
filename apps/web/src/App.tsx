@@ -5,9 +5,10 @@ import { EventDetailPage, EventsPage } from './features/events';
 import { SongDetailPage, SongsPage } from './features/songs';
 import { AudioPlayerProvider, PersistentAudioPlayer } from './features/songs/player';
 import { SetlistDetailPage, SetlistsPage as RealSetlistsPage } from './features/setlists';
-import { ArchivesPage, SettingsPage } from './app/LegacyPages';
+import { SettingsPage } from './app/LegacyPages';
 import { LoginPage } from './app/LoginPage';
 import { OnboardingPage } from './app/OnboardingPage';
+import { ArchivesPage } from './features/files';
 import { MusiciansPage } from './features/musicians';
 import { ProfilePage } from './features/profile';
 import { readStoredUser, storeUser, withOrganization } from './app/session';
@@ -36,7 +37,7 @@ function resolvePage(path: string, user: AppUser, navigate: Navigate, onProfileU
     '/events': <EventsPage navigate={navigate} />,
     '/setlists': <RealSetlistsPage navigate={navigate} />,
     '/musicians': <MusiciansPage organizationId={user.currentOrganizationId || ''} currentUserId={user.id} currentRole={user.role} />,
-    '/archives': <ArchivesPage />,
+    '/archives': <ArchivesPage organizationId={user.currentOrganizationId || ''} navigate={navigate} />,
     '/calendar': <CalendarPage navigate={navigate} />,
     '/notifications': <ActivityPage navigate={navigate} />,
     '/settings': <SettingsPage />,

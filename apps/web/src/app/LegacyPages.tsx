@@ -1,5 +1,4 @@
-import { FileText, Info, Monitor, Moon, Sun } from 'lucide-react';
-import { files } from '../data';
+import { Info, Monitor, Moon, Sun } from 'lucide-react';
 
 /** Estas secciones todavia muestran datos de ejemplo (src/data.ts); se diseñan en la próxima etapa. */
 function SampleDataNotice() {
@@ -17,26 +16,6 @@ function PageHeader({ title, subtitle }: { title: string; subtitle: string }) {
       <h1 className="page-title">{title}</h1>
       <p className="page-subtitle">{subtitle}</p>
     </section>
-  );
-}
-
-export function ArchivesPage() {
-  return (
-    <div className="space-y-5">
-      <PageHeader title="Archivos" subtitle="Partituras, letras y audios compartidos con el equipo." />
-      <SampleDataNotice />
-      <section className="panel divide-y divide-[#23252A]">
-        {files.map((file) => (
-          <div key={file.id} className="flex items-center gap-3 px-4 py-3.5 sm:px-5">
-            <span className="icon-tile h-10 w-10 shrink-0 rounded-xl"><FileText className="h-5 w-5" /></span>
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[15px] font-semibold text-white">{file.name}</p>
-              <p className="truncate text-sm text-muted">{file.type} · {file.size} · {file.author}</p>
-            </div>
-          </div>
-        ))}
-      </section>
-    </div>
   );
 }
 
