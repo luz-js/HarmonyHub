@@ -1,6 +1,6 @@
-import { BadRequestException, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import type { NotificationsListQueryData } from '@harmonyhub/contracts';
 import { NotificationType, Prisma } from '@prisma/client';
-import { z } from 'zod';
 import { PrismaService } from '../prisma/prisma.service';
 
 /** Recordatorio de evento: se avisa cuando falta menos que esto y la persona todavia no confirmo. */
@@ -15,11 +15,6 @@ export type NotificationInput = {
   link?: string | null;
   dedupeKey: string;
 };
-
-const listSchema = z.object({
-  limit: z.coerce.number().int().min(1).max(50).default(20),
-  cursor: z.string().trim().min(1).optional(),
-});
 
 const notificationSelect = { id: true, organizationId: true, type: true, title: true, body: true, link: true, readAt: true, createdAt: true } satisfies Prisma.NotificationSelect;
 
@@ -227,10 +222,8 @@ export class NotificationsService {
     return { userId, OR: [{ type: 'INVITATION_RECEIVED' }, ...(member ? [{ organizationId }] : [])] };
   }
 
-  async list(userId: string, organizationId: string | undefined, query: Record<string, unknown>) {
-    const parsed = listSchema.safeParse(query);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
-    const { limit, cursor } = parsed.data;
+  async list(userId: string, organizationId: string | undefined, query: NotificationsListQueryData) {
+    const { limit, cursor } = query;
     const where = await this.scope(userId, organizationId);
     const rows = await this.prisma.notification.findMany({
       where,

@@ -1,11 +1,10 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import type { CreateUnavailabilityData, TeamAvailabilityQueryData, UnavailabilityRangeQueryData } from '@harmonyhub/contracts';
 import type { Prisma } from '@prisma/client';
 import type { OrgMember } from '../permissions/current-membership.decorator';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   addDays,
-  availabilityQuerySchema,
-  createUnavailabilitySchema,
   daysBetween,
   eventWindow,
   formatDay,
@@ -13,7 +12,6 @@ import {
   MAX_QUERY_DAYS,
   MAX_UNAVAILABILITY_ROWS,
   parseDay,
-  rangeQuerySchema,
   rankForRole,
   safeTimeZone,
   windowsOverlap,
@@ -47,14 +45,12 @@ export class AvailabilityService {
     return rows.map(toMine);
   }
 
-  async createMine(userId: string, body: unknown) {
-    const parsed = createUnavailabilitySchema.safeParse(body);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
+  async createMine(userId: string, data: CreateUnavailabilityData) {
     if ((await this.prisma.unavailability.count({ where: { userId } })) >= MAX_UNAVAILABILITY_ROWS) {
       throw new BadRequestException('Tienes demasiadas fechas guardadas: borra algunas que ya pasaron');
     }
     const row = await this.prisma.unavailability.create({
-      data: { userId, startsOn: parseDay(parsed.data.startsOn)!, endsOn: parseDay(parsed.data.endsOn)!, note: parsed.data.note },
+      data: { userId, startsOn: parseDay(data.startsOn)!, endsOn: parseDay(data.endsOn)!, note: data.note },
       select: mineSelect,
     });
     return toMine(row);
@@ -67,11 +63,9 @@ export class AvailabilityService {
   }
 
   /** Quien de la organizacion no esta disponible entre dos dias (por defecto, los proximos 30). */
-  async unavailableInRange(member: OrgMember, query: Record<string, unknown>) {
-    const parsed = rangeQuerySchema.safeParse(query);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Filtros invalidos');
-    const from = parsed.data.from ? parseDay(parsed.data.from)! : parseDay(formatDay(new Date()))!;
-    const to = parsed.data.to ? parseDay(parsed.data.to)! : addDays(from, 30);
+  async unavailableInRange(member: OrgMember, query: UnavailabilityRangeQueryData) {
+    const from = query.from ? parseDay(query.from)! : parseDay(formatDay(new Date()))!;
+    const to = query.to ? parseDay(query.to)! : addDays(from, 30);
     if (to < from) throw new BadRequestException('La fecha hasta no puede ser anterior a la fecha desde');
     if (daysBetween(from, to) + 1 > MAX_QUERY_DAYS) throw new BadRequestException(`Consulta como maximo ${MAX_QUERY_DAYS} dias`);
 
@@ -92,14 +86,14 @@ export class AvailabilityService {
     };
   }
 
-  async forEvent(member: OrgMember, eventId: string, query: Record<string, unknown>) {
+  async forEvent(member: OrgMember, eventId: string, query: TeamAvailabilityQueryData) {
     const event = await this.prisma.event.findFirst({ where: { id: eventId, organizationId: member.organizationId }, select: eventSelect });
     if (!event) throw new NotFoundException('Evento no encontrado');
     return this.build(member.organizationId, event, query);
   }
 
   /** Un setlist no tiene fecha: se usa el proximo evento que lo toca (si no hay, no hay nada que avisar). */
-  async forSetlist(member: OrgMember, setlistId: string, query: Record<string, unknown>) {
+  async forSetlist(member: OrgMember, setlistId: string, query: TeamAvailabilityQueryData) {
     const setlist = await this.prisma.setlist.findFirst({ where: { id: setlistId, organizationId: member.organizationId }, select: { id: true } });
     if (!setlist) throw new NotFoundException('Setlist no encontrado');
     const event = await this.prisma.event.findFirst({
@@ -107,25 +101,17 @@ export class AvailabilityService {
       select: eventSelect,
       orderBy: { startsAt: 'asc' },
     });
-    if (!event) {
-      this.parseQuery(query);
-      return { event: null, members: [], suggestions: [] };
-    }
+    if (!event) return { event: null, members: [], suggestions: [] };
     return this.build(member.organizationId, event, query);
-  }
-
-  private parseQuery(query: Record<string, unknown>) {
-    const parsed = availabilityQuerySchema.safeParse(query);
-    if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Filtros invalidos');
-    return { timeZone: safeTimeZone(parsed.data.tz), role: parsed.data.role };
   }
 
   /**
    * Para cada miembro activo: si bloqueo algun dia del evento (en la zona horaria de quien consulta) y en que otros
    * eventos de esta organizacion esta a la misma hora (sin contar cancelados ni a quien ya dijo que no va).
    */
-  private async build(organizationId: string, event: EventWindowRow, query: Record<string, unknown>) {
-    const { timeZone, role } = this.parseQuery(query);
+  private async build(organizationId: string, event: EventWindowRow, query: TeamAvailabilityQueryData) {
+    const timeZone = safeTimeZone(query.tz);
+    const { role } = query;
     const window = eventWindow(event);
     const firstDay = parseDay(localDay(event.startsAt, timeZone))!;
     const lastDay = parseDay(localDay(event.endsAt ?? event.startsAt, timeZone))!;

@@ -1,4 +1,13 @@
 import { Body, Controller, Delete, Get, Inject, Param, Post, Query, UseGuards } from '@nestjs/common';
+import {
+  createUnavailabilitySchema,
+  teamAvailabilityQuerySchema,
+  unavailabilityRangeQuerySchema,
+  type CreateUnavailabilityData,
+  type TeamAvailabilityQueryData,
+  type UnavailabilityRangeQueryData,
+} from '@harmonyhub/contracts';
+import { ZodPipe } from '../shared/zod.pipe';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser, CurrentUserPayload } from '../auth/current-user.decorator';
 import { CurrentMembership, OrgMember } from '../permissions/current-membership.decorator';
@@ -18,8 +27,8 @@ export class MyUnavailabilityController {
   }
 
   @Post()
-  create(@CurrentUser() user: CurrentUserPayload, @Body() body: unknown) {
-    return this.availability.createMine(user.id, body ?? {});
+  create(@CurrentUser() user: CurrentUserPayload, @Body(new ZodPipe(createUnavailabilitySchema)) body: CreateUnavailabilityData) {
+    return this.availability.createMine(user.id, body);
   }
 
   @Delete(':unavailabilityId')
@@ -36,19 +45,19 @@ export class AvailabilityController {
 
   @Get('availability')
   @RequirePermission('availability.read')
-  unavailable(@CurrentMembership() member: OrgMember, @Query() query: Record<string, unknown>) {
+  unavailable(@CurrentMembership() member: OrgMember, @Query(new ZodPipe(unavailabilityRangeQuerySchema, 'Filtros invalidos')) query: UnavailabilityRangeQueryData) {
     return this.availability.unavailableInRange(member, query);
   }
 
   @Get('events/:id/availability')
   @RequirePermission('availability.read')
-  forEvent(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Query() query: Record<string, unknown>) {
+  forEvent(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Query(new ZodPipe(teamAvailabilityQuerySchema, 'Filtros invalidos')) query: TeamAvailabilityQueryData) {
     return this.availability.forEvent(member, id, query);
   }
 
   @Get('setlists/:id/availability')
   @RequirePermission('availability.read')
-  forSetlist(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Query() query: Record<string, unknown>) {
+  forSetlist(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Query(new ZodPipe(teamAvailabilityQuerySchema, 'Filtros invalidos')) query: TeamAvailabilityQueryData) {
     return this.availability.forSetlist(member, id, query);
   }
 }

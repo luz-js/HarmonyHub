@@ -35,6 +35,7 @@ export class SongCollaborationController {
     return this.collaborationService.createThread(member, id, body);
   }
 
+  /** Sin ZodPipe: el servicio valida el cuerpo despues de comprobar el permiso (asi quien no puede recibe 403). */
   @Patch(':id/threads/:threadId')
   updateThread(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('threadId') threadId: string, @Body() body: Record<string, unknown>) {
     return this.collaborationService.updateThread(member, id, threadId, body ?? {});
@@ -55,6 +56,7 @@ export class SongCollaborationController {
     return this.collaborationService.createComment(member, id, threadId, body);
   }
 
+  /** Sin ZodPipe: el servicio valida el cuerpo despues de comprobar el permiso (asi quien no puede recibe 403). */
   @Patch(':id/threads/:threadId/comments/:commentId')
   updateComment(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('threadId') threadId: string, @Param('commentId') commentId: string, @Body() body: Record<string, unknown>) {
     return this.collaborationService.updateComment(member, id, threadId, commentId, body ?? {});

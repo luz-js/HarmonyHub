@@ -9,3 +9,6 @@ export * from './query';
 export * from './events';
 export * from './setlists';
 export * from './songs';
+export * from './availability';
+export * from './notifications';
+export * from './dashboard';

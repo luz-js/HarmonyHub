@@ -1,4 +1,6 @@
 import { Controller, Get, Headers, HttpCode, Inject, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { notificationsListQuerySchema, type NotificationsListQueryData } from '@harmonyhub/contracts';
+import { ZodPipe } from '../shared/zod.pipe';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentUser, CurrentUserPayload } from '../auth/current-user.decorator';
 import { NotificationsService } from './notifications.service';
@@ -13,7 +15,7 @@ export class NotificationsController {
   constructor(@Inject(NotificationsService) private readonly notifications: NotificationsService) {}
 
   @Get()
-  list(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string | undefined, @Query() query: Record<string, unknown>) {
+  list(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string | undefined, @Query(new ZodPipe(notificationsListQuerySchema)) query: NotificationsListQueryData) {
     return this.notifications.list(user.id, organizationId || undefined, query);
   }
 

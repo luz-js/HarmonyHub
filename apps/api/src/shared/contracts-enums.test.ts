@@ -9,6 +9,7 @@ import {
   SETLIST_CUE_TYPES,
   SETLIST_ITEM_TYPES,
   SETLIST_PARTICIPANT_STATUSES,
+  NOTIFICATION_TYPES,
   REVISION_SOURCES,
   SONG_ACTIVITY_TYPES,
   SONG_COMMENT_TARGETS,
@@ -48,6 +49,7 @@ const pairs: [string, readonly string[], Record<string, string>][] = [
   ['SongFileCategory', SONG_FILE_CATEGORIES, $Enums.SongFileCategory],
   ['SongLinkProvider', SONG_LINK_PROVIDERS, $Enums.SongLinkProvider],
   ['RevisionSource', REVISION_SOURCES, $Enums.RevisionSource],
+  ['NotificationType', NOTIFICATION_TYPES, $Enums.NotificationType],
   ['SetlistMusicalRole', SETLIST_MUSICAL_ROLES, $Enums.SetlistMusicalRole],
 ];
 

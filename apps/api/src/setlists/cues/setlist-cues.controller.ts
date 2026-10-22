@@ -97,6 +97,7 @@ export class SetlistCuesController {
     return this.cuesService.update(member, setlistId, cueId, body);
   }
 
+  /** Sin ZodPipe: el servicio valida el cuerpo despues de comprobar el permiso (asi quien no puede recibe 403). */
   @Patch(':setlistId/cues/:cueId/status')
   @RequirePermission('read')
   updateStatus(

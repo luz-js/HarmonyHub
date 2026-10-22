@@ -28,6 +28,7 @@ export class SongNotesController {
     return this.notesService.create(member, id, body);
   }
 
+  /** Sin ZodPipe: el servicio valida el cuerpo despues de comprobar el permiso (asi quien no puede recibe 403). */
   @Patch(':id/notes/:noteId')
   update(@CurrentMembership() member: OrgMember, @Param('id') id: string, @Param('noteId') noteId: string, @Body() body: Record<string, unknown>) {
     return this.notesService.update(member, id, noteId, body ?? {});

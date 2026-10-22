@@ -1,4 +1,6 @@
 import { Controller, Get, Inject, Query, UseGuards } from '@nestjs/common';
+import { dashboardActivityQuerySchema, type DashboardActivityQueryData } from '@harmonyhub/contracts';
+import { ZodPipe } from '../shared/zod.pipe';
 import { AuthGuard } from '../auth/auth.guard';
 import { CurrentMembership, OrgMember } from '../permissions/current-membership.decorator';
 import { PermissionsGuard } from '../permissions/permissions.guard';
@@ -17,7 +19,7 @@ export class DashboardController {
   }
 
   @Get('activity')
-  activity(@CurrentMembership() member: OrgMember, @Query() query: Record<string, unknown>) {
+  activity(@CurrentMembership() member: OrgMember, @Query(new ZodPipe(dashboardActivityQuerySchema, 'Filtros invalidos')) query: DashboardActivityQueryData) {
     return this.dashboardService.activity(member, query);
   }
 }

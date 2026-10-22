@@ -22,3 +22,25 @@ corriendo, reinicia la API para que tome la versión nueva.
 - Nada de Prisma, Nest ni React aquí: solo zod y tipos. Las listas de valores (roles, estados) se copian como
   arrays y una prueba de la API verifica que sigan iguales a los enums de Prisma.
 - Los mensajes de error de los esquemas son los que ve la persona: cambiarlos cambia la app.
+
+## Excepciones (validan en el servicio, con el esquema del contrato)
+
+En estas rutas el cuerpo se valida con `parseOrBadRequest` **dentro del servicio**, no con `ZodPipe`, porque
+antes hay que comprobar otra cosa y esa respuesta tiene que llegar primero:
+
+| Ruta | Qué se comprueba antes |
+| --- | --- |
+| Estado de preparación de una asignación | que la asignación sea tuya (o seas líder) → 403 |
+| Estado de un cue | que seas responsable del cue (o líder) → 403 |
+| Editar una conversación / un comentario | que seas el autor (o líder) → 403 |
+| Editar una nota | que puedas modificarla → 403 |
+| Subir una pista / un archivo | el archivo (que venga, tipo y tamaño) → 400 |
+
+Sin esquema (como antes): la lista de canciones (`GET /api/songs`, filtros sueltos) y duplicar un item
+(`includeCues`). Los `metadata` de los cues se validan por tipo de cue en el servicio.
+
+## Comprobar las respuestas
+
+Cada módulo de la API tiene un `*.contract-check.ts` que solo existe para el compilador: compara lo que devuelve
+el servicio (con las fechas como texto, `Wire<T>`) contra el tipo de respuesta. Las columnas JSON
+(`contentJson`, `structureJson`, `metadata`) no se pueden comprobar así y quedan afuera.
