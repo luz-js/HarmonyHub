@@ -2,6 +2,7 @@ import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
 import { CalendarPage } from './features/calendar';
 import { ActivityPage, DashboardPage as HomeDashboard } from './features/dashboard';
 import { StatsPage } from './features/stats/StatsPage';
+import { RolePermissionsSettings } from './features/organizations/components/RolePermissionsSettings';
 import { EventDetailPage, EventsPage } from './features/events';
 import { SongDetailPage, SongsPage } from './features/songs';
 import { AudioPlayerProvider, PersistentAudioPlayer } from './features/songs/player';
@@ -214,6 +215,7 @@ function App() {
           <div className="space-y-5">
             {page}
             {currentOrganization && <OrganizationSettings organization={currentOrganization} currentUserId={user.id} onChanged={() => void syncSession()} />}
+            {currentOrganization && user.role === 'OWNER' && <RolePermissionsSettings organizationId={currentOrganization.id} />}
           </div>
         ) : (
           page

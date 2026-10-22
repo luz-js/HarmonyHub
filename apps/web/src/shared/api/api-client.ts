@@ -69,6 +69,8 @@ import type {
   MemberLoadStats,
   RepertoireStats,
   StatsPeriodMonths,
+  RolePermissionsMatrix,
+  UpdateRolePermissionsInput,
   CreatedShareLink,
   CreateShareLinkInput,
   ShareLinkList,
@@ -688,6 +690,19 @@ export function getSetlist(id: string) {
 
 export function createSetlist(input: CreateSetlistInput) {
   return http<SetlistDetail>('/api/setlists', { method: 'POST', body: JSON.stringify(input) });
+}
+
+/** Roles y permisos de la organizacion activa (solo el propietario). */
+export function getRolePermissions() {
+  return http<RolePermissionsMatrix>('/api/role-permissions');
+}
+
+export function updateRolePermissions(input: UpdateRolePermissionsInput) {
+  return http<RolePermissionsMatrix>('/api/role-permissions', { method: 'PUT', body: JSON.stringify(input) });
+}
+
+export function resetRolePermissions() {
+  return http<RolePermissionsMatrix>('/api/role-permissions', { method: 'DELETE' });
 }
 
 /** Estadisticas del repertorio de la organizacion activa (cualquier miembro). */
