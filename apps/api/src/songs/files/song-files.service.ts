@@ -8,22 +8,22 @@ import {
   type SongFileListQueryData,
   type UpdateSongFileData,
 } from '@harmonyhub/contracts';
-import { parseOrBadRequest } from '../shared/zod.pipe';
-import { clean } from '../shared/object.utils';
-import { SongActivityService } from './activity/song-activity.service';
+import { parseOrBadRequest } from '../../shared/zod.pipe';
+import { clean } from '../../shared/object.utils';
+import { SongActivityService } from '../activity/song-activity.service';
 import {
   AudioNotAllowedFileError,
   FileTooLargeError,
   mapMimeTypeToFileType,
   UnsupportedFileTypeError,
   validateSongFileUpload,
-} from './files/song-file.utils';
-import { SongsAccessService } from './songs-access.service';
-import { normalizeSongFileResponse, sanitizeDownloadFileName } from './songs.presenter';
-import { SongFilesRepository } from './files/song-files.repository';
-import { buildSongFileStorageSegments } from './songs.schemas';
-import { TRACK_STORAGE, TrackStorageProvider } from './storage/track-storage.interface';
-import type { OrgMember } from '../permissions/current-membership.decorator';
+} from './song-file.utils';
+import { SongsAccessService } from '../songs-access.service';
+import { normalizeSongFileResponse, sanitizeDownloadFileName } from '../songs.presenter';
+import { SongFilesRepository } from './song-files.repository';
+import { buildSongFileStorageSegments } from '../songs.schemas';
+import { TRACK_STORAGE, TrackStorageProvider } from '../storage/track-storage.interface';
+import type { OrgMember } from '../../permissions/current-membership.decorator';
 
 type UploadedSongFile = {
   buffer: Buffer;
@@ -33,7 +33,7 @@ type UploadedSongFile = {
 };
 
 @Injectable()
-export class SongsFilesService {
+export class SongFilesService {
   constructor(
     @Inject(SongFilesRepository) private readonly filesRepository: SongFilesRepository,
     @Inject(SongsAccessService) private readonly access: SongsAccessService,

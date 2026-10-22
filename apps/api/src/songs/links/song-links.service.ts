@@ -1,15 +1,15 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { CreateSongLinkData, ReorderSongLinksData, SongLinkListQueryData, UpdateSongLinkData } from '@harmonyhub/contracts';
-import { clean } from '../shared/object.utils';
-import { SongActivityService } from './activity/song-activity.service';
-import { resolveLinkUrlOrThrow } from './songs-links.helpers';
-import { normalizeLinkResponse } from './songs.presenter';
-import { SongsAccessService } from './songs-access.service';
-import { SongLinksRepository } from './links/song-links.repository';
-import type { OrgMember } from '../permissions/current-membership.decorator';
+import { clean } from '../../shared/object.utils';
+import { SongActivityService } from '../activity/song-activity.service';
+import { resolveLinkUrlOrThrow } from './song-links.helpers';
+import { normalizeLinkResponse } from '../songs.presenter';
+import { SongsAccessService } from '../songs-access.service';
+import { SongLinksRepository } from './song-links.repository';
+import type { OrgMember } from '../../permissions/current-membership.decorator';
 
 @Injectable()
-export class SongsLinksService {
+export class SongLinksService {
   constructor(
     @Inject(SongLinksRepository) private readonly linksRepository: SongLinksRepository,
     @Inject(SongsAccessService) private readonly access: SongsAccessService,

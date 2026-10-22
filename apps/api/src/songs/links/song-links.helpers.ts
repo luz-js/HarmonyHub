@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { InvalidLinkUrlError, resolveSongLink } from './links/song-link.utils';
+import { InvalidLinkUrlError, resolveSongLink } from './song-link.utils';
 
 export function resolveLinkUrlOrThrow(rawUrl: string) {
   try {

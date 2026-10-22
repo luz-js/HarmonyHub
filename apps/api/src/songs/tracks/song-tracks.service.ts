@@ -9,19 +9,19 @@ import {
   type SongTrackListQueryData,
   type UpdateSongTrackData,
 } from '@harmonyhub/contracts';
-import { parseOrBadRequest } from '../shared/zod.pipe';
-import { clean } from '../shared/object.utils';
-import { SongActivityService } from './activity/song-activity.service';
-import { SongsAccessService } from './songs-access.service';
+import { parseOrBadRequest } from '../../shared/zod.pipe';
+import { clean } from '../../shared/object.utils';
+import { SongActivityService } from '../activity/song-activity.service';
+import { SongsAccessService } from '../songs-access.service';
 import {
   buildInternalTrackUrl,
   normalizeTrackResponse,
   sanitizeDownloadFileName,
-} from './songs.presenter';
-import { SongTracksRepository } from './tracks/song-tracks.repository';
-import { buildTrackStorageSegments, validateAudioUploadFile } from './songs.schemas';
-import { TRACK_STORAGE, TrackStorageProvider } from './storage/track-storage.interface';
-import type { OrgMember } from '../permissions/current-membership.decorator';
+} from '../songs.presenter';
+import { SongTracksRepository } from './song-tracks.repository';
+import { buildTrackStorageSegments, validateAudioUploadFile } from '../songs.schemas';
+import { TRACK_STORAGE, TrackStorageProvider } from '../storage/track-storage.interface';
+import type { OrgMember } from '../../permissions/current-membership.decorator';
 
 type UploadedTrackFile = {
   buffer: Buffer;
@@ -31,7 +31,7 @@ type UploadedTrackFile = {
 };
 
 @Injectable()
-export class SongsTracksService {
+export class SongTracksService {
   constructor(
     @Inject(SongTracksRepository) private readonly tracksRepository: SongTracksRepository,
     @Inject(SongsAccessService) private readonly access: SongsAccessService,

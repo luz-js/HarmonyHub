@@ -1,42 +1,14 @@
 import { Inject, Injectable } from '@nestjs/common';
-import type {
-  CopySongTracksData,
-  CreateSongData,
-  CreateSongLinkData,
-  CreateSongTrackData,
-  CreateSongVersionData,
-  ReorderSongFilesData,
-  ReorderSongLinksData,
-  ReorderSongTracksData,
-  SongFileListQueryData,
-  SongLinkListQueryData,
-  SongTrackListQueryData,
-  UpdateSongData,
-  UpdateSongFileData,
-  UpdateSongLinkData,
-  UpdateSongTrackData,
-  UpdateSongVersionData,
-} from '@harmonyhub/contracts';
+import type { CreateSongData, UpdateSongData } from '@harmonyhub/contracts';
 import { clean } from '../shared/object.utils';
 import { SongActivityService } from './activity/song-activity.service';
 import { SongRevisionsService } from './history/song-revisions.service';
 import { SongsAccessService } from './songs-access.service';
-import { SongsFilesService } from './songs-files.service';
-import { buildYoutubeLinkCreateInput } from './songs-links.helpers';
-import { SongsLinksService } from './songs-links.service';
+import { buildYoutubeLinkCreateInput } from './links/song-links.helpers';
 import { normalizeSongSummary, normalizeTrackResponse } from './songs.presenter';
 import { SongsRepository } from './songs.repository';
 import { buildContentJson, parseTags } from './songs.schemas';
-import { SongsTracksService } from './songs-tracks.service';
-import { SongsVersionsService } from './songs-versions.service';
 import type { OrgMember } from '../permissions/current-membership.decorator';
-
-type UploadedBinary = {
-  buffer: Buffer;
-  size: number;
-  mimetype: string;
-  originalname: string;
-};
 
 @Injectable()
 export class SongsService {
@@ -45,10 +17,6 @@ export class SongsService {
     @Inject(SongActivityService) private readonly activity: SongActivityService,
     @Inject(SongRevisionsService) private readonly revisions: SongRevisionsService,
     @Inject(SongsAccessService) private readonly access: SongsAccessService,
-    @Inject(SongsVersionsService) private readonly versionsService: SongsVersionsService,
-    @Inject(SongsLinksService) private readonly linksService: SongsLinksService,
-    @Inject(SongsTracksService) private readonly tracksService: SongsTracksService,
-    @Inject(SongsFilesService) private readonly filesService: SongsFilesService,
   ) {}
 
   async list(member: OrgMember, query: Record<string, unknown>) {
@@ -74,62 +42,6 @@ export class SongsService {
       tracks: song.tracks.map((track) => normalizeTrackResponse(track)),
       activeVersion: song.versions.find((version) => version.isDefault) || song.versions[0] || null,
     };
-  }
-
-  async versions(member: OrgMember, songId: string) {
-    return this.versionsService.versions(member, songId);
-  }
-
-  async version(member: OrgMember, songId: string, versionId: string) {
-    return this.versionsService.version(member, songId, versionId);
-  }
-
-  async tracks(member: OrgMember, songId: string, query: SongTrackListQueryData) {
-    return this.tracksService.tracks(member, songId, query);
-  }
-
-  async track(member: OrgMember, songId: string, trackId: string) {
-    return this.tracksService.track(member, songId, trackId);
-  }
-
-  async files(member: OrgMember, songId: string, query: SongFileListQueryData) {
-    return this.filesService.files(member, songId, query);
-  }
-
-  async file(member: OrgMember, songId: string, songFileId: string) {
-    return this.filesService.file(member, songId, songFileId);
-  }
-
-  async uploadSongFile(member: OrgMember, songId: string, input: Record<string, unknown>, file?: UploadedBinary) {
-    return this.filesService.uploadSongFile(member, songId, input, file);
-  }
-
-  async updateSongFile(member: OrgMember, songId: string, songFileId: string, input: UpdateSongFileData) {
-    return this.filesService.updateSongFile(member, songId, songFileId, input);
-  }
-
-  async deleteSongFile(member: OrgMember, songId: string, songFileId: string) {
-    return this.filesService.deleteSongFile(member, songId, songFileId);
-  }
-
-  async setPrimarySongFile(member: OrgMember, songId: string, songFileId: string) {
-    return this.filesService.setPrimarySongFile(member, songId, songFileId);
-  }
-
-  async reorderSongFiles(member: OrgMember, songId: string, input: ReorderSongFilesData) {
-    return this.filesService.reorderSongFiles(member, songId, input);
-  }
-
-  async songFileAsset(member: OrgMember, songId: string, songFileId: string) {
-    return this.filesService.songFileAsset(member, songId, songFileId);
-  }
-
-  async downloadSongFileName(member: OrgMember, songId: string, songFileId: string) {
-    return this.filesService.downloadSongFileName(member, songId, songFileId);
-  }
-
-  async songFileStream(storageKey: string) {
-    return this.filesService.songFileStream(storageKey);
   }
 
   async create(member: OrgMember, song: CreateSongData) {
@@ -277,87 +189,4 @@ export class SongsService {
     return archived;
   }
 
-  async createVersion(member: OrgMember, songId: string, input: CreateSongVersionData) {
-    return this.versionsService.createVersion(member, songId, input);
-  }
-
-  async updateVersion(member: OrgMember, songId: string, versionId: string, input: UpdateSongVersionData) {
-    return this.versionsService.updateVersion(member, songId, versionId, input);
-  }
-
-  async setDefaultVersion(member: OrgMember, songId: string, versionId: string) {
-    return this.versionsService.setDefaultVersion(member, songId, versionId);
-  }
-
-  async deleteVersion(member: OrgMember, songId: string, versionId: string) {
-    return this.versionsService.deleteVersion(member, songId, versionId);
-  }
-
-  async links(member: OrgMember, songId: string, query: SongLinkListQueryData) {
-    return this.linksService.links(member, songId, query);
-  }
-
-  async link(member: OrgMember, songId: string, linkId: string) {
-    return this.linksService.link(member, songId, linkId);
-  }
-
-  async createLink(member: OrgMember, songId: string, input: CreateSongLinkData) {
-    return this.linksService.createLink(member, songId, input);
-  }
-
-  async updateLink(member: OrgMember, songId: string, linkId: string, input: UpdateSongLinkData) {
-    return this.linksService.updateLink(member, songId, linkId, input);
-  }
-
-  async deleteLink(member: OrgMember, songId: string, linkId: string) {
-    return this.linksService.deleteLink(member, songId, linkId);
-  }
-
-  async setPrimaryLink(member: OrgMember, songId: string, linkId: string) {
-    return this.linksService.setPrimaryLink(member, songId, linkId);
-  }
-
-  async reorderLinks(member: OrgMember, songId: string, input: ReorderSongLinksData) {
-    return this.linksService.reorderLinks(member, songId, input);
-  }
-
-  async createTrack(member: OrgMember, songId: string, input: CreateSongTrackData) {
-    return this.tracksService.createTrack(member, songId, input);
-  }
-
-  async uploadTrack(member: OrgMember, songId: string, input: Record<string, unknown>, file?: UploadedBinary) {
-    return this.tracksService.uploadTrack(member, songId, input, file);
-  }
-
-  async updateTrack(member: OrgMember, songId: string, trackId: string, input: UpdateSongTrackData) {
-    return this.tracksService.updateTrack(member, songId, trackId, input);
-  }
-
-  async deleteTrack(member: OrgMember, songId: string, trackId: string) {
-    return this.tracksService.deleteTrack(member, songId, trackId);
-  }
-
-  async setPrimaryTrack(member: OrgMember, songId: string, trackId: string) {
-    return this.tracksService.setPrimaryTrack(member, songId, trackId);
-  }
-
-  async reorderTracks(member: OrgMember, songId: string, input: ReorderSongTracksData) {
-    return this.tracksService.reorderTracks(member, songId, input);
-  }
-
-  async copyTrackReferences(member: OrgMember, songId: string, input: CopySongTracksData) {
-    return this.tracksService.copyTrackReferences(member, songId, input);
-  }
-
-  async trackAsset(member: OrgMember, songId: string, trackId: string) {
-    return this.tracksService.trackAsset(member, songId, trackId);
-  }
-
-  async downloadFileName(member: OrgMember, songId: string, trackId: string) {
-    return this.tracksService.downloadFileName(member, songId, trackId);
-  }
-
-  async storageStream(storageKey: string) {
-    return this.tracksService.storageStream(storageKey);
-  }
 }

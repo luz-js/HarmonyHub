@@ -1,17 +1,17 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import type { CreateSongVersionData, UpdateSongVersionData } from '@harmonyhub/contracts';
 import { Prisma } from '@prisma/client';
-import { clean } from '../shared/object.utils';
-import { SongActivityService } from './activity/song-activity.service';
-import { SongRevisionsService } from './history/song-revisions.service';
-import { SongsAccessService } from './songs-access.service';
-import { SongsRepository } from './songs.repository';
-import { SongVersionsRepository } from './versions/song-versions.repository';
-import { buildContentJson } from './songs.schemas';
-import type { OrgMember } from '../permissions/current-membership.decorator';
+import { clean } from '../../shared/object.utils';
+import { SongActivityService } from '../activity/song-activity.service';
+import { SongRevisionsService } from '../history/song-revisions.service';
+import { SongsAccessService } from '../songs-access.service';
+import { SongsRepository } from '../songs.repository';
+import { SongVersionsRepository } from './song-versions.repository';
+import { buildContentJson } from '../songs.schemas';
+import type { OrgMember } from '../../permissions/current-membership.decorator';
 
 @Injectable()
-export class SongsVersionsService {
+export class SongVersionsService {
   constructor(
     @Inject(SongsRepository) private readonly songsRepository: SongsRepository,
     @Inject(SongVersionsRepository) private readonly versionsRepository: SongVersionsRepository,
