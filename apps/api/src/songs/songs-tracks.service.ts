@@ -18,7 +18,7 @@ import {
   normalizeTrackResponse,
   sanitizeDownloadFileName,
 } from './songs.presenter';
-import { SongsRepository } from './songs.repository';
+import { SongTracksRepository } from './tracks/song-tracks.repository';
 import { buildTrackStorageSegments, validateAudioUploadFile } from './songs.schemas';
 import { TRACK_STORAGE, TrackStorageProvider } from './storage/track-storage.interface';
 import type { OrgMember } from '../permissions/current-membership.decorator';
@@ -33,7 +33,7 @@ type UploadedTrackFile = {
 @Injectable()
 export class SongsTracksService {
   constructor(
-    @Inject(SongsRepository) private readonly songsRepository: SongsRepository,
+    @Inject(SongTracksRepository) private readonly tracksRepository: SongTracksRepository,
     @Inject(SongsAccessService) private readonly access: SongsAccessService,
     @Inject(TRACK_STORAGE) private readonly trackStorage: TrackStorageProvider,
     @Inject(SongActivityService) private readonly activity: SongActivityService,
@@ -44,7 +44,7 @@ export class SongsTracksService {
     await this.access.assertSongInOrganization(organizationId, songId);
     const versionId = query.versionId ? query.versionId : undefined;
     if (versionId) await this.access.assertVersionInSong(songId, versionId);
-    const tracks = await this.songsRepository.listTracks(songId, { versionId, includeGeneral: query.includeGeneral });
+    const tracks = await this.tracksRepository.listTracks(songId, { versionId, includeGeneral: query.includeGeneral });
     return tracks.map((track) => normalizeTrackResponse(track));
   }
 
@@ -59,9 +59,9 @@ export class SongsTracksService {
     const { userId, organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
     const version = await this.access.assertVersionInSong(songId, data.versionId);
-    const sortOrder = data.sortOrder ?? await this.songsRepository.nextTrackSortOrder(songId, version?.id || null);
+    const sortOrder = data.sortOrder ?? await this.tracksRepository.nextTrackSortOrder(songId, version?.id || null);
     const provider = data.provider ?? 'EXTERNAL_URL';
-    const created = await this.songsRepository.createTrack({
+    const created = await this.tracksRepository.createTrack({
       songId,
       versionId: version?.id,
       name: data.name,
@@ -109,8 +109,8 @@ export class SongsTracksService {
     );
 
     try {
-      const sortOrder = await this.songsRepository.nextTrackSortOrder(songId, version?.id || null);
-      const created = await this.songsRepository.createTrack({
+      const sortOrder = await this.tracksRepository.nextTrackSortOrder(songId, version?.id || null);
+      const created = await this.tracksRepository.createTrack({
         id: trackId,
         songId,
         versionId: version?.id,
@@ -162,7 +162,7 @@ export class SongsTracksService {
       throw new BadRequestException('La URL externa no puede quedar vacia');
     }
 
-    const updated = await this.songsRepository.updateTrack(trackId, clean({
+    const updated = await this.tracksRepository.updateTrack(trackId, clean({
       versionId: data.versionId === undefined ? undefined : version?.id ?? null,
       name: data.name,
       type: data.type,
@@ -184,12 +184,12 @@ export class SongsTracksService {
     await this.access.assertSongInOrganization(organizationId, songId);
     const track = await this.access.assertTrackInSong(songId, trackId);
     if (track.storageKey && track.provider !== 'EXTERNAL_URL' && track.provider !== 'OTHER') {
-      const otherReferences = await this.songsRepository.countTracksByStorageKey(track.storageKey, trackId);
+      const otherReferences = await this.tracksRepository.countTracksByStorageKey(track.storageKey, trackId);
       if (otherReferences === 0) {
         await this.trackStorage.delete(track.storageKey);
       }
     }
-    await this.songsRepository.deleteTrack(trackId);
+    await this.tracksRepository.deleteTrack(trackId);
     await this.activity.recordBestEffort({
       songId,
       versionId: track.versionId,
@@ -207,7 +207,7 @@ export class SongsTracksService {
     const { userId, organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
     await this.access.assertTrackInSong(songId, trackId);
-    const track = await this.songsRepository.setTrackPrimary(songId, trackId);
+    const track = await this.tracksRepository.setTrackPrimary(songId, trackId);
     await this.activity.recordBestEffort({
       songId,
       versionId: track.versionId,
@@ -225,7 +225,7 @@ export class SongsTracksService {
     const { organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
     const version = await this.access.assertVersionInSong(songId, data.versionId);
-    const tracks = await this.songsRepository.reorderTracks(songId, version?.id || null, data.items);
+    const tracks = await this.tracksRepository.reorderTracks(songId, version?.id || null, data.items);
     return tracks.map((track) => normalizeTrackResponse(track));
   }
 
@@ -241,7 +241,7 @@ export class SongsTracksService {
     const target = await this.access.assertVersionInSong(songId, data.targetVersionId);
     if (!source || !target) throw new BadRequestException('Version invalida');
 
-    const created = await this.songsRepository.copyTrackReferences({
+    const created = await this.tracksRepository.copyTrackReferences({
       songId,
       sourceVersionId: source.id,
       targetVersionId: target.id,
@@ -256,7 +256,7 @@ export class SongsTracksService {
   async trackAsset(member: OrgMember, songId: string, trackId: string) {
     const { organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
-    return this.songsRepository.songTrackFileContext(songId, trackId);
+    return this.tracksRepository.songTrackFileContext(songId, trackId);
   }
 
   async downloadFileName(member: OrgMember, songId: string, trackId: string) {

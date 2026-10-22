@@ -6,6 +6,7 @@ import { SongActivityService } from './activity/song-activity.service';
 import { SongRevisionsService } from './history/song-revisions.service';
 import { SongsAccessService } from './songs-access.service';
 import { SongsRepository } from './songs.repository';
+import { SongVersionsRepository } from './versions/song-versions.repository';
 import { buildContentJson } from './songs.schemas';
 import type { OrgMember } from '../permissions/current-membership.decorator';
 
@@ -13,6 +14,7 @@ import type { OrgMember } from '../permissions/current-membership.decorator';
 export class SongsVersionsService {
   constructor(
     @Inject(SongsRepository) private readonly songsRepository: SongsRepository,
+    @Inject(SongVersionsRepository) private readonly versionsRepository: SongVersionsRepository,
     @Inject(SongActivityService) private readonly activity: SongActivityService,
     @Inject(SongRevisionsService) private readonly revisions: SongRevisionsService,
     @Inject(SongsAccessService) private readonly access: SongsAccessService,
@@ -21,7 +23,7 @@ export class SongsVersionsService {
   async versions(member: OrgMember, songId: string) {
     const { organizationId } = member;
     await this.access.assertSongDetailInOrganization(organizationId, songId);
-    return this.songsRepository.listVersions(songId);
+    return this.versionsRepository.listVersions(songId);
   }
 
   async version(member: OrgMember, songId: string, versionId: string) {
@@ -35,7 +37,7 @@ export class SongsVersionsService {
   async createVersion(member: OrgMember, songId: string, version: CreateSongVersionData) {
     const { userId, organizationId } = member;
     await this.access.assertSongDetailInOrganization(organizationId, songId);
-    const created = await this.songsRepository.createVersion({
+    const created = await this.versionsRepository.createVersion({
       songId,
       name: version.name,
       key: version.key,
@@ -85,7 +87,7 @@ export class SongsVersionsService {
   async updateVersion(member: OrgMember, songId: string, versionId: string, data: UpdateSongVersionData) {
     const { userId, organizationId } = member;
     const before = await this.version(member, songId, versionId);
-    const updated = await this.songsRepository.updateVersion(versionId, clean({
+    const updated = await this.versionsRepository.updateVersion(versionId, clean({
       ...data,
       contentJson: data.contentJson as Prisma.InputJsonValue | undefined,
       structureJson: data.structureJson as Prisma.InputJsonValue | undefined,
@@ -129,7 +131,7 @@ export class SongsVersionsService {
   async setDefaultVersion(member: OrgMember, songId: string, versionId: string) {
     const { userId, organizationId } = member;
     const version = await this.version(member, songId, versionId);
-    const updated = await this.songsRepository.setDefaultVersion(songId, versionId);
+    const updated = await this.versionsRepository.setDefaultVersion(songId, versionId);
     await this.activity.recordBestEffort({
       songId,
       versionId,
@@ -148,7 +150,7 @@ export class SongsVersionsService {
     const version = await this.version(member, songId, versionId);
     let result;
     try {
-      result = await this.songsRepository.deleteVersion(songId, versionId);
+      result = await this.versionsRepository.deleteVersion(songId, versionId);
     } catch (error: any) {
       const pgErrorCode = error?.cause?.code || error?.code;
       if (pgErrorCode === 'P2003' || pgErrorCode === '23503' || pgErrorCode === '23001') {

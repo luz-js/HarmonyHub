@@ -3,6 +3,7 @@ import type { RestoreSongRevisionData } from '@harmonyhub/contracts';
 import { Prisma, RevisionSource } from '@prisma/client';
 import { assertSongAccess, assertSongVersionAccess } from '../song-access.utils';
 import { SongsRepository } from '../songs.repository';
+import { SongVersionsRepository } from '../versions/song-versions.repository';
 import { SongActivityService } from '../activity/song-activity.service';
 import { calculateSongVersionRevisionHash, diffSongVersionRevisions, SongVersionRevisionSnapshot } from './song-revision.utils';
 import { SongRevisionsRepository } from './song-revisions.repository';
@@ -43,6 +44,7 @@ function toJsonInput(value: unknown) {
 export class SongRevisionsService {
   constructor(
     @Inject(SongsRepository) private readonly songsRepository: SongsRepository,
+    @Inject(SongVersionsRepository) private readonly versionsRepository: SongVersionsRepository,
     @Inject(SongRevisionsRepository) private readonly revisionsRepository: SongRevisionsRepository,
     @Inject(SongActivityService) private readonly activity: SongActivityService,
   ) {}
@@ -221,7 +223,7 @@ export class SongRevisionsService {
 
     // 2) Aplicar el snapshot restaurado a la version (append-only: nunca se borra historial).
     const restoredSnapshot = toSnapshot(target);
-    await this.songsRepository.updateVersion(versionId, {
+    await this.versionsRepository.updateVersion(versionId, {
       name: restoredSnapshot.name,
       key: restoredSnapshot.key ?? undefined,
       bpm: restoredSnapshot.bpm,

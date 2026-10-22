@@ -19,6 +19,10 @@ import { SongsController } from './songs.controller';
 import { SongsFilesService } from './songs-files.service';
 import { SongsLinksService } from './songs-links.service';
 import { SongsRepository } from './songs.repository';
+import { SongFilesRepository } from './files/song-files.repository';
+import { SongLinksRepository } from './links/song-links.repository';
+import { SongTracksRepository } from './tracks/song-tracks.repository';
+import { SongVersionsRepository } from './versions/song-versions.repository';
 import { SongsService } from './songs.service';
 import { SongsTracksService } from './songs-tracks.service';
 import { SongsVersionsService } from './songs-versions.service';
@@ -30,6 +34,10 @@ import { TRACK_STORAGE } from './storage/track-storage.interface';
   controllers: [SongsController, SongNotesController, SongCollaborationController, SongHistoryController, FilesController],
   providers: [
     SongsRepository,
+    SongVersionsRepository,
+    SongLinksRepository,
+    SongTracksRepository,
+    SongFilesRepository,
     SongsService,
     SongsAccessService,
     SongsVersionsService,

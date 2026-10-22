@@ -20,7 +20,7 @@ import {
 } from './files/song-file.utils';
 import { SongsAccessService } from './songs-access.service';
 import { normalizeSongFileResponse, sanitizeDownloadFileName } from './songs.presenter';
-import { SongsRepository } from './songs.repository';
+import { SongFilesRepository } from './files/song-files.repository';
 import { buildSongFileStorageSegments } from './songs.schemas';
 import { TRACK_STORAGE, TrackStorageProvider } from './storage/track-storage.interface';
 import type { OrgMember } from '../permissions/current-membership.decorator';
@@ -35,7 +35,7 @@ type UploadedSongFile = {
 @Injectable()
 export class SongsFilesService {
   constructor(
-    @Inject(SongsRepository) private readonly songsRepository: SongsRepository,
+    @Inject(SongFilesRepository) private readonly filesRepository: SongFilesRepository,
     @Inject(SongsAccessService) private readonly access: SongsAccessService,
     @Inject(TRACK_STORAGE) private readonly trackStorage: TrackStorageProvider,
     @Inject(SongActivityService) private readonly activity: SongActivityService,
@@ -43,7 +43,7 @@ export class SongsFilesService {
 
   /** Pagina Archivos: todos los archivos de las canciones de la organizacion, con su cancion. */
   async organizationFiles(member: OrgMember, query: OrganizationFilesQueryData) {
-    const files = await this.songsRepository.listOrganizationFiles(member.organizationId, { search: query.search, category: query.category, take: query.limit });
+    const files = await this.filesRepository.listOrganizationFiles(member.organizationId, { search: query.search, category: query.category, take: query.limit });
     return { items: files.map((file) => ({ ...normalizeSongFileResponse(file), song: file.song })) };
   }
 
@@ -52,7 +52,7 @@ export class SongsFilesService {
     await this.access.assertSongInOrganization(organizationId, songId);
     const versionId = query.versionId ? query.versionId : undefined;
     if (versionId) await this.access.assertVersionInSong(songId, versionId);
-    const files = await this.songsRepository.listFiles(songId, { versionId, category: query.category });
+    const files = await this.filesRepository.listFiles(songId, { versionId, category: query.category });
     return files.map((file) => normalizeSongFileResponse(file));
   }
 
@@ -91,8 +91,8 @@ export class SongsFilesService {
 
     try {
       const checksum = createHash('sha256').update(file.buffer).digest('hex');
-      const sortOrder = await this.songsRepository.nextSongFileSortOrder(songId, version?.id || null);
-      const created = await this.songsRepository.createSongFile({
+      const sortOrder = await this.filesRepository.nextSongFileSortOrder(songId, version?.id || null);
+      const created = await this.filesRepository.createSongFile({
         fileData: {
           id: fileId,
           organizationId,
@@ -140,7 +140,7 @@ export class SongsFilesService {
     await this.access.assertSongFileInSong(songId, songFileId);
     const version = data.versionId === undefined ? undefined : await this.access.assertVersionInSong(songId, data.versionId);
 
-    const updated = await this.songsRepository.updateSongFile(songFileId, clean({
+    const updated = await this.filesRepository.updateSongFile(songFileId, clean({
       versionId: data.versionId === undefined ? undefined : version?.id ?? null,
       title: data.title,
       description: data.description,
@@ -156,14 +156,14 @@ export class SongsFilesService {
     const { userId, organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
     const existing = await this.access.assertSongFileInSong(songId, songFileId);
-    const deleted = await this.songsRepository.deleteSongFile(songFileId);
+    const deleted = await this.filesRepository.deleteSongFile(songFileId);
 
-    const stillReferenced = await this.songsRepository.countFileReferences(deleted.fileId);
+    const stillReferenced = await this.filesRepository.countFileReferences(deleted.fileId);
     const legacyLinked = Boolean(deleted.file.songId || deleted.file.eventId || deleted.file.setlistId);
 
     if (stillReferenced === 0 && !legacyLinked) {
       if (deleted.file.storageKey) await this.trackStorage.delete(deleted.file.storageKey);
-      await this.songsRepository.deleteFile(deleted.fileId);
+      await this.filesRepository.deleteFile(deleted.fileId);
     }
 
     await this.activity.recordBestEffort({
@@ -184,7 +184,7 @@ export class SongsFilesService {
     const { userId, organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
     await this.access.assertSongFileInSong(songId, songFileId);
-    const songFile = await this.songsRepository.setSongFilePrimary(songId, songFileId);
+    const songFile = await this.filesRepository.setSongFilePrimary(songId, songFileId);
     await this.activity.recordBestEffort({
       songId,
       versionId: songFile.versionId,
@@ -202,14 +202,14 @@ export class SongsFilesService {
     const { organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
     const version = await this.access.assertVersionInSong(songId, data.versionId);
-    const files = await this.songsRepository.reorderSongFiles(songId, version?.id || null, data.items);
+    const files = await this.filesRepository.reorderSongFiles(songId, version?.id || null, data.items);
     return files.map((file) => normalizeSongFileResponse(file));
   }
 
   async songFileAsset(member: OrgMember, songId: string, songFileId: string) {
     const { organizationId } = member;
     await this.access.assertSongInOrganization(organizationId, songId);
-    return this.songsRepository.songFileContext(songId, songFileId);
+    return this.filesRepository.songFileContext(songId, songFileId);
   }
 
   async downloadSongFileName(member: OrgMember, songId: string, songFileId: string) {
