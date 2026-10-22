@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { CreateSongData, UpdateSongData } from '@harmonyhub/contracts';
+import type { Prisma } from '@prisma/client';
 import { clean } from '../shared/object.utils';
 import { SongActivityService } from './activity/song-activity.service';
 import { SongRevisionsService } from './history/song-revisions.service';
@@ -44,7 +45,11 @@ export class SongsService {
     };
   }
 
-  async create(member: OrgMember, song: CreateSongData) {
+  /**
+   * Crea la cancion con su version predeterminada. `versionContent` (al importar) reemplaza el contenido que si no
+   * se arma con la letra y los acordes en texto plano.
+   */
+  async create(member: OrgMember, song: CreateSongData, versionContent?: { contentJson: Prisma.InputJsonValue; structureJson?: Prisma.InputJsonValue }) {
     const { userId, organizationId } = member;
     const youtubeLinkInput = song.youtubeUrl ? buildYoutubeLinkCreateInput(song.youtubeUrl, userId) : undefined;
 
@@ -79,7 +84,8 @@ export class SongsService {
         durationSec: song.durationSec,
         lyrics: song.lyrics,
         chords: song.chords,
-        contentJson: buildContentJson(song.lyrics, song.chords),
+        contentJson: versionContent?.contentJson ?? buildContentJson(song.lyrics, song.chords),
+        ...(versionContent?.structureJson ? { structureJson: versionContent.structureJson } : {}),
         notes: song.notes,
         isDefault: true,
       },

@@ -13,3 +13,4 @@ export * from './availability';
 export * from './notifications';
 export * from './dashboard';
 export * from './live-stage';
+export * from './chordpro';

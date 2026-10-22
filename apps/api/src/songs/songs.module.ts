@@ -16,6 +16,8 @@ import { SongNotesRepository } from './notes/song-notes.repository';
 import { SongNotesService } from './notes/song-notes.service';
 import { SongsAccessService } from './songs-access.service';
 import { SongsController } from './songs.controller';
+import { SongImportController } from './import/song-import.controller';
+import { SongImportService } from './import/song-import.service';
 import { SongFilesController } from './files/song-files.controller';
 import { SongLinksController } from './links/song-links.controller';
 import { SongTracksController } from './tracks/song-tracks.controller';
@@ -35,7 +37,7 @@ import { TRACK_STORAGE } from './storage/track-storage.interface';
 
 @Module({
   imports: [AuthModule, PrismaModule, PermissionsModule],
-  controllers: [SongsController, SongVersionsController, SongTracksController, SongLinksController, SongFilesController, SongNotesController, SongCollaborationController, SongHistoryController, OrganizationFilesController],
+  controllers: [SongsController, SongImportController, SongVersionsController, SongTracksController, SongLinksController, SongFilesController, SongNotesController, SongCollaborationController, SongHistoryController, OrganizationFilesController],
   providers: [
     SongsRepository,
     SongVersionsRepository,
@@ -43,6 +45,7 @@ import { TRACK_STORAGE } from './storage/track-storage.interface';
     SongTracksRepository,
     SongFilesRepository,
     SongsService,
+    SongImportService,
     SongsAccessService,
     SongVersionsService,
     SongLinksService,
