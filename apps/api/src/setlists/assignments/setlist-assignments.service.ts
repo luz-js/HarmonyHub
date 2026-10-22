@@ -8,6 +8,7 @@ import { ASSIGNMENT_PREPARATION_STATUSES, computeCoverage, COPY_ASSIGNMENTS_MODE
 import { SetlistAssignmentsRepository } from './setlist-assignments.repository';
 import { SetlistParticipantsRepository } from './setlist-participants.repository';
 import { SetlistRoleRequirementsRepository } from './setlist-role-requirements.repository';
+import type { OrgMember } from '../../permissions/current-membership.decorator';
 
 const createAssignmentSchema = z.object({
   participantId: z.string().trim().min(1),
@@ -48,15 +49,15 @@ export class SetlistAssignmentsService {
     @Inject(SetlistsAccessService) private readonly access: SetlistsAccessService,
   ) {}
 
-  async list(userId: string, organizationId: string, setlistId: string, itemId: string) {
-    await this.access.assertViewAssignments(userId, organizationId);
+  async list(member: OrgMember, setlistId: string, itemId: string) {
+    const { organizationId } = member;
     await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
     const assignments = await this.assignmentsRepository.listByItem(itemId);
     return assignments.map(mapSetlistAssignment);
   }
 
-  async create(userId: string, organizationId: string, setlistId: string, itemId: string, body: Record<string, unknown>) {
-    await this.access.assertManageAssignments(userId, organizationId);
+  async create(member: OrgMember, setlistId: string, itemId: string, body: Record<string, unknown>) {
+    const { userId, organizationId } = member;
     await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
 
     const parsed = createAssignmentSchema.safeParse(body);
@@ -80,8 +81,8 @@ export class SetlistAssignmentsService {
     return mapSetlistAssignment(created);
   }
 
-  async update(userId: string, organizationId: string, setlistId: string, itemId: string, assignmentId: string, body: Record<string, unknown>) {
-    await this.access.assertManageAssignments(userId, organizationId);
+  async update(member: OrgMember, setlistId: string, itemId: string, assignmentId: string, body: Record<string, unknown>) {
+    const { organizationId } = member;
     await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
     const existing = await this.findAssignment(itemId, assignmentId);
 
@@ -92,8 +93,8 @@ export class SetlistAssignmentsService {
     return mapSetlistAssignment(updated);
   }
 
-  async remove(userId: string, organizationId: string, setlistId: string, itemId: string, assignmentId: string) {
-    await this.access.assertManageAssignments(userId, organizationId);
+  async remove(member: OrgMember, setlistId: string, itemId: string, assignmentId: string) {
+    const { organizationId } = member;
     await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
     await this.findAssignment(itemId, assignmentId);
 
@@ -101,13 +102,13 @@ export class SetlistAssignmentsService {
     return { ok: true };
   }
 
-  async updatePreparation(userId: string, organizationId: string, setlistId: string, itemId: string, assignmentId: string, body: Record<string, unknown>) {
-    const membership = await this.permissions.assertOrganizationMember(userId, organizationId);
+  async updatePreparation(member: OrgMember, setlistId: string, itemId: string, assignmentId: string, body: Record<string, unknown>) {
+    const { userId, organizationId } = member;
     await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
     const existing = await this.findAssignment(itemId, assignmentId);
 
     const isOwnAssignment = existing.participant.membership.user.id === userId;
-    const allowed = this.permissions.canUpdateOwnPreparationStatus(isOwnAssignment) || this.permissions.canUpdateAnyPreparationStatus(membership.role);
+    const allowed = this.permissions.canUpdateOwnPreparationStatus(isOwnAssignment) || this.permissions.canUpdateAnyPreparationStatus(member.role);
     if (!allowed) throw new ForbiddenException('No puedes actualizar el estado de preparacion de otro musico');
 
     const parsed = preparationSchema.safeParse(body);
@@ -117,8 +118,8 @@ export class SetlistAssignmentsService {
     return mapSetlistAssignment(updated);
   }
 
-  async copy(userId: string, organizationId: string, setlistId: string, itemId: string, body: Record<string, unknown>) {
-    await this.access.assertManageAssignments(userId, organizationId);
+  async copy(member: OrgMember, setlistId: string, itemId: string, body: Record<string, unknown>) {
+    const { organizationId } = member;
     await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
 
     const parsed = copySchema.safeParse(body);
@@ -131,8 +132,8 @@ export class SetlistAssignmentsService {
     return copied.map(mapSetlistAssignment);
   }
 
-  async team(userId: string, organizationId: string, setlistId: string) {
-    await this.access.assertViewAssignments(userId, organizationId);
+  async team(member: OrgMember, setlistId: string) {
+    const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const [participants, assignments, requirements, items] = await Promise.all([

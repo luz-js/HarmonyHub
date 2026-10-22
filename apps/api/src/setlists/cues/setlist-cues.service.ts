@@ -24,6 +24,7 @@ import {
   type CueCategory,
 } from './setlist-cue.utils';
 import { SetlistCuesRepository, toNullableJsonInput } from './setlist-cues.repository';
+import type { OrgMember } from '../../permissions/current-membership.decorator';
 
 const createCueSchema = z.object({
   setlistItemId: z.string().trim().min(1).optional().nullable(),
@@ -85,29 +86,29 @@ export class SetlistCuesService {
     @Inject(SetlistsAccessService) private readonly access: SetlistsAccessService,
   ) {}
 
-  async list(userId: string, organizationId: string, setlistId: string) {
-    await this.access.assertViewCues(userId, organizationId);
+  async list(member: OrgMember, setlistId: string) {
+    const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
     const cues = await this.cuesRepository.listBySetlist(setlistId);
     return this.mapListWithTimeline(setlistId, cues);
   }
 
-  async listByItem(userId: string, organizationId: string, setlistId: string, itemId: string) {
-    await this.access.assertViewCues(userId, organizationId);
+  async listByItem(member: OrgMember, setlistId: string, itemId: string) {
+    const { organizationId } = member;
     await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
     const cues = await this.cuesRepository.listByItem(itemId);
     return this.mapListWithTimeline(setlistId, cues);
   }
 
-  async get(userId: string, organizationId: string, setlistId: string, cueId: string) {
-    await this.access.assertViewCues(userId, organizationId);
+  async get(member: OrgMember, setlistId: string, cueId: string) {
+    const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
     const cue = await this.findCue(setlistId, cueId);
     return this.mapSingleWithTimeline(setlistId, cue);
   }
 
-  async create(userId: string, organizationId: string, setlistId: string, body: Record<string, unknown>) {
-    await this.access.assertManageCues(userId, organizationId);
+  async create(member: OrgMember, setlistId: string, body: Record<string, unknown>) {
+    const { userId, organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const parsed = createCueSchema.safeParse(body);
@@ -150,8 +151,8 @@ export class SetlistCuesService {
     return this.mapSingleWithTimeline(setlistId, created);
   }
 
-  async update(userId: string, organizationId: string, setlistId: string, cueId: string, body: Record<string, unknown>) {
-    await this.access.assertManageCues(userId, organizationId);
+  async update(member: OrgMember, setlistId: string, cueId: string, body: Record<string, unknown>) {
+    const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
     const existing = await this.findCue(setlistId, cueId);
 
@@ -187,13 +188,13 @@ export class SetlistCuesService {
     return this.mapSingleWithTimeline(setlistId, updated);
   }
 
-  async updateStatus(userId: string, organizationId: string, setlistId: string, cueId: string, body: Record<string, unknown>) {
-    const membership = await this.permissions.assertOrganizationMember(userId, organizationId);
+  async updateStatus(member: OrgMember, setlistId: string, cueId: string, body: Record<string, unknown>) {
+    const { userId, organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
     const cue = await this.findCue(setlistId, cueId);
 
     const isResponsible = cue.responsibleParticipant?.membership.user.id === userId;
-    const allowed = this.permissions.canUpdateOwnCueStatus(isResponsible) || this.permissions.canUpdateAnyCueStatus(membership.role);
+    const allowed = this.permissions.canUpdateOwnCueStatus(isResponsible) || this.permissions.canUpdateAnyCueStatus(member.role);
     if (!allowed) throw new ForbiddenException('No puedes actualizar el estado de este cue');
 
     const parsed = updateStatusSchema.safeParse(body);
@@ -203,8 +204,8 @@ export class SetlistCuesService {
     return this.mapSingleWithTimeline(setlistId, updated);
   }
 
-  async remove(userId: string, organizationId: string, setlistId: string, cueId: string) {
-    await this.access.assertManageCues(userId, organizationId);
+  async remove(member: OrgMember, setlistId: string, cueId: string) {
+    const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
     await this.findCue(setlistId, cueId);
 
@@ -212,8 +213,8 @@ export class SetlistCuesService {
     return { ok: true };
   }
 
-  async reorder(userId: string, organizationId: string, setlistId: string, body: Record<string, unknown>) {
-    await this.access.assertManageCues(userId, organizationId);
+  async reorder(member: OrgMember, setlistId: string, body: Record<string, unknown>) {
+    const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const parsed = reorderSchema.safeParse(body);
@@ -230,16 +231,16 @@ export class SetlistCuesService {
     return this.mapListWithTimeline(setlistId, reordered);
   }
 
-  async duplicate(userId: string, organizationId: string, setlistId: string, cueId: string) {
-    await this.access.assertManageCues(userId, organizationId);
+  async duplicate(member: OrgMember, setlistId: string, cueId: string) {
+    const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const created = await this.cuesRepository.duplicate(setlistId, cueId);
     return this.mapSingleWithTimeline(setlistId, created);
   }
 
-  async copy(userId: string, organizationId: string, setlistId: string, targetItemId: string, body: Record<string, unknown>) {
-    await this.access.assertManageCues(userId, organizationId);
+  async copy(member: OrgMember, setlistId: string, targetItemId: string, body: Record<string, unknown>) {
+    const { organizationId } = member;
     await this.access.assertItemInSetlist(organizationId, setlistId, targetItemId);
 
     const parsed = copySchema.safeParse(body);
@@ -258,8 +259,8 @@ export class SetlistCuesService {
     return this.mapListWithTimeline(setlistId, copied);
   }
 
-  async production(userId: string, organizationId: string, setlistId: string) {
-    await this.access.assertViewCues(userId, organizationId);
+  async production(member: OrgMember, setlistId: string) {
+    const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const [cues, items, participants] = await Promise.all([

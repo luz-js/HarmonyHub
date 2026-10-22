@@ -4,6 +4,7 @@ import { SetlistsAccessService } from '../setlists-access.service';
 import { mapSetlistRoleRequirement } from './setlist-assignment.mapper';
 import { SETLIST_MUSICAL_ROLES } from './setlist-assignment.utils';
 import { SetlistRoleRequirementsRepository } from './setlist-role-requirements.repository';
+import type { OrgMember } from '../../permissions/current-membership.decorator';
 
 const createRequirementSchema = z.object({
   role: z.enum(SETLIST_MUSICAL_ROLES),
@@ -25,15 +26,15 @@ export class SetlistRoleRequirementsService {
     @Inject(SetlistsAccessService) private readonly access: SetlistsAccessService,
   ) {}
 
-  async list(userId: string, organizationId: string, setlistId: string, itemId: string) {
-    await this.access.assertViewAssignments(userId, organizationId);
+  async list(member: OrgMember, setlistId: string, itemId: string) {
+    const { organizationId } = member;
     await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
     const requirements = await this.requirementsRepository.listByItem(itemId);
     return requirements.map(mapSetlistRoleRequirement);
   }
 
-  async create(userId: string, organizationId: string, setlistId: string, itemId: string, body: Record<string, unknown>) {
-    await this.access.assertManageRequirements(userId, organizationId);
+  async create(member: OrgMember, setlistId: string, itemId: string, body: Record<string, unknown>) {
+    const { organizationId } = member;
     await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
 
     const parsed = createRequirementSchema.safeParse(body);
@@ -52,8 +53,8 @@ export class SetlistRoleRequirementsService {
     return mapSetlistRoleRequirement(created);
   }
 
-  async update(userId: string, organizationId: string, setlistId: string, itemId: string, requirementId: string, body: Record<string, unknown>) {
-    await this.access.assertManageRequirements(userId, organizationId);
+  async update(member: OrgMember, setlistId: string, itemId: string, requirementId: string, body: Record<string, unknown>) {
+    const { organizationId } = member;
     await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
     await this.findRequirement(itemId, requirementId);
 
@@ -64,8 +65,8 @@ export class SetlistRoleRequirementsService {
     return mapSetlistRoleRequirement(updated);
   }
 
-  async remove(userId: string, organizationId: string, setlistId: string, itemId: string, requirementId: string) {
-    await this.access.assertManageRequirements(userId, organizationId);
+  async remove(member: OrgMember, setlistId: string, itemId: string, requirementId: string) {
+    const { organizationId } = member;
     await this.access.assertItemInSetlist(organizationId, setlistId, itemId);
     await this.findRequirement(itemId, requirementId);
 

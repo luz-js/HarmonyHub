@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { SetlistsAccessService } from '../setlists-access.service';
 import { mapSetlistParticipant } from './setlist-assignment.mapper';
 import { SetlistParticipantsRepository } from './setlist-participants.repository';
+import type { OrgMember } from '../../permissions/current-membership.decorator';
 
 const PARTICIPANT_STATUSES = ['INVITED', 'CONFIRMED', 'DECLINED', 'TENTATIVE', 'NOT_REQUIRED'] as const;
 
@@ -26,8 +27,8 @@ export class SetlistParticipantsService {
     @Inject(SetlistsAccessService) private readonly access: SetlistsAccessService,
   ) {}
 
-  async list(userId: string, organizationId: string, setlistId: string) {
-    await this.access.assertViewAssignments(userId, organizationId);
+  async list(member: OrgMember, setlistId: string) {
+    const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
     const participants = await this.participantsRepository.list(setlistId);
     const counts = await this.participantsRepository.assignmentCounts(participants.map((participant) => participant.id));
@@ -41,8 +42,8 @@ export class SetlistParticipantsService {
     return this.participantsRepository.create({ setlistId, membershipId, status: 'CONFIRMED', addedById });
   }
 
-  async add(userId: string, organizationId: string, setlistId: string, body: Record<string, unknown>) {
-    await this.access.assertManageParticipants(userId, organizationId);
+  async add(member: OrgMember, setlistId: string, body: Record<string, unknown>) {
+    const { userId, organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const parsed = addParticipantSchema.safeParse(body);
@@ -66,8 +67,8 @@ export class SetlistParticipantsService {
     return mapSetlistParticipant(created, []);
   }
 
-  async update(userId: string, organizationId: string, setlistId: string, participantId: string, body: Record<string, unknown>) {
-    await this.access.assertManageParticipants(userId, organizationId);
+  async update(member: OrgMember, setlistId: string, participantId: string, body: Record<string, unknown>) {
+    const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
     await this.findParticipant(setlistId, participantId);
 
@@ -84,8 +85,8 @@ export class SetlistParticipantsService {
     return mapSetlistParticipant(updated, counts);
   }
 
-  async remove(userId: string, organizationId: string, setlistId: string, participantId: string, removeAssignments: boolean) {
-    await this.access.assertManageParticipants(userId, organizationId);
+  async remove(member: OrgMember, setlistId: string, participantId: string, removeAssignments: boolean) {
+    const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
     await this.findParticipant(setlistId, participantId);
 

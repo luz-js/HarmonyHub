@@ -1,5 +1,7 @@
 import { BadRequestException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { z } from 'zod';
+import type { OrgMember } from '../permissions/current-membership.decorator';
+import { PermissionsService } from '../permissions/permissions.service';
 import { clean } from '../shared/object.utils';
 import { mapSetlistDetail, mapSetlistSummary } from './setlist.mapper';
 import { SetlistsAccessService } from './setlists-access.service';
@@ -50,10 +52,11 @@ export class SetlistsService {
   constructor(
     @Inject(SetlistsRepository) private readonly setlistsRepository: SetlistsRepository,
     @Inject(SetlistsAccessService) private readonly access: SetlistsAccessService,
+    @Inject(PermissionsService) private readonly permissions: PermissionsService,
   ) {}
 
-  async list(userId: string, organizationId: string, query: Record<string, unknown>) {
-    await this.access.assertViewSetlists(userId, organizationId);
+  async list(member: OrgMember, query: Record<string, unknown>) {
+    const { organizationId } = member;
 
     const parsed = listQuerySchema.safeParse(query);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Filtros invalidos');
@@ -77,13 +80,13 @@ export class SetlistsService {
     };
   }
 
-  async detail(userId: string, organizationId: string, id: string) {
-    await this.access.assertViewSetlists(userId, organizationId);
+  async detail(member: OrgMember, id: string) {
+    const { organizationId } = member;
     return mapSetlistDetail(await this.findOwnedDetail(organizationId, id));
   }
 
-  async create(userId: string, organizationId: string, body: Record<string, unknown>) {
-    await this.assertManage(userId, organizationId);
+  async create(member: OrgMember, body: Record<string, unknown>) {
+    const { userId, organizationId } = member;
     const parsed = createSetlistSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
 
@@ -116,8 +119,8 @@ export class SetlistsService {
     return mapSetlistDetail({ ...created, items: [] });
   }
 
-  async saveAsTemplate(userId: string, organizationId: string, id: string, body: Record<string, unknown>) {
-    await this.assertManage(userId, organizationId);
+  async saveAsTemplate(member: OrgMember, id: string, body: Record<string, unknown>) {
+    const { userId, organizationId } = member;
     await this.findOwnedDetail(organizationId, id);
     const parsed = saveAsTemplateSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
@@ -134,8 +137,8 @@ export class SetlistsService {
     return mapSetlistDetail(createdTemplate);
   }
 
-  async update(userId: string, organizationId: string, id: string, body: Record<string, unknown>) {
-    await this.assertManage(userId, organizationId);
+  async update(member: OrgMember, id: string, body: Record<string, unknown>) {
+    const { userId, organizationId } = member;
     const current = await this.findOwnedDetail(organizationId, id);
     const parsed = updateSetlistSchema.safeParse(body);
     if (!parsed.success) throw new BadRequestException(parsed.error.issues[0]?.message || 'Datos invalidos');
@@ -145,7 +148,7 @@ export class SetlistsService {
     }
 
     if (parsed.data.status && parsed.data.status !== current.status) {
-      await this.assertStatusChangeAllowed(userId, organizationId, current, parsed.data.status);
+      this.assertStatusChangeAllowed(member, current, parsed.data.status);
     }
 
     await this.setlistsRepository.update(
@@ -155,9 +158,8 @@ export class SetlistsService {
     return mapSetlistDetail(await this.findOwnedDetail(organizationId, id));
   }
 
-  async archive(userId: string, organizationId: string, id: string) {
-    await this.access.assertArchiveSetlists(userId, organizationId);
-
+  async archive(member: OrgMember, id: string) {
+    const { userId, organizationId } = member;
     const current = await this.findOwnedDetail(organizationId, id);
     this.assertTemplateAllows(current.isTemplate, 'archive');
     this.assertTransition(current.status, 'ARCHIVED');
@@ -165,9 +167,8 @@ export class SetlistsService {
     return mapSetlistDetail(await this.findOwnedDetail(organizationId, id));
   }
 
-  async publish(userId: string, organizationId: string, id: string) {
-    await this.access.assertPublishSetlists(userId, organizationId);
-
+  async publish(member: OrgMember, id: string) {
+    const { userId, organizationId } = member;
     const current = await this.findOwnedDetail(organizationId, id);
     this.assertTemplateAllows(current.isTemplate, 'publish');
     this.assertTransition(current.status, 'PUBLISHED');
@@ -176,9 +177,8 @@ export class SetlistsService {
     return mapSetlistDetail(await this.findOwnedDetail(organizationId, id));
   }
 
-  async delete(userId: string, organizationId: string, id: string) {
-    await this.access.assertDeleteSetlists(userId, organizationId);
-
+  async delete(member: OrgMember, id: string) {
+    const { organizationId } = member;
     await this.findOwnedDetail(organizationId, id);
     const eventsCount = await this.setlistsRepository.countEvents(id);
     if (eventsCount > 0) throw new BadRequestException('No se puede eliminar un setlist con eventos asociados; archivalo en su lugar');
@@ -187,21 +187,13 @@ export class SetlistsService {
     return { ok: true };
   }
 
-  private async assertManage(userId: string, organizationId: string) {
-    return this.access.assertManageSetlists(userId, organizationId);
-  }
-
-  private async assertStatusChangeAllowed(
-    userId: string,
-    organizationId: string,
-    current: SetlistDetailForValidation & { status: string },
-    nextStatus: string,
-  ) {
+  /** Archivar o publicar desde PATCH exige ademas el permiso de esa accion (depende del estado pedido). */
+  private assertStatusChangeAllowed(member: OrgMember, current: SetlistDetailForValidation & { status: string }, nextStatus: string) {
     if (nextStatus === 'ARCHIVED') {
-      await this.access.assertArchiveSetlists(userId, organizationId);
+      this.permissions.assertRoleCan(member.role, 'setlists.archive');
     }
     if (nextStatus === 'PUBLISHED') {
-      await this.access.assertPublishSetlists(userId, organizationId);
+      this.permissions.assertRoleCan(member.role, 'setlists.publish');
       this.assertPublishable(current);
     }
     this.assertTransition(current.status as any, nextStatus as any);

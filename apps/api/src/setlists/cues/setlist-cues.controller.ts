@@ -1,115 +1,119 @@
-import { Body, Controller, Delete, Get, Headers, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../../auth/auth.guard';
-import { CurrentUser, CurrentUserPayload } from '../../auth/current-user.decorator';
 import { SetlistCuesService } from './setlist-cues.service';
+import { CurrentMembership, OrgMember } from '../../permissions/current-membership.decorator';
+import { PermissionsGuard } from '../../permissions/permissions.guard';
+import { RequirePermission } from '../../permissions/require-permission.decorator';
 
 @Controller('api/setlists')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, PermissionsGuard)
 export class SetlistCuesController {
   constructor(@Inject(SetlistCuesService) private readonly cuesService: SetlistCuesService) {}
 
   @Get(':setlistId/production')
-  production(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('setlistId') setlistId: string) {
-    return this.cuesService.production(user.id, organizationId, setlistId);
+  @RequirePermission('read')
+  production(@CurrentMembership() member: OrgMember, @Param('setlistId') setlistId: string) {
+    return this.cuesService.production(member, setlistId);
   }
 
   @Get(':setlistId/items/:itemId/cues')
+  @RequirePermission('read')
   listByItem(
-    @CurrentUser() user: CurrentUserPayload,
-    @Headers('x-organization-id') organizationId: string,
+    @CurrentMembership() member: OrgMember,
     @Param('setlistId') setlistId: string,
     @Param('itemId') itemId: string,
   ) {
-    return this.cuesService.listByItem(user.id, organizationId, setlistId, itemId);
+    return this.cuesService.listByItem(member, setlistId, itemId);
   }
 
   @Post(':setlistId/items/:itemId/cues/copy')
+  @RequirePermission('setlists.cues.manage')
   copy(
-    @CurrentUser() user: CurrentUserPayload,
-    @Headers('x-organization-id') organizationId: string,
+    @CurrentMembership() member: OrgMember,
     @Param('setlistId') setlistId: string,
     @Param('itemId') itemId: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return this.cuesService.copy(user.id, organizationId, setlistId, itemId, body ?? {});
+    return this.cuesService.copy(member, setlistId, itemId, body ?? {});
   }
 
   @Get(':setlistId/cues')
-  list(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('setlistId') setlistId: string) {
-    return this.cuesService.list(user.id, organizationId, setlistId);
+  @RequirePermission('read')
+  list(@CurrentMembership() member: OrgMember, @Param('setlistId') setlistId: string) {
+    return this.cuesService.list(member, setlistId);
   }
 
   @Post(':setlistId/cues')
+  @RequirePermission('setlists.cues.manage')
   create(
-    @CurrentUser() user: CurrentUserPayload,
-    @Headers('x-organization-id') organizationId: string,
+    @CurrentMembership() member: OrgMember,
     @Param('setlistId') setlistId: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return this.cuesService.create(user.id, organizationId, setlistId, body ?? {});
+    return this.cuesService.create(member, setlistId, body ?? {});
   }
 
   // PATCH .../cues/reorder debe registrarse antes que PATCH .../cues/:cueId
   // (Express resolveria ":cueId" con "reorder" si se registrara despues).
   @Patch(':setlistId/cues/reorder')
+  @RequirePermission('setlists.cues.manage')
   reorder(
-    @CurrentUser() user: CurrentUserPayload,
-    @Headers('x-organization-id') organizationId: string,
+    @CurrentMembership() member: OrgMember,
     @Param('setlistId') setlistId: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return this.cuesService.reorder(user.id, organizationId, setlistId, body ?? {});
+    return this.cuesService.reorder(member, setlistId, body ?? {});
   }
 
   @Get(':setlistId/cues/:cueId')
+  @RequirePermission('read')
   get(
-    @CurrentUser() user: CurrentUserPayload,
-    @Headers('x-organization-id') organizationId: string,
+    @CurrentMembership() member: OrgMember,
     @Param('setlistId') setlistId: string,
     @Param('cueId') cueId: string,
   ) {
-    return this.cuesService.get(user.id, organizationId, setlistId, cueId);
+    return this.cuesService.get(member, setlistId, cueId);
   }
 
   @Patch(':setlistId/cues/:cueId')
+  @RequirePermission('setlists.cues.manage')
   update(
-    @CurrentUser() user: CurrentUserPayload,
-    @Headers('x-organization-id') organizationId: string,
+    @CurrentMembership() member: OrgMember,
     @Param('setlistId') setlistId: string,
     @Param('cueId') cueId: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return this.cuesService.update(user.id, organizationId, setlistId, cueId, body ?? {});
+    return this.cuesService.update(member, setlistId, cueId, body ?? {});
   }
 
   @Patch(':setlistId/cues/:cueId/status')
+  @RequirePermission('read')
   updateStatus(
-    @CurrentUser() user: CurrentUserPayload,
-    @Headers('x-organization-id') organizationId: string,
+    @CurrentMembership() member: OrgMember,
     @Param('setlistId') setlistId: string,
     @Param('cueId') cueId: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return this.cuesService.updateStatus(user.id, organizationId, setlistId, cueId, body ?? {});
+    return this.cuesService.updateStatus(member, setlistId, cueId, body ?? {});
   }
 
   @Post(':setlistId/cues/:cueId/duplicate')
+  @RequirePermission('setlists.cues.manage')
   duplicate(
-    @CurrentUser() user: CurrentUserPayload,
-    @Headers('x-organization-id') organizationId: string,
+    @CurrentMembership() member: OrgMember,
     @Param('setlistId') setlistId: string,
     @Param('cueId') cueId: string,
   ) {
-    return this.cuesService.duplicate(user.id, organizationId, setlistId, cueId);
+    return this.cuesService.duplicate(member, setlistId, cueId);
   }
 
   @Delete(':setlistId/cues/:cueId')
+  @RequirePermission('setlists.cues.manage')
   remove(
-    @CurrentUser() user: CurrentUserPayload,
-    @Headers('x-organization-id') organizationId: string,
+    @CurrentMembership() member: OrgMember,
     @Param('setlistId') setlistId: string,
     @Param('cueId') cueId: string,
   ) {
-    return this.cuesService.remove(user.id, organizationId, setlistId, cueId);
+    return this.cuesService.remove(member, setlistId, cueId);
   }
 }

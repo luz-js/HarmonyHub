@@ -1,53 +1,61 @@
-import { Body, Controller, Delete, Get, Headers, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthGuard } from '../../auth/auth.guard';
-import { CurrentUser, CurrentUserPayload } from '../../auth/current-user.decorator';
 import { SetlistItemsService } from './setlist-items.service';
+import { CurrentMembership, OrgMember } from '../../permissions/current-membership.decorator';
+import { PermissionsGuard } from '../../permissions/permissions.guard';
+import { RequirePermission } from '../../permissions/require-permission.decorator';
 
 @Controller('api/setlists')
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, PermissionsGuard)
 export class SetlistItemsController {
   constructor(@Inject(SetlistItemsService) private readonly itemsService: SetlistItemsService) {}
 
   @Get(':setlistId/items')
-  list(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('setlistId') setlistId: string) {
-    return this.itemsService.list(user.id, organizationId, setlistId);
+  @RequirePermission('read')
+  list(@CurrentMembership() member: OrgMember, @Param('setlistId') setlistId: string) {
+    return this.itemsService.list(member, setlistId);
   }
 
   @Post(':setlistId/items')
-  create(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('setlistId') setlistId: string, @Body() body: Record<string, unknown>) {
-    return this.itemsService.create(user.id, organizationId, setlistId, body ?? {});
+  @RequirePermission('setlists.manage')
+  create(@CurrentMembership() member: OrgMember, @Param('setlistId') setlistId: string, @Body() body: Record<string, unknown>) {
+    return this.itemsService.create(member, setlistId, body ?? {});
   }
 
   // PATCH .../items/reorder debe registrarse antes que PATCH .../items/:itemId
   // (Express resolveria ":itemId" con "reorder" si se registrara despues).
   @Patch(':setlistId/items/reorder')
-  reorder(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('setlistId') setlistId: string, @Body() body: Record<string, unknown>) {
-    return this.itemsService.reorder(user.id, organizationId, setlistId, body ?? {});
+  @RequirePermission('setlists.manage')
+  reorder(@CurrentMembership() member: OrgMember, @Param('setlistId') setlistId: string, @Body() body: Record<string, unknown>) {
+    return this.itemsService.reorder(member, setlistId, body ?? {});
   }
 
   @Get(':setlistId/items/:itemId')
-  get(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('setlistId') setlistId: string, @Param('itemId') itemId: string) {
-    return this.itemsService.get(user.id, organizationId, setlistId, itemId);
+  @RequirePermission('read')
+  get(@CurrentMembership() member: OrgMember, @Param('setlistId') setlistId: string, @Param('itemId') itemId: string) {
+    return this.itemsService.get(member, setlistId, itemId);
   }
 
   @Patch(':setlistId/items/:itemId')
-  update(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('setlistId') setlistId: string, @Param('itemId') itemId: string, @Body() body: Record<string, unknown>) {
-    return this.itemsService.update(user.id, organizationId, setlistId, itemId, body ?? {});
+  @RequirePermission('setlists.manage')
+  update(@CurrentMembership() member: OrgMember, @Param('setlistId') setlistId: string, @Param('itemId') itemId: string, @Body() body: Record<string, unknown>) {
+    return this.itemsService.update(member, setlistId, itemId, body ?? {});
   }
 
   @Delete(':setlistId/items/:itemId')
-  remove(@CurrentUser() user: CurrentUserPayload, @Headers('x-organization-id') organizationId: string, @Param('setlistId') setlistId: string, @Param('itemId') itemId: string) {
-    return this.itemsService.remove(user.id, organizationId, setlistId, itemId);
+  @RequirePermission('setlists.manage')
+  remove(@CurrentMembership() member: OrgMember, @Param('setlistId') setlistId: string, @Param('itemId') itemId: string) {
+    return this.itemsService.remove(member, setlistId, itemId);
   }
 
   @Post(':setlistId/items/:itemId/duplicate')
+  @RequirePermission('setlists.manage')
   duplicate(
-    @CurrentUser() user: CurrentUserPayload,
-    @Headers('x-organization-id') organizationId: string,
+    @CurrentMembership() member: OrgMember,
     @Param('setlistId') setlistId: string,
     @Param('itemId') itemId: string,
     @Body() body: Record<string, unknown>,
   ) {
-    return this.itemsService.duplicate(user.id, organizationId, setlistId, itemId, body?.includeCues === true);
+    return this.itemsService.duplicate(member, setlistId, itemId, body?.includeCues === true);
   }
 }

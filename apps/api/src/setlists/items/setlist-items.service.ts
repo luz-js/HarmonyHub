@@ -6,6 +6,7 @@ import { SetlistsAccessService } from '../setlists-access.service';
 import { assertReorderPayloadValid, computeInsertOrder, normalizeSetlistItemInput } from '../setlist.utils';
 import { SetlistsRepository } from '../setlists.repository';
 import { SetlistItemsRepository } from './setlist-items.repository';
+import type { OrgMember } from '../../permissions/current-membership.decorator';
 
 const SETLIST_ITEM_TYPES = ['SONG', 'SPEAKING', 'PRAYER', 'VIDEO', 'ANNOUNCEMENT', 'SILENCE', 'TRANSITION', 'BREAK', 'CUSTOM'] as const;
 
@@ -51,23 +52,23 @@ export class SetlistItemsService {
     @Inject(SetlistsAccessService) private readonly access: SetlistsAccessService,
   ) {}
 
-  async list(userId: string, organizationId: string, setlistId: string) {
-    await this.access.assertViewSetlists(userId, organizationId);
+  async list(member: OrgMember, setlistId: string) {
+    const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
     const items = await this.itemsRepository.listItems(setlistId);
     return items.map(mapSetlistItemDetail);
   }
 
-  async get(userId: string, organizationId: string, setlistId: string, itemId: string) {
-    await this.access.assertViewSetlists(userId, organizationId);
+  async get(member: OrgMember, setlistId: string, itemId: string) {
+    const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
     const item = await this.itemsRepository.findItem(setlistId, itemId);
     if (!item) throw new NotFoundException('Item no encontrado');
     return mapSetlistItemDetail(item);
   }
 
-  async create(userId: string, organizationId: string, setlistId: string, body: Record<string, unknown>) {
-    await this.access.assertManageSetlists(userId, organizationId);
+  async create(member: OrgMember, setlistId: string, body: Record<string, unknown>) {
+    const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const parsed = createItemSchema.safeParse(body);
@@ -128,8 +129,8 @@ export class SetlistItemsService {
     return mapSetlistItemDetail(created);
   }
 
-  async update(userId: string, organizationId: string, setlistId: string, itemId: string, body: Record<string, unknown>) {
-    await this.access.assertManageSetlists(userId, organizationId);
+  async update(member: OrgMember, setlistId: string, itemId: string, body: Record<string, unknown>) {
+    const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const existing = await this.itemsRepository.findItem(setlistId, itemId);
@@ -185,8 +186,8 @@ export class SetlistItemsService {
     return mapSetlistItemDetail(updated);
   }
 
-  async remove(userId: string, organizationId: string, setlistId: string, itemId: string) {
-    await this.access.assertManageSetlists(userId, organizationId);
+  async remove(member: OrgMember, setlistId: string, itemId: string) {
+    const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const existing = await this.itemsRepository.findItem(setlistId, itemId);
@@ -197,8 +198,8 @@ export class SetlistItemsService {
     return { ok: true };
   }
 
-  async duplicate(userId: string, organizationId: string, setlistId: string, itemId: string, includeCues = false) {
-    await this.access.assertManageSetlists(userId, organizationId);
+  async duplicate(member: OrgMember, setlistId: string, itemId: string, includeCues = false) {
+    const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const existing = await this.itemsRepository.findItem(setlistId, itemId);
@@ -209,8 +210,8 @@ export class SetlistItemsService {
     return mapSetlistItemDetail(created);
   }
 
-  async reorder(userId: string, organizationId: string, setlistId: string, body: Record<string, unknown>) {
-    await this.access.assertManageSetlists(userId, organizationId);
+  async reorder(member: OrgMember, setlistId: string, body: Record<string, unknown>) {
+    const { organizationId } = member;
     await this.access.assertSetlistInOrg(organizationId, setlistId);
 
     const parsed = reorderSchema.safeParse(body);
